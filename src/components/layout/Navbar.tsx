@@ -2,13 +2,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, Calendar, Image, Book, Mail, Menu, X } from 'lucide-react';
+import { Home, Calendar, Image, Book, Mail, Menu, X, LogIn } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAdminAuth } from '@/context/AdminAuthContext';
 
 export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const isMobile = useIsMobile();
+  const { adminUser } = useAdminAuth();
 
   const navItems = [
     { name: 'Home', path: '/', icon: <Home className="h-4 w-4 mr-2" /> },
@@ -44,6 +46,29 @@ export const Navbar = () => {
                     </Link>
                   </Button>
                 ))}
+                {adminUser ? (
+                  <Button
+                    variant="ghost"
+                    className="text-gray-700 hover:text-primary"
+                    asChild
+                  >
+                    <Link to="/admin/dashboard" className="flex items-center">
+                      <LogIn className="h-4 w-4 mr-2" />
+                      Dashboard
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    className="text-gray-700 hover:text-primary"
+                    asChild
+                  >
+                    <Link to="/admin/login" className="flex items-center">
+                      <LogIn className="h-4 w-4 mr-2" />
+                      Login
+                    </Link>
+                  </Button>
+                )}
               </div>
             </div>
           )}
@@ -82,6 +107,25 @@ export const Navbar = () => {
               {item.name}
             </Link>
           ))}
+          {adminUser ? (
+            <Link
+              to="/admin/dashboard"
+              className="flex items-center text-gray-700 hover:bg-gray-100 hover:text-primary px-3 py-2 rounded-md text-base font-medium"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <LogIn className="h-4 w-4 mr-2" />
+              Dashboard
+            </Link>
+          ) : (
+            <Link
+              to="/admin/login"
+              className="flex items-center text-gray-700 hover:bg-gray-100 hover:text-primary px-3 py-2 rounded-md text-base font-medium"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <LogIn className="h-4 w-4 mr-2" />
+              Login
+            </Link>
+          )}
         </div>
       </div>
     </nav>
