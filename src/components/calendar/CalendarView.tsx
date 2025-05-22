@@ -36,7 +36,7 @@ const CalendarView = () => {
   const [selectedDayEvents, setSelectedDayEvents] = useState<Event[]>([]);
   const { toast } = useToast();
 
-  const getDayEvents = (day: Date | undefined) => {
+  const getDayEvents = (day: Date | undefined): Event[] => {
     if (!day) return [];
     return events.filter(event => 
       event.date.getDate() === day.getDate() && 
