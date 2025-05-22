@@ -2,10 +2,26 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, Calendar, Image, Book, Mail, Menu, X, LogIn } from 'lucide-react';
+import { Home, Calendar, Image, Book, Mail, Menu, X, LogIn, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAdminAuth } from '@/context/AdminAuthContext';
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
@@ -18,6 +34,13 @@ export const Navbar = () => {
     { name: 'Gallery', path: '/gallery', icon: <Image className="h-4 w-4 mr-2" /> },
     { name: 'Bylaws', path: '/bylaws', icon: <Book className="h-4 w-4 mr-2" /> },
     { name: 'Contact', path: '/contact', icon: <Mail className="h-4 w-4 mr-2" /> },
+  ];
+
+  const informationItems = [
+    { name: 'Recycling', path: '/information/recycling' },
+    { name: 'Organics', path: '/information/organics' },
+    { name: 'Fees', path: '/information/fees' },
+    { name: 'Renovations', path: '/information/renovations' },
   ];
 
   return (
@@ -46,6 +69,26 @@ export const Navbar = () => {
                     </Link>
                   </Button>
                 ))}
+
+                {/* Information Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="text-gray-700 hover:text-primary flex items-center">
+                      Information
+                      <ChevronDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-white">
+                    {informationItems.map((item) => (
+                      <DropdownMenuItem key={item.name} asChild>
+                        <Link to={item.path} className="w-full">
+                          {item.name}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
                 {adminUser ? (
                   <Button
                     variant="ghost"
@@ -107,6 +150,24 @@ export const Navbar = () => {
               {item.name}
             </Link>
           ))}
+          
+          {/* Information section in mobile menu */}
+          <div className="block">
+            <div className="px-3 py-2 font-medium text-gray-700">Information</div>
+            <div className="pl-5 space-y-1">
+              {informationItems.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.path}
+                  className="flex items-center text-gray-600 hover:bg-gray-100 hover:text-primary px-3 py-2 rounded-md text-sm"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+          
           {adminUser ? (
             <Link
               to="/admin/dashboard"

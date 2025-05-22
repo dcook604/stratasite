@@ -13,6 +13,10 @@ import Contact from "./pages/Contact";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
+import Recycling from "./pages/information/Recycling";
+import Organics from "./pages/information/Organics";
+import Fees from "./pages/information/Fees";
+import Renovations from "./pages/information/Renovations";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +35,11 @@ const App = () => (
             <Route path="/contact" element={<Contact />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            {/* Information routes */}
+            <Route path="/information/recycling" element={<Recycling />} />
+            <Route path="/information/organics" element={<Organics />} />
+            <Route path="/information/fees" element={<Fees />} />
+            <Route path="/information/renovations" element={<Renovations />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
