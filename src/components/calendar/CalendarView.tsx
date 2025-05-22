@@ -12,16 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 
-// Mock data for calendar events
-const events = [
-  { id: 1, title: 'Council Meeting', date: new Date('2025-06-01'), type: 'meeting', approved: true },
-  { id: 2, title: 'Building Maintenance', date: new Date('2025-06-05'), type: 'maintenance', approved: true },
-  { id: 3, title: 'Move-in: Unit 302', date: new Date('2025-06-08'), type: 'move', approved: true },
-  { id: 4, title: 'Roof Inspection', date: new Date('2025-06-12'), type: 'maintenance', approved: true },
-  { id: 5, title: 'Move-out: Unit 105', date: new Date('2025-06-15'), type: 'move', approved: false },
-  { id: 6, title: 'Gardening Committee', date: new Date('2025-06-20'), type: 'meeting', approved: true },
-];
-
+// Define the Event interface first
 interface Event {
   id: number;
   title: string;
@@ -29,6 +20,16 @@ interface Event {
   type: 'meeting' | 'maintenance' | 'move' | 'other';
   approved: boolean;
 }
+
+// Mock data for calendar events - ensure it follows the Event interface
+const events: Event[] = [
+  { id: 1, title: 'Council Meeting', date: new Date('2025-06-01'), type: 'meeting', approved: true },
+  { id: 2, title: 'Building Maintenance', date: new Date('2025-06-05'), type: 'maintenance', approved: true },
+  { id: 3, title: 'Move-in: Unit 302', date: new Date('2025-06-08'), type: 'move', approved: true },
+  { id: 4, title: 'Roof Inspection', date: new Date('2025-06-12'), type: 'maintenance', approved: true },
+  { id: 5, title: 'Move-out: Unit 105', date: new Date('2025-06-15'), type: 'move', approved: false },
+  { id: 6, title: 'Gardening Committee', date: new Date('2025-06-20'), type: 'meeting', approved: true },
+];
 
 const CalendarView = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -86,7 +87,7 @@ const CalendarView = () => {
     });
   };
 
-  const getEventTypeBadge = (type: string) => {
+  const getEventTypeBadge = (type: Event['type']) => {
     switch (type) {
       case 'meeting':
         return <Badge variant="secondary">Meeting</Badge>;
