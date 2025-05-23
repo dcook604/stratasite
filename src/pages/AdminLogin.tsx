@@ -10,8 +10,8 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 
 const AdminLogin = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@example.com');
+  const [password, setPassword] = useState('admin123');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAdminAuth();
   const navigate = useNavigate();
@@ -22,9 +22,11 @@ const AdminLogin = () => {
     setIsLoading(true);
 
     try {
+      console.log('Submitting login with:', email);
       const { error } = await login(email, password);
 
       if (error) {
+        console.log('Login error:', error);
         toast({
           title: "Login Failed",
           description: error,
@@ -38,7 +40,7 @@ const AdminLogin = () => {
         navigate('/admin/dashboard');
       }
     } catch (error) {
-      console.error(error);
+      console.error('Login submission error:', error);
       toast({
         title: "Login Failed",
         description: "An unexpected error occurred.",
@@ -88,7 +90,10 @@ const AdminLogin = () => {
               </Button>
             </form>
             <div className="mt-4 text-sm text-center text-gray-600">
-              <p>Test Account: admin@example.com / admin123</p>
+              <p>Using test account: admin@example.com / admin123</p>
+            </div>
+            <div className="mt-2 text-xs text-center text-gray-500">
+              <p>(Added to database via SQL migration)</p>
             </div>
           </div>
         </div>
