@@ -36,7 +36,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      console.log('Attempting login with:', email);
+      console.log('Attempting login with:', email, 'password length:', password.length);
       
       // Call the RPC function and log the response for debugging
       const { data, error } = await supabase.rpc('check_admin_login', {
@@ -52,6 +52,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (data) {
+        console.log('Login successful, user ID:', data);
         const adminUser = { id: data, email };
         setAdminUser(adminUser);
         localStorage.setItem('admin_user', JSON.stringify(adminUser));

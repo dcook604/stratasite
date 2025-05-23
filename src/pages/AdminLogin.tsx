@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,9 +13,20 @@ const AdminLogin = () => {
   const [email, setEmail] = useState('admin@example.com');
   const [password, setPassword] = useState('admin123');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAdminAuth();
+  const { adminUser, login } = useAdminAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  
+  // Get the intended destination from location state, or default to dashboard
+  const from = location.state?.from?.pathname || '/admin/dashboard';
+  
+  useEffect(() => {
+    // If already logged in, redirect to dashboard or previous location
+    if (adminUser) {
+      navigate(from, { replace: true });
+    }
+  }, [adminUser, navigate, from]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +48,7 @@ const AdminLogin = () => {
           title: "Login Successful",
           description: "Welcome back, admin!",
         });
-        navigate('/admin/dashboard');
+        navigate(from, { replace: true });
       }
     } catch (error) {
       console.error('Login submission error:', error);
