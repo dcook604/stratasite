@@ -35,35 +35,41 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
+    setIsLoading(true);
     try {
-      console.log('Attempting login with:', email, 'password length:', password.length);
+      console.log('Attempting login with:', email);
       
-      // Call the RPC function and log the response for debugging
+      // Call the RPC function to verify admin credentials
       const { data, error } = await supabase.rpc('check_admin_login', {
         email_input: email,
         password_input: password,
       });
       
-      console.log('Login response:', { data, error });
+      console.log('Login RPC response:', { data, error });
 
       if (error) {
         console.error('Login RPC error:', error);
-        throw error;
+        setIsLoading(false);
+        return { error: error.message };
       }
 
       if (data) {
+        // Data will be the user ID if successful
         console.log('Login successful, user ID:', data);
         const adminUser = { id: data, email };
         setAdminUser(adminUser);
         localStorage.setItem('admin_user', JSON.stringify(adminUser));
+        setIsLoading(false);
         return { error: null };
       } else {
-        console.log('Invalid credentials: No data returned from RPC function');
+        console.log('Invalid credentials: No user ID returned');
+        setIsLoading(false);
         return { error: 'Invalid credentials' };
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Admin login error:', error);
-      return { error: 'Login failed. Please try again.' };
+      setIsLoading(false);
+      return { error: error.message || 'Login failed. Please try again.' };
     }
   };
 

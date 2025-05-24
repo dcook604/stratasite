@@ -5,6 +5,7 @@ import { useAdminAuth } from '@/context/AdminAuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -13,6 +14,7 @@ const AdminLogin = () => {
   const [email, setEmail] = useState('admin@example.com');
   const [password, setPassword] = useState('admin123');
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const { adminUser, login } = useAdminAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,6 +33,7 @@ const AdminLogin = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMessage('');
 
     try {
       console.log('Submitting login with:', email);
@@ -38,6 +41,7 @@ const AdminLogin = () => {
 
       if (error) {
         console.log('Login error:', error);
+        setErrorMessage(error);
         toast({
           title: "Login Failed",
           description: error,
@@ -50,8 +54,9 @@ const AdminLogin = () => {
         });
         navigate(from, { replace: true });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login submission error:', error);
+      setErrorMessage(error.message || "An unexpected error occurred.");
       toast({
         title: "Login Failed",
         description: "An unexpected error occurred.",
@@ -69,6 +74,13 @@ const AdminLogin = () => {
         <div className="max-w-md mx-auto mt-16 mb-16">
           <div className="bg-white p-8 rounded-lg shadow-md">
             <h1 className="text-2xl font-bold text-center mb-6">Admin Login</h1>
+            
+            {errorMessage && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
+            )}
+            
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -104,7 +116,7 @@ const AdminLogin = () => {
               <p>Using test account: admin@example.com / admin123</p>
             </div>
             <div className="mt-2 text-xs text-center text-gray-500">
-              <p>(Added to database via SQL migration)</p>
+              <p>(Account added via SQL migration)</p>
             </div>
           </div>
         </div>
