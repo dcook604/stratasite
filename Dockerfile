@@ -16,30 +16,25 @@ COPY . .
 RUN npm run db:generate
 RUN npm run build
 
-# Production stage
-FROM node:18-alpine AS runner
+# Production stage - use nginx to serve static files
+FROM nginx:alpine
 
-WORKDIR /app
+# Copy built static files
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Install sqlite3
-RUN apk add --no-cache sqlite
+# Create nginx config for SPA
+RUN echo 'server { \
+    listen 80; \
+    server_name localhost; \
+    root /usr/share/nginx/html; \
+    index index.html; \
+    location / { \
+        try_files $uri $uri/ /index.html; \
+    } \
+}' > /etc/nginx/conf.d/default.conf
 
-# Copy built application
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/prisma ./prisma/
-COPY --from=builder /app/scripts ./scripts/
-COPY --from=builder /app/node_modules ./node_modules
+# Expose port 80
+EXPOSE 80
 
-# Create data directory for SQLite
-RUN mkdir -p /app/data
-
-# Set environment variables
-ENV NODE_ENV=production
-ENV DATABASE_URL="file:/app/data/database.db"
-
-# Expose port
-EXPOSE 3331
-
-# Start command
-CMD ["sh", "-c", "npx prisma db push && npm run db:seed && npm start"]
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]
