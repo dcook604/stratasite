@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { RequireAdminAuth } from '@/components/hoc/RequireAdminAuth';
-import { Plus, Trash2, Edit2, Users, Calendar, FileText, Megaphone } from 'lucide-react';
+import { Plus, Trash2, Edit2, Users, Calendar, FileText, Megaphone, ShoppingCart } from 'lucide-react';
 
 const AdminDashboard = () => {
   const { adminUser, logout } = useAdminAuth();
@@ -24,6 +24,7 @@ const AdminDashboard = () => {
   const [events, setEvents] = useState([]);
   const [pages, setPages] = useState([]);
   const [adminUsers, setAdminUsers] = useState([]);
+  const [marketplacePosts, setMarketplacePosts] = useState([]);
   const [loading, setLoading] = useState(false);
 
   // Form states
@@ -40,17 +41,19 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [announcementsRes, eventsRes, pagesRes, adminUsersRes] = await Promise.all([
+      const [announcementsRes, eventsRes, pagesRes, adminUsersRes, marketplaceRes] = await Promise.all([
         fetch('/api/announcements'),
         fetch('/api/events'),
         fetch('/api/pages'),
-        fetch('/api/admin/users')
+        fetch('/api/admin/users'),
+        fetch('/api/marketplace')
       ]);
 
       if (announcementsRes.ok) setAnnouncements(await announcementsRes.json());
       if (eventsRes.ok) setEvents(await eventsRes.json());
       if (pagesRes.ok) setPages(await pagesRes.json());
       if (adminUsersRes.ok) setAdminUsers(await adminUsersRes.json());
+      if (marketplaceRes.ok) setMarketplacePosts(await marketplaceRes.json());
     } catch (error) {
       toast({ title: "Error", description: "Failed to fetch data", variant: "destructive" });
     } finally {
@@ -179,7 +182,7 @@ const AdminDashboard = () => {
             </Alert>
 
             <Tabs defaultValue="announcements" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="announcements" className="flex items-center gap-2">
                   <Megaphone className="w-4 h-4" />
                   Announcements
@@ -191,6 +194,10 @@ const AdminDashboard = () => {
                 <TabsTrigger value="pages" className="flex items-center gap-2">
                   <FileText className="w-4 h-4" />
                   Pages
+                </TabsTrigger>
+                <TabsTrigger value="marketplace" className="flex items-center gap-2">
+                  <ShoppingCart className="w-4 h-4" />
+                  Marketplace
                 </TabsTrigger>
                 <TabsTrigger value="users" className="flex items-center gap-2">
                   <Users className="w-4 h-4" />
@@ -499,6 +506,80 @@ const AdminDashboard = () => {
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="marketplace" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Marketplace Management</CardTitle>
+                    <CardDescription>Manage user-posted marketplace items</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {marketplacePosts.length === 0 ? (
+                      <p className="text-gray-500">No marketplace posts yet.</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {marketplacePosts.map((post) => (
+                          <div key={post.id} className="p-4 border rounded">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h3 className="font-semibold">{post.title}</h3>
+                                  <span className={`px-2 py-1 text-xs rounded ${
+                                    post.type === 'sell' ? 'bg-green-100 text-green-800' :
+                                    post.type === 'buy' ? 'bg-blue-100 text-blue-800' :
+                                    'bg-purple-100 text-purple-800'
+                                  }`}>
+                                    {post.type.charAt(0).toUpperCase() + post.type.slice(1)}
+                                  </span>
+                                  {post.category && (
+                                    <span className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded">
+                                      {post.category}
+                                    </span>
+                                  )}
+                                  {post.price && (
+                                    <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">
+                                      ${post.price}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-gray-600 mb-2">{post.description}</p>
+                                <div className="text-sm text-gray-500">
+                                  <p>Posted by: {post.authorName} ({post.authorEmail})</p>
+                                  <p>Date: {new Date(post.createdAt).toLocaleDateString()}</p>
+                                  {post.replies && post.replies.length > 0 && (
+                                    <p>Replies: {post.replies.length}</p>
+                                  )}
+                                </div>
+                              </div>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => deleteItem('marketplace', post.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                            
+                            {post.replies && post.replies.length > 0 && (
+                              <div className="mt-4 pl-4 border-l-2 border-gray-200">
+                                <h4 className="font-medium text-sm mb-2">Replies:</h4>
+                                {post.replies.map((reply) => (
+                                  <div key={reply.id} className="mb-2 p-2 bg-gray-50 rounded text-sm">
+                                    <p>{reply.content}</p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      {reply.authorName} - {new Date(reply.createdAt).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
                             )}
                           </div>
                         ))}

@@ -351,6 +351,144 @@ app.delete('/api/admin/users/:id', async (req, res) => {
   }
 });
 
+// Marketplace CRUD
+app.get('/api/marketplace', async (req, res) => {
+  try {
+    const posts = await prisma.marketplacePost.findMany({
+      where: { isActive: true },
+      include: {
+        replies: {
+          orderBy: { createdAt: 'asc' },
+          select: {
+            id: true,
+            content: true,
+            authorName: true,
+            createdAt: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(posts);
+  } catch (error) {
+    console.error('Error fetching marketplace posts:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/marketplace', async (req, res) => {
+  try {
+    const { title, description, category, type, price, authorName, authorEmail } = req.body;
+    
+    // Basic validation
+    if (!title || !description || !authorName || !authorEmail) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(authorEmail)) {
+      return res.status(400).json({ error: 'Invalid email address' });
+    }
+    
+    const post = await prisma.marketplacePost.create({
+      data: {
+        title,
+        description,
+        category,
+        type,
+        price: price ? parseFloat(price) : null,
+        authorName,
+        authorEmail
+      }
+    });
+    res.json(post);
+  } catch (error) {
+    console.error('Error creating marketplace post:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.put('/api/marketplace/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, category, type, price, isActive } = req.body;
+    const post = await prisma.marketplacePost.update({
+      where: { id },
+      data: { 
+        title, 
+        description, 
+        category, 
+        type, 
+        price: price ? parseFloat(price) : null,
+        isActive 
+      }
+    });
+    res.json(post);
+  } catch (error) {
+    console.error('Error updating marketplace post:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/marketplace/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.marketplacePost.update({
+      where: { id },
+      data: { isActive: false }
+    });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting marketplace post:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/marketplace/:id/replies', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { content, authorName, authorEmail } = req.body;
+    
+    // Basic validation
+    if (!content || !authorName || !authorEmail) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(authorEmail)) {
+      return res.status(400).json({ error: 'Invalid email address' });
+    }
+    
+    const reply = await prisma.marketplaceReply.create({
+      data: {
+        content,
+        authorName,
+        authorEmail,
+        postId: id
+      }
+    });
+    res.json(reply);
+  } catch (error) {
+    console.error('Error creating marketplace reply:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/marketplace/:postId/replies/:replyId', async (req, res) => {
+  try {
+    const { replyId } = req.params;
+    await prisma.marketplaceReply.delete({
+      where: { id: replyId }
+    });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting marketplace reply:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });

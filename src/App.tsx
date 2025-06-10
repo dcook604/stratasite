@@ -40,6 +40,8 @@ const App = () => (
             <Route path="/information/organics" element={<DynamicPage />} />
             <Route path="/information/fees" element={<DynamicPage />} />
             <Route path="/information/renovations" element={<DynamicPage />} />
+            <Route path="/marketplace" element={<DynamicPage />} />
+            <Route path="/information/marketplace" element={<DynamicPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
