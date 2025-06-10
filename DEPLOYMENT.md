@@ -30,7 +30,7 @@ Password: admin123
 3. **Configure Build Settings**:
    - Build Command: `npm run build`
    - Start Command: `npm start`
-   - Port: `3000`
+   - Port: `3331`
 4. **Environment Variables**:
    ```
    NODE_ENV=production
