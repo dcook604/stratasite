@@ -4,7 +4,6 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-COPY prisma ./prisma/
 
 # Install dependencies
 RUN npm ci
@@ -12,8 +11,7 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Generate Prisma client and build
-RUN npm run db:generate
+# Build the application  
 RUN npm run build
 
 # Production stage - use nginx to serve static files

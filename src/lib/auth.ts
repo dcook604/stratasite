@@ -1,49 +1,12 @@
-import bcrypt from 'bcryptjs';
-import { prisma } from './database';
-
+// Mock authentication for static frontend
 export async function validateAdminCredentials(email: string, password: string) {
-  try {
-    const admin = await prisma.adminUser.findUnique({
-      where: { email }
-    });
-
-    if (!admin) {
-      return null;
-    }
-
-    const isValidPassword = await bcrypt.compare(password, admin.password);
-    
-    if (!isValidPassword) {
-      return null;
-    }
-
+  // Simple mock authentication - replace with actual backend API calls
+  if (email === 'admin@spectrum4.ca' && password === 'admin123') {
     return {
-      id: admin.id,
-      email: admin.email
+      id: '1',
+      email: email
     };
-  } catch (error) {
-    console.error('Error validating admin credentials:', error);
-    return null;
   }
-}
-
-export async function createAdminUser(email: string, password: string) {
-  try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    const admin = await prisma.adminUser.create({
-      data: {
-        email,
-        password: hashedPassword
-      }
-    });
-
-    return {
-      id: admin.id,
-      email: admin.email
-    };
-  } catch (error) {
-    console.error('Error creating admin user:', error);
-    throw error;
-  }
+  
+  return null;
 }

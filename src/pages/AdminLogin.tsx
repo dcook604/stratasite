@@ -11,7 +11,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 
 const AdminLogin = () => {
-  const [email, setEmail] = useState('admin@example.com');
+  const [email, setEmail] = useState('admin@spectrum4.ca');
   const [password, setPassword] = useState('admin123');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -89,7 +89,7 @@ const AdminLogin = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@example.com"
+                  placeholder="admin@spectrum4.ca"
                   required
                 />
               </div>
@@ -113,10 +113,7 @@ const AdminLogin = () => {
               </Button>
             </form>
             <div className="mt-4 text-sm text-center text-gray-600">
-              <p>Using test account: admin@example.com / admin123</p>
-            </div>
-            <div className="mt-2 text-xs text-center text-gray-500">
-              <p>(Account added via SQL migration)</p>
+              <p>Demo credentials: admin@spectrum4.ca / admin123</p>
             </div>
           </div>
         </div>
