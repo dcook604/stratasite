@@ -4,7 +4,7 @@
 set -e
 
 COOLIFY_HOST="http://localhost:8000"
-API_TOKEN="1|mb7QIX1Snzmbhk6DXybpB72Uq8zkbHw2uZa1YBGs696ede6d"
+API_TOKEN="2|dcYe6bV3RuV1WZHlfrTHwkzCN4soyU9GUyWsjPvN7dbdedd3"
 
 echo "🚀 Deploying Strata Site to Coolify via API..."
 
@@ -23,8 +23,11 @@ SERVERS=$(curl -s -H "Authorization: Bearer $API_TOKEN" \
 
 echo "Available servers: $SERVERS"
 
-# Get the first project and server UUIDs
-PROJECT_UUID=$(echo "$PROJECTS" | jq -r '.[0].uuid // empty' 2>/dev/null || echo "")
+# Get the Website project and server UUIDs
+PROJECT_UUID=$(echo "$PROJECTS" | jq -r '.[] | select(.name | test("Website"; "i")) | .uuid // empty' 2>/dev/null || echo "")
+if [ -z "$PROJECT_UUID" ]; then
+    PROJECT_UUID=$(echo "$PROJECTS" | jq -r '.[0].uuid // empty' 2>/dev/null || echo "")
+fi
 SERVER_UUID=$(echo "$SERVERS" | jq -r '.[0].uuid // empty' 2>/dev/null || echo "")
 
 if [ -z "$PROJECT_UUID" ] || [ -z "$SERVER_UUID" ]; then
@@ -49,6 +52,19 @@ echo "📦 Creating application..."
 echo "Project UUID: $PROJECT_UUID"
 echo "Server UUID: $SERVER_UUID"
 
+# Try to create an environment first if needed
+echo "🔧 Ensuring environment exists..."
+ENV_RESPONSE=$(curl -s -X POST \
+  -H "Authorization: Bearer $API_TOKEN" \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  "$COOLIFY_HOST/api/v1/projects/$PROJECT_UUID/environments" \
+  -d '{
+    "name": "production"
+  }' 2>/dev/null || echo '{}')
+
+echo "Environment creation response: $ENV_RESPONSE"
+
 # Create the application
 RESPONSE=$(curl -s -X POST \
   -H "Authorization: Bearer $API_TOKEN" \
@@ -58,21 +74,12 @@ RESPONSE=$(curl -s -X POST \
   -d '{
     "project_uuid": "'$PROJECT_UUID'",
     "server_uuid": "'$SERVER_UUID'",
+    "environment_name": "production",
     "git_repository": "https://github.com/dcook604/stratasite",
     "git_branch": "main",
     "name": "stratasite",
     "build_pack": "dockerfile",
-    "ports_exposes": "3331",
-    "environment_variables": [
-      {
-        "key": "NODE_ENV",
-        "value": "production"
-      },
-      {
-        "key": "DATABASE_URL", 
-        "value": "file:/app/data/database.db"
-      }
-    ]
+    "ports_exposes": "3331"
   }')
 
 echo "API Response: $RESPONSE"
