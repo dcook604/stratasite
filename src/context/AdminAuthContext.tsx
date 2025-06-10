@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { validateAdminCredentials } from '@/lib/auth';
 
 type AdminUser = {
   id: string;
@@ -39,30 +39,16 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('Attempting login with:', email);
       
-      // Call the RPC function to verify admin credentials
-      const { data, error } = await supabase.rpc('check_admin_login', {
-        email_input: email,
-        password_input: password,
-      });
+      const adminUser = await validateAdminCredentials(email, password);
       
-      console.log('Login RPC response:', { data, error });
-
-      if (error) {
-        console.error('Login RPC error:', error);
-        setIsLoading(false);
-        return { error: error.message };
-      }
-
-      if (data) {
-        // Data will be the user ID if successful
-        console.log('Login successful, user ID:', data);
-        const adminUser = { id: data, email };
+      if (adminUser) {
+        console.log('Login successful, user:', adminUser);
         setAdminUser(adminUser);
         localStorage.setItem('admin_user', JSON.stringify(adminUser));
         setIsLoading(false);
         return { error: null };
       } else {
-        console.log('Invalid credentials: No user ID returned');
+        console.log('Invalid credentials');
         setIsLoading(false);
         return { error: 'Invalid credentials' };
       }
