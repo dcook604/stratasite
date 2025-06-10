@@ -41,6 +41,7 @@ export const Navbar = () => {
     { name: 'Organics', path: '/information/organics' },
     { name: 'Fees', path: '/information/fees' },
     { name: 'Renovations', path: '/information/renovations' },
+    { name: 'Marketplace', path: '/information/marketplace' },
   ];
 
   return (
