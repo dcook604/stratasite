@@ -1,4 +1,4 @@
-import { createAdminUser } from '../src/lib/auth';
+import { createAdminUser } from '../src/lib/auth.js';
 
 async function main() {
   try {

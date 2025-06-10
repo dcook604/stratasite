@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
-    "db:seed": "npx tsx scripts/seed.ts",
+    "db:seed": "node scripts/seed.js",
     "db:studio": "prisma studio",
     "start": "vite preview --port 3331 --host"
   },
