@@ -112,12 +112,6 @@ const AdminLogin = () => {
                 {isLoading ? "Logging in..." : "Log In"}
               </Button>
             </form>
-            <div className="mt-4 text-sm text-center text-gray-600">
-              <p>Demo credentials: admin@example.com / admin123</p>
-            </div>
-            <div className="mt-2 text-xs text-center text-gray-500">
-              <p>(Account seeded via database initialization)</p>
-            </div>
           </div>
         </div>
       </div>
