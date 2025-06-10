@@ -239,6 +239,53 @@ View photos of our fantastic building amenities including:
 *Photo gallery functionality will be enhanced with actual image uploads in future updates.*
 
 To submit photos for inclusion in the gallery, please contact the building manager.`
+  },
+  {
+    slug: 'marketplace',
+    title: 'Strata Marketplace',
+    content: `# Strata Marketplace
+
+Buy, sell, and trade items with your neighbors in our community marketplace.
+
+## How It Works
+The Strata Marketplace is a community platform where residents can:
+- **Sell items** you no longer need
+- **Find items** you're looking for from neighbors
+- **Trade items** with other residents
+- **Connect** with your community
+
+## Getting Started
+1. Browse existing posts to see what's available
+2. Use the filter to find specific types of posts
+3. Click "Create New Post" to list your own items
+4. Reply to posts that interest you
+5. Connect directly with other residents
+
+## Categories
+- Electronics
+- Furniture
+- Appliances
+- Books & Media
+- Clothing
+- Sports & Recreation
+- Tools & Hardware
+- Home Decor
+- Other
+
+## Community Guidelines
+- Be respectful and honest in all interactions
+- Provide accurate descriptions of items
+- Meet in common areas for safety
+- Honor your commitments
+- Report any issues to building management
+
+## Safety Tips
+- Meet in well-lit common areas
+- Bring a friend if possible
+- Trust your instincts
+- Don't share personal information unnecessarily
+
+Happy trading with your neighbors!`
   }
 ];
 

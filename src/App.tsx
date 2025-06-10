@@ -12,6 +12,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import DynamicPage from "./pages/DynamicPage";
+import Marketplace from "./pages/information/Marketplace";
 
 const queryClient = new QueryClient();
 
@@ -40,9 +41,10 @@ const App = () => (
             <Route path="/information/organics" element={<DynamicPage />} />
             <Route path="/information/fees" element={<DynamicPage />} />
             <Route path="/information/renovations" element={<DynamicPage />} />
-            <Route path="/marketplace" element={<DynamicPage />} />
-            <Route path="/information/marketplace" element={<DynamicPage />} />
+            <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/information/marketplace" element={<Marketplace />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="/not-found" element={<NotFound />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

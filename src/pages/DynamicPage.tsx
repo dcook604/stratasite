@@ -96,7 +96,7 @@ const DynamicPage = () => {
   }
 
   if (notFound || !page) {
-    return <Navigate to="/404" replace />;
+    return <Navigate to="/not-found" replace />;
   }
 
   return (
