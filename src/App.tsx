@@ -8,15 +8,10 @@ import { AdminAuthProvider } from "./context/AdminAuthContext";
 import Index from "./pages/Index";
 import Calendar from "./pages/Calendar";
 import Gallery from "./pages/Gallery";
-import Bylaws from "./pages/Bylaws";
-import Contact from "./pages/Contact";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
-import Recycling from "./pages/information/Recycling";
-import Organics from "./pages/information/Organics";
-import Fees from "./pages/information/Fees";
-import Renovations from "./pages/information/Renovations";
+import DynamicPage from "./pages/DynamicPage";
 
 const queryClient = new QueryClient();
 
@@ -30,16 +25,21 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/calendar" element={<Calendar />} />
-            <Route path="/gallery" element={<Gallery />} />
-            <Route path="/bylaws" element={<Bylaws />} />
-            <Route path="/contact" element={<Contact />} />
+            <Route path="/gallery" element={<DynamicPage />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            {/* Information routes */}
-            <Route path="/information/recycling" element={<Recycling />} />
-            <Route path="/information/organics" element={<Organics />} />
-            <Route path="/information/fees" element={<Fees />} />
-            <Route path="/information/renovations" element={<Renovations />} />
+            {/* Dynamic pages - these will load from database */}
+            <Route path="/bylaws" element={<DynamicPage />} />
+            <Route path="/contact" element={<DynamicPage />} />
+            <Route path="/fees" element={<DynamicPage />} />
+            <Route path="/recycling" element={<DynamicPage />} />
+            <Route path="/organics" element={<DynamicPage />} />
+            <Route path="/renovations" element={<DynamicPage />} />
+            {/* Legacy information routes - redirect to new slugs */}
+            <Route path="/information/recycling" element={<DynamicPage />} />
+            <Route path="/information/organics" element={<DynamicPage />} />
+            <Route path="/information/fees" element={<DynamicPage />} />
+            <Route path="/information/renovations" element={<DynamicPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
