@@ -19,10 +19,10 @@ const Index = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-                Welcome to Strata Council
+                Welcome to Spectrum 4 (BCS2611)
               </h1>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                A modern platform for our community to stay informed, connected, and engaged.
+                A modern platform for our community Vancouver Community to stay informed, connected, and engaged.
               </p>
               <div className="mt-8 flex flex-wrap justify-center gap-4">
                 <Button asChild size="lg">
