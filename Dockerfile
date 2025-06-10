@@ -24,7 +24,7 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Create nginx config for SPA
 RUN echo 'server { \
-    listen 80; \
+    listen 3331; \
     server_name localhost; \
     root /usr/share/nginx/html; \
     index index.html; \
@@ -33,8 +33,8 @@ RUN echo 'server { \
     } \
 }' > /etc/nginx/conf.d/default.conf
 
-# Expose port 80
-EXPOSE 80
+# Expose port 3331
+EXPOSE 3331
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]
