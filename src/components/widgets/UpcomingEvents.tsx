@@ -1,35 +1,35 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-// Mock data for upcoming events
-const events = [
-  {
-    id: 1,
-    title: 'Council Meeting',
-    date: '2025-06-01',
-    time: '7:00 PM',
-    type: 'meeting'
-  },
-  {
-    id: 2,
-    title: 'Building Maintenance',
-    date: '2025-06-05',
-    time: '9:00 AM - 12:00 PM',
-    type: 'maintenance'
-  },
-  {
-    id: 3, 
-    title: 'Move-in: Unit 302',
-    date: '2025-06-08',
-    time: '10:00 AM - 2:00 PM',
-    type: 'move'
-  }
-];
-
 const UpcomingEvents = () => {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await fetch('/api/events');
+        if (response.ok) {
+          const data = await response.json();
+          // Filter to only show future events and limit to 3
+          const futureEvents = data
+            .filter((event: any) => new Date(event.startDate) > new Date())
+            .slice(0, 3);
+          setEvents(futureEvents);
+        }
+      } catch (error) {
+        console.error('Failed to fetch events:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
+
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { 
       weekday: 'short', 
@@ -37,6 +37,23 @@ const UpcomingEvents = () => {
       day: 'numeric' 
     };
     return new Date(dateString).toLocaleDateString('en-US', options);
+  };
+
+  const formatTime = (dateString: string, endDateString?: string) => {
+    const startTime = new Date(dateString).toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit' 
+    });
+    
+    if (endDateString) {
+      const endTime = new Date(endDateString).toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit' 
+      });
+      return `${startTime} - ${endTime}`;
+    }
+    
+    return startTime;
   };
 
   return (
@@ -48,21 +65,33 @@ const UpcomingEvents = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ul className="space-y-4">
-          {events.map((event) => (
-            <li key={event.id} className="border-b pb-3 last:border-0 last:pb-0">
-              <h3 className="font-medium">{event.title}</h3>
-              <div className="flex items-center text-sm text-gray-500 mt-1">
-                <Calendar className="h-4 w-4 mr-1 text-gray-400" />
-                <span>{formatDate(event.date)}</span>
-              </div>
-              <div className="flex items-center text-sm text-gray-500 mt-1">
-                <Clock className="h-4 w-4 mr-1 text-gray-400" />
-                <span>{event.time}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
+        {loading ? (
+          <p className="text-gray-500">Loading events...</p>
+        ) : events.length === 0 ? (
+          <p className="text-gray-500">No upcoming events.</p>
+        ) : (
+          <ul className="space-y-4">
+            {events.map((event: any) => (
+              <li key={event.id} className="border-b pb-3 last:border-0 last:pb-0">
+                <h3 className="font-medium">{event.title}</h3>
+                {event.description && (
+                  <p className="text-sm text-gray-600 mt-1">{event.description}</p>
+                )}
+                <div className="flex items-center text-sm text-gray-500 mt-1">
+                  <Calendar className="h-4 w-4 mr-1 text-gray-400" />
+                  <span>{formatDate(event.startDate)}</span>
+                </div>
+                <div className="flex items-center text-sm text-gray-500 mt-1">
+                  <Clock className="h-4 w-4 mr-1 text-gray-400" />
+                  <span>{formatTime(event.startDate, event.endDate)}</span>
+                </div>
+                {event.location && (
+                  <p className="text-sm text-gray-500 mt-1">📍 {event.location}</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
         <div className="mt-4 pt-2">
           <Link 
             to="/calendar" 
