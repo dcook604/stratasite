@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate, useLocation } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import PageHeader from '@/components/shared/PageHeader';
@@ -15,14 +15,15 @@ interface PageData {
 
 const DynamicPage = () => {
   const params = useParams();
+  const location = useLocation();
   const [page, setPage] = useState<PageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     const fetchPage = async () => {
-      // Extract slug from URL path
-      const currentPath = window.location.pathname;
+      // Extract slug from URL path using React Router location
+      const currentPath = location.pathname;
       let slug = '';
       
       if (currentPath.startsWith('/information/')) {
@@ -59,7 +60,7 @@ const DynamicPage = () => {
     };
 
     fetchPage();
-  }, [params]);
+  }, [location.pathname]);
 
   // Format content - handle both markdown and HTML content
   const formatContent = (content: string) => {
