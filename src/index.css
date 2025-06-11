@@ -3,6 +3,30 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Quill Editor Styles */
+.ql-editor {
+  min-height: 150px;
+}
+
+.ql-container {
+  font-family: inherit;
+}
+
+/* Custom Quill toolbar styling */
+.ql-snow .ql-toolbar {
+  border-top: 1px solid #ccc;
+  border-left: 1px solid #ccc;
+  border-right: 1px solid #ccc;
+  border-bottom: none;
+}
+
+.ql-snow .ql-container {
+  border-bottom: 1px solid #ccc;
+  border-left: 1px solid #ccc;
+  border-right: 1px solid #ccc;
+  border-top: none;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

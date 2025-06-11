@@ -9,11 +9,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { RequireAdminAuth } from '@/components/hoc/RequireAdminAuth';
-import { Plus, Trash2, Edit2, Users, Calendar, FileText, Megaphone, ShoppingCart } from 'lucide-react';
+import { Plus, Trash2, Edit2, Users, Calendar, FileText, Megaphone, ShoppingCart, Save, X } from 'lucide-react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 const AdminDashboard = () => {
   const { adminUser, logout } = useAdminAuth();
@@ -32,6 +35,11 @@ const AdminDashboard = () => {
   const [newEvent, setNewEvent] = useState({ title: '', description: '', startDate: '', endDate: '', location: '' });
   const [newPage, setNewPage] = useState({ slug: '', title: '', content: '' });
   const [newAdmin, setNewAdmin] = useState({ email: '', password: '' });
+  
+  // Edit states
+  const [editingPage, setEditingPage] = useState(null);
+  const [editPageData, setEditPageData] = useState({ slug: '', title: '', content: '' });
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -163,6 +171,55 @@ const AdminDashboard = () => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     }
   };
+
+  const openEditDialog = (page) => {
+    setEditingPage(page);
+    setEditPageData({
+      slug: page.slug,
+      title: page.title,
+      content: page.content
+    });
+    setEditDialogOpen(true);
+  };
+
+  const updatePage = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(`/api/pages/${editingPage.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editPageData)
+      });
+      
+      if (response.ok) {
+        toast({ title: "Success", description: "Page updated" });
+        setEditDialogOpen(false);
+        setEditingPage(null);
+        fetchData();
+      } else {
+        throw new Error('Failed to update page');
+      }
+    } catch (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const quillModules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'color': [] }, { 'background': [] }],
+      ['link', 'blockquote', 'code-block'],
+      ['clean']
+    ],
+  };
+
+  const quillFormats = [
+    'header', 'bold', 'italic', 'underline', 'strike',
+    'list', 'bullet', 'color', 'background',
+    'link', 'blockquote', 'code-block'
+  ];
 
   return (
     <RequireAdminAuth>
@@ -399,13 +456,16 @@ const AdminDashboard = () => {
                       </div>
                       <div>
                         <Label htmlFor="page-content">Content</Label>
-                        <Textarea
-                          id="page-content"
-                          value={newPage.content}
-                          onChange={(e) => setNewPage({...newPage, content: e.target.value})}
-                          rows={6}
-                          required
-                        />
+                        <div className="border rounded-md">
+                          <ReactQuill
+                            theme="snow"
+                            value={newPage.content}
+                            onChange={(content) => setNewPage({...newPage, content})}
+                            modules={quillModules}
+                            formats={quillFormats}
+                            style={{ minHeight: '200px' }}
+                          />
+                        </div>
                       </div>
                       <Button type="submit">Create Page</Button>
                     </form>
@@ -423,18 +483,32 @@ const AdminDashboard = () => {
                       <div className="space-y-4">
                         {pages.map((page) => (
                           <div key={page.id} className="flex justify-between items-start p-4 border rounded">
-                            <div>
+                            <div className="flex-1">
                               <h3 className="font-semibold">{page.title}</h3>
                               <p className="text-sm text-gray-500">/{page.slug}</p>
-                              <p className="text-gray-600 mt-1">{page.content.substring(0, 100)}...</p>
+                              <p className="text-gray-600 mt-1">
+                                {page.content.replace(/<[^>]*>/g, '').substring(0, 100)}...
+                              </p>
+                              <p className="text-xs text-gray-400 mt-2">
+                                Last updated: {new Date(page.updatedAt).toLocaleDateString()}
+                              </p>
                             </div>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => deleteItem('pages', page.id)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            <div className="flex gap-2 ml-4">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openEditDialog(page)}
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => deleteItem('pages', page.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -592,6 +666,69 @@ const AdminDashboard = () => {
           </div>
         </div>
         <Footer />
+        
+        {/* Edit Page Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Page</DialogTitle>
+              <DialogDescription>
+                Edit the page content using the rich text editor below.
+              </DialogDescription>
+            </DialogHeader>
+            
+            {editingPage && (
+              <form onSubmit={updatePage} className="space-y-4">
+                <div>
+                  <Label htmlFor="edit-page-slug">URL Slug</Label>
+                  <Input
+                    id="edit-page-slug"
+                    value={editPageData.slug}
+                    onChange={(e) => setEditPageData({...editPageData, slug: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-page-title">Title</Label>
+                  <Input
+                    id="edit-page-title"
+                    value={editPageData.title}
+                    onChange={(e) => setEditPageData({...editPageData, title: e.target.value})}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-page-content">Content</Label>
+                  <div className="border rounded-md">
+                    <ReactQuill
+                      theme="snow"
+                      value={editPageData.content}
+                      onChange={(content) => setEditPageData({...editPageData, content})}
+                      modules={quillModules}
+                      formats={quillFormats}
+                      style={{ minHeight: '300px' }}
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditDialogOpen(false)}
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel
+                  </Button>
+                  <Button type="submit">
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Changes
+                  </Button>
+                </div>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </RequireAdminAuth>
   );

@@ -61,8 +61,14 @@ const DynamicPage = () => {
     fetchPage();
   }, [params]);
 
-  // Convert markdown-style content to HTML (basic conversion)
+  // Format content - handle both markdown and HTML content
   const formatContent = (content: string) => {
+    // If content contains HTML tags, assume it's from the WYSIWYG editor
+    if (content.includes('<p>') || content.includes('<div>') || content.includes('<h1>')) {
+      return content;
+    }
+    
+    // Otherwise, convert markdown-style content to HTML
     return content
       .replace(/^# (.*$)/gm, '<h1 class="text-3xl font-bold mb-6">$1</h1>')
       .replace(/^## (.*$)/gm, '<h2 class="text-2xl font-bold mb-4 mt-8">$1</h2>')
@@ -109,9 +115,9 @@ const DynamicPage = () => {
         />
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div 
-            className="prose prose-lg max-w-none"
+            className="prose prose-lg max-w-none [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:mb-6 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mb-4 [&_h2]:mt-8 [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:mb-3 [&_h3]:mt-6 [&_p]:mb-4 [&_ul]:ml-6 [&_ol]:ml-6 [&_li]:mb-2 [&_table]:border-collapse [&_td]:border [&_td]:px-4 [&_td]:py-2 [&_th]:border [&_th]:px-4 [&_th]:py-2 [&_th]:bg-gray-50"
             dangerouslySetInnerHTML={{ 
-              __html: `<p class="mb-4">${formatContent(page.content)}</p>` 
+              __html: formatContent(page.content)
             }}
           />
         </div>
