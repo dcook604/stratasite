@@ -77,6 +77,9 @@ const errorHandler = (err, req, res, next) => {
 app.use(cors());
 app.use(express.json());
 
+// Move request logger to be the first middleware to ensure all requests are logged
+app.use(requestLogger);
+
 // Domain handling middleware - redirect non-www to www for consistency
 app.use((req, res, next) => {
   // Add security headers
@@ -101,8 +104,6 @@ app.use((req, res, next) => {
   
   next();
 });
-
-app.use(requestLogger);
 
 logger.info('Server starting...', {
   port: PORT,
