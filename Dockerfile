@@ -43,4 +43,4 @@ ENV DATABASE_URL="file:/app/data/database.db"
 EXPOSE 3331
 
 # Start command
-CMD ["sh", "-c", "npx prisma db push && npm run db:seed && npm start"]
+CMD ["npm", "start"]
