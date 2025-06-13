@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -433,6 +433,9 @@ const Marketplace = () => {
               <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Create New Post</DialogTitle>
+                  <DialogDescription>
+                    Fill out the form below to create a new post in the marketplace.
+                  </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmitPost} className="space-y-4">
                   <div>
@@ -728,6 +731,9 @@ const Marketplace = () => {
             <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Post a Reply</DialogTitle>
+                <DialogDescription>
+                  Your reply will be visible to all residents. Please be respectful.
+                </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmitReply} className="space-y-4">
                 <div>
