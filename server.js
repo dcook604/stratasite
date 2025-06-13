@@ -77,7 +77,6 @@ const errorHandler = (err, req, res, next) => {
 app.use(cors());
 app.use(express.json());
 app.use(requestLogger);
-app.use(express.static(path.join(__dirname, 'dist')));
 
 logger.info('Server starting...', {
   port: PORT,
@@ -586,6 +585,9 @@ app.get('/api/health', (req, res) => {
   logger.debug('Health check requested', healthData);
   res.json(healthData);
 });
+
+// Serve static files (must be after API routes, before error handler)
+app.use(express.static(path.join(__dirname, 'dist')));
 
 // Error handling middleware (must be after API routes, before catch-all)
 app.use(errorHandler);
