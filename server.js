@@ -127,6 +127,9 @@ app.use(express.json());
 // Move request logger to be the first middleware to ensure all requests are logged
 app.use(requestLogger);
 
+// Serve uploaded files statically from the 'public' directory
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+
 logger.info('Server starting...', {
   port: PORT,
   nodeEnv: process.env.NODE_ENV,
@@ -991,66 +994,6 @@ app.get('/api/health', (req, res) => {
   res.json(healthData);
 });
 
-// Serve static files (must be after API routes, before error handler)
-app.use(express.static(path.join(__dirname, 'dist'), {
-  // Better caching for static assets
-  setHeaders: (res, path, stat) => {
-    // Cache static assets for better performance
-    if (path.includes('/assets/')) {
-      // Cache JS/CSS assets for 1 year (they have hashes in names)
-      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-    } else if (path.endsWith('.html')) {
-      // Don't cache HTML files
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-    } else {
-      // Cache other files for 1 day
-      res.setHeader('Cache-Control', 'public, max-age=86400');
-    }
-  }
-}));
-
-// Error handling middleware (must be after API routes, before catch-all)
-app.use(errorHandler);
-
-// Serve React app for all other routes (must be last)
-app.get('*', (req, res) => {
-  logger.debug('Serving React app for route', { path: req.path });
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
-});
-
-// Start server
-const server = app.listen(PORT, '0.0.0.0', () => {
-  logger.info('Server started successfully', {
-    port: PORT,
-    host: '0.0.0.0',
-    nodeEnv: process.env.NODE_ENV || 'development',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Handle graceful shutdown
-process.on('SIGTERM', async () => {
-  logger.info('SIGTERM received, shutting down gracefully');
-  server.close(async () => {
-    logger.info('Server closed');
-    await prisma.$disconnect();
-    logger.info('Database connection closed');
-    process.exit(0);
-  });
-});
-
-process.on('SIGINT', async () => {
-  logger.info('SIGINT received, shutting down gracefully');
-  server.close(async () => {
-    logger.info('Server closed');
-    await prisma.$disconnect();
-    logger.info('Database connection closed');
-    process.exit(0);
-  });
-});
-
 // --- Image Upload API Route ---
 app.post('/api/upload/image', upload.single('image'), async (req, res) => {
   if (!req.file) {
@@ -1162,4 +1105,64 @@ app.put('/api/event-requests/:id', async (req, res) => {
     logger.error('Error updating event request', error);
     res.status(500).json({ error: 'Internal server error' });
   }
+});
+
+// Serve static files (must be after API routes, before error handler)
+app.use(express.static(path.join(__dirname, 'dist'), {
+  // Better caching for static assets
+  setHeaders: (res, path, stat) => {
+    // Cache static assets for better performance
+    if (path.includes('/assets/')) {
+      // Cache JS/CSS assets for 1 year (they have hashes in names)
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    } else if (path.endsWith('.html')) {
+      // Don't cache HTML files
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    } else {
+      // Cache other files for 1 day
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+    }
+  }
+}));
+
+// Error handling middleware (must be after API routes, before catch-all)
+app.use(errorHandler);
+
+// Serve React app for all other routes (must be last)
+app.get('*', (req, res) => {
+  logger.debug('Serving React app for route', { path: req.path });
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+
+// Start server
+const server = app.listen(PORT, '0.0.0.0', () => {
+  logger.info('Server started successfully', {
+    port: PORT,
+    host: '0.0.0.0',
+    nodeEnv: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Handle graceful shutdown
+process.on('SIGTERM', async () => {
+  logger.info('SIGTERM received, shutting down gracefully');
+  server.close(async () => {
+    logger.info('Server closed');
+    await prisma.$disconnect();
+    logger.info('Database connection closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', async () => {
+  logger.info('SIGINT received, shutting down gracefully');
+  server.close(async () => {
+    logger.info('Server closed');
+    await prisma.$disconnect();
+    logger.info('Database connection closed');
+    process.exit(0);
+  });
 });
