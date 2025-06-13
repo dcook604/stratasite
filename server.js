@@ -458,6 +458,27 @@ app.delete('/api/admin/users/:id', async (req, res) => {
   }
 });
 
+// reCAPTCHA verification function
+const verifyRecaptcha = async (token) => {
+  if (!token) return false;
+  
+  try {
+    const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `secret=6LfDCGArAAAAADmYjJpT1QwQBpBRScDj1qc3YQkR&response=${token}`
+    });
+    
+    const data = await response.json();
+    return data.success;
+  } catch (error) {
+    console.error('reCAPTCHA verification error:', error);
+    return false;
+  }
+};
+
 // Marketplace CRUD
 app.get('/api/marketplace', async (req, res) => {
   try {
@@ -470,13 +491,26 @@ app.get('/api/marketplace', async (req, res) => {
             id: true,
             content: true,
             authorName: true,
+            authorPhone: true,
+            images: true,
             createdAt: true
           }
         }
       },
       orderBy: { createdAt: 'desc' }
     });
-    res.json(posts);
+    
+    // Parse JSON fields
+    const postsWithParsedImages = posts.map(post => ({
+      ...post,
+      images: post.images ? JSON.parse(post.images) : [],
+      replies: post.replies.map(reply => ({
+        ...reply,
+        images: reply.images ? JSON.parse(reply.images) : []
+      }))
+    }));
+    
+    res.json(postsWithParsedImages);
   } catch (error) {
     console.error('Error fetching marketplace posts:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -485,7 +519,18 @@ app.get('/api/marketplace', async (req, res) => {
 
 app.post('/api/marketplace', async (req, res) => {
   try {
-    const { title, description, category, type, price, authorName, authorEmail } = req.body;
+    const { 
+      title, 
+      description, 
+      category, 
+      type, 
+      price, 
+      authorName, 
+      authorEmail, 
+      authorPhone,
+      images,
+      recaptchaToken 
+    } = req.body;
     
     // Basic validation
     if (!title || !description || !authorName || !authorEmail) {
@@ -498,6 +543,20 @@ app.post('/api/marketplace', async (req, res) => {
       return res.status(400).json({ error: 'Invalid email address' });
     }
     
+    // Phone validation (optional)
+    if (authorPhone) {
+      const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+      if (!phoneRegex.test(authorPhone.replace(/[\s\-\(\)]/g, ''))) {
+        return res.status(400).json({ error: 'Invalid phone number' });
+      }
+    }
+    
+    // reCAPTCHA verification
+    const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
+    if (!isRecaptchaValid) {
+      return res.status(400).json({ error: 'Invalid reCAPTCHA. Please try again.' });
+    }
+    
     const post = await prisma.marketplacePost.create({
       data: {
         title,
@@ -506,10 +565,17 @@ app.post('/api/marketplace', async (req, res) => {
         type,
         price: price ? parseFloat(price) : null,
         authorName,
-        authorEmail
+        authorEmail,
+        authorPhone,
+        images: images && images.length > 0 ? JSON.stringify(images) : null,
+        recaptchaToken
       }
     });
-    res.json(post);
+    
+    res.json({
+      ...post,
+      images: post.images ? JSON.parse(post.images) : []
+    });
   } catch (error) {
     console.error('Error creating marketplace post:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -538,6 +604,21 @@ app.put('/api/marketplace/:id', async (req, res) => {
   }
 });
 
+// New endpoint for marking posts as sold
+app.put('/api/marketplace/:id/sold', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const post = await prisma.marketplacePost.update({
+      where: { id },
+      data: { isSold: true }
+    });
+    res.json(post);
+  } catch (error) {
+    console.error('Error marking post as sold:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.delete('/api/marketplace/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -555,7 +636,14 @@ app.delete('/api/marketplace/:id', async (req, res) => {
 app.post('/api/marketplace/:id/replies', async (req, res) => {
   try {
     const { id } = req.params;
-    const { content, authorName, authorEmail } = req.body;
+    const { 
+      content, 
+      authorName, 
+      authorEmail, 
+      authorPhone,
+      images,
+      recaptchaToken 
+    } = req.body;
     
     // Basic validation
     if (!content || !authorName || !authorEmail) {
@@ -568,15 +656,36 @@ app.post('/api/marketplace/:id/replies', async (req, res) => {
       return res.status(400).json({ error: 'Invalid email address' });
     }
     
+    // Phone validation (optional)
+    if (authorPhone) {
+      const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+      if (!phoneRegex.test(authorPhone.replace(/[\s\-\(\)]/g, ''))) {
+        return res.status(400).json({ error: 'Invalid phone number' });
+      }
+    }
+    
+    // reCAPTCHA verification
+    const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
+    if (!isRecaptchaValid) {
+      return res.status(400).json({ error: 'Invalid reCAPTCHA. Please try again.' });
+    }
+    
     const reply = await prisma.marketplaceReply.create({
       data: {
         content,
         authorName,
         authorEmail,
+        authorPhone,
+        images: images && images.length > 0 ? JSON.stringify(images) : null,
+        recaptchaToken,
         postId: id
       }
     });
-    res.json(reply);
+    
+    res.json({
+      ...reply,
+      images: reply.images ? JSON.parse(reply.images) : []
+    });
   } catch (error) {
     console.error('Error creating marketplace reply:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -593,6 +702,197 @@ app.delete('/api/marketplace/:postId/replies/:replyId', async (req, res) => {
   } catch (error) {
     console.error('Error deleting marketplace reply:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin cleanup endpoint for marketplace data
+app.post('/api/admin/cleanup', async (req, res) => {
+  try {
+    const {
+      deleteOlderThanDays = 90,
+      deleteSoldItems = false,
+      deleteInactivePosts = true,
+      deleteOrphanedImages = true,
+      dryRun = false
+    } = req.body;
+
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - deleteOlderThanDays);
+
+    let stats = {
+      postsDeleted: 0,
+      repliesDeleted: 0,
+      imagesDeleted: 0,
+      spaceFreed: '0 MB'
+    };
+
+    // Build where conditions for posts to delete
+    const postWhereConditions = {
+      AND: []
+    };
+
+    if (deleteOlderThanDays > 0) {
+      postWhereConditions.AND.push({
+        createdAt: { lt: cutoffDate }
+      });
+    }
+
+    if (deleteSoldItems) {
+      postWhereConditions.AND.push({
+        isSold: true
+      });
+    }
+
+    if (deleteInactivePosts) {
+      postWhereConditions.AND.push({
+        isActive: false
+      });
+    }
+
+    // Only proceed if we have conditions to avoid deleting everything
+    if (postWhereConditions.AND.length > 0) {
+      // Get posts to be deleted (for counting and image cleanup)
+      const postsToDelete = await prisma.marketplacePost.findMany({
+        where: postWhereConditions,
+        include: {
+          replies: {
+            select: {
+              id: true,
+              images: true
+            }
+          }
+        },
+        select: {
+          id: true,
+          images: true,
+          replies: true
+        }
+      });
+
+      stats.postsDeleted = postsToDelete.length;
+
+      // Count replies that will be deleted
+      stats.repliesDeleted = postsToDelete.reduce((total, post) => total + post.replies.length, 0);
+
+      // Collect image URLs for deletion
+      const imagesToDelete = [];
+      
+      postsToDelete.forEach(post => {
+        if (post.images) {
+          try {
+            const postImages = JSON.parse(post.images);
+            imagesToDelete.push(...postImages);
+          } catch (e) {
+            console.error('Error parsing post images:', e);
+          }
+        }
+        
+        post.replies.forEach(reply => {
+          if (reply.images) {
+            try {
+              const replyImages = JSON.parse(reply.images);
+              imagesToDelete.push(...replyImages);
+            } catch (e) {
+              console.error('Error parsing reply images:', e);
+            }
+          }
+        });
+      });
+
+      stats.imagesDeleted = imagesToDelete.length;
+
+      if (!dryRun) {
+        // Delete the posts (replies will be deleted due to cascade)
+        await prisma.marketplacePost.deleteMany({
+          where: postWhereConditions
+        });
+
+        // Delete associated images from filesystem
+        if (deleteOrphanedImages && imagesToDelete.length > 0) {
+          const fs = require('fs').promises;
+          const path = require('path');
+          
+          for (const imageUrl of imagesToDelete) {
+            try {
+              const filename = imageUrl.split('/').pop();
+              const filepath = path.join(process.cwd(), 'public', 'uploads', 'marketplace', filename);
+              await fs.unlink(filepath);
+            } catch (error) {
+              console.error('Error deleting image file:', error);
+            }
+          }
+        }
+      }
+    }
+
+    // Handle orphaned images cleanup
+    if (deleteOrphanedImages && !dryRun) {
+      try {
+        const fs = require('fs').promises;
+        const path = require('path');
+        
+        const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'marketplace');
+        const files = await fs.readdir(uploadsDir);
+        
+        // Get all image URLs currently in use
+        const activePosts = await prisma.marketplacePost.findMany({
+          where: { isActive: true },
+          select: { images: true }
+        });
+        
+        const activeReplies = await prisma.marketplaceReply.findMany({
+          select: { images: true }
+        });
+        
+        const activeImages = new Set();
+        
+        [...activePosts, ...activeReplies].forEach(item => {
+          if (item.images) {
+            try {
+              const images = JSON.parse(item.images);
+              images.forEach(img => {
+                const filename = img.split('/').pop();
+                activeImages.add(filename);
+              });
+            } catch (e) {
+              console.error('Error parsing images during cleanup:', e);
+            }
+          }
+        });
+        
+        // Delete orphaned files
+        for (const file of files) {
+          if (!activeImages.has(file)) {
+            try {
+              await fs.unlink(path.join(uploadsDir, file));
+              stats.imagesDeleted++;
+            } catch (error) {
+              console.error('Error deleting orphaned image:', error);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error during orphaned images cleanup:', error);
+      }
+    }
+
+    // Estimate space freed (rough calculation)
+    if (stats.imagesDeleted > 0) {
+      const avgImageSize = 0.2; // Assume 200KB average per image
+      const mbFreed = (stats.imagesDeleted * avgImageSize).toFixed(1);
+      stats.spaceFreed = `${mbFreed} MB`;
+    }
+
+    res.json({
+      success: true,
+      dryRun,
+      ...stats,
+      message: dryRun ? 'Cleanup preview completed' : 'Cleanup completed successfully'
+    });
+
+  } catch (error) {
+    console.error('Error during marketplace cleanup:', error);
+    res.status(500).json({ error: 'Cleanup operation failed' });
   }
 });
 

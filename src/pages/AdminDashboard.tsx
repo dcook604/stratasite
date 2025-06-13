@@ -12,10 +12,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { RequireAdminAuth } from '@/components/hoc/RequireAdminAuth';
-import { Plus, Trash2, Edit2, Users, Calendar, FileText, Megaphone, ShoppingCart, Save, X } from 'lucide-react';
+import RequireAdminAuth from '@/components/auth/RequireAdminAuth';
+import { Plus, Trash2, Edit2, Users, Calendar, FileText, Megaphone, ShoppingCart, Save, X, Database, AlertTriangle, CheckCircle } from 'lucide-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import { cleanupMarketplaceData, getCleanupPreview, formatCleanupStats, CleanupOptions } from '@/utils/databaseCleanup';
 
 const AdminDashboard = () => {
   const { adminUser, logout } = useAdminAuth();
@@ -40,6 +41,17 @@ const AdminDashboard = () => {
   const [editPageData, setEditPageData] = useState({ slug: '', title: '', content: '' });
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
+  // Cleanup state
+  const [cleanupOptions, setCleanupOptions] = useState<CleanupOptions>({
+    deleteOlderThanDays: 90,
+    deleteSoldItems: false,
+    deleteInactivePosts: true,
+    deleteOrphanedImages: true,
+    dryRun: false
+  });
+  const [cleanupPreview, setCleanupPreview] = useState(null);
+  const [cleanupInProgress, setCleanupInProgress] = useState(false);
+
   const handleLogout = async () => {
     await logout();
     navigate('/');
@@ -50,38 +62,49 @@ const AdminDashboard = () => {
     try {
       console.log('AdminDashboard: Starting data fetch...');
       
-      const [announcementsRes, eventsRes, pagesRes, adminUsersRes, marketplaceRes] = await Promise.all([
-        fetch('/api/announcements'),
-        fetch('/api/events'),
-        fetch('/api/pages'),
-        fetch('/api/admin/users'),
-        fetch('/api/marketplace')
+      const [
+        announcementsRes, 
+        eventsRes, 
+        pagesRes, 
+        marketplaceRes, 
+        adminUsersRes
+      ] = await Promise.all([
+        fetch('/api/announcements').catch(err => ({ ok: false, error: err })),
+        fetch('/api/events').catch(err => ({ ok: false, error: err })),
+        fetch('/api/pages').catch(err => ({ ok: false, error: err })),
+        fetch('/api/marketplace').catch(err => ({ ok: false, error: err })),
+        fetch('/api/admin/users').catch(err => ({ ok: false, error: err }))
       ]);
 
       console.log('AdminDashboard: API responses:', {
         announcements: announcementsRes.status,
         events: eventsRes.status,
         pages: pagesRes.status,
-        adminUsers: adminUsersRes.status,
-        marketplace: marketplaceRes.status
+        marketplace: marketplaceRes.status,
+        adminUsers: adminUsersRes.status
       });
 
+      // Handle announcements
       if (announcementsRes.ok) {
         const announcementsData = await announcementsRes.json();
         console.log('AdminDashboard: Announcements loaded:', announcementsData.length);
         setAnnouncements(announcementsData);
       } else {
         console.error('AdminDashboard: Failed to load announcements:', announcementsRes.status);
+        setAnnouncements([]);
       }
       
+      // Handle events
       if (eventsRes.ok) {
         const eventsData = await eventsRes.json();
         console.log('AdminDashboard: Events loaded:', eventsData.length);
         setEvents(eventsData);
       } else {
         console.error('AdminDashboard: Failed to load events:', eventsRes.status);
+        setEvents([]);
       }
       
+      // Handle pages
       if (pagesRes.ok) {
         const pagesData = await pagesRes.json();
         console.log('AdminDashboard: Pages loaded:', pagesData.length, pagesData);
@@ -90,22 +113,27 @@ const AdminDashboard = () => {
         console.error('AdminDashboard: Failed to load pages:', pagesRes.status);
         const errorText = await pagesRes.text();
         console.error('AdminDashboard: Pages error details:', errorText);
+        setPages([]);
       }
       
-      if (adminUsersRes.ok) {
-        const adminUsersData = await adminUsersRes.json();
-        console.log('AdminDashboard: Admin users loaded:', adminUsersData.length);
-        setAdminUsers(adminUsersData);
-      } else {
-        console.error('AdminDashboard: Failed to load admin users:', adminUsersRes.status);
-      }
-      
+      // Handle marketplace
       if (marketplaceRes.ok) {
         const marketplaceData = await marketplaceRes.json();
         console.log('AdminDashboard: Marketplace posts loaded:', marketplaceData.length);
         setMarketplacePosts(marketplaceData);
       } else {
         console.error('AdminDashboard: Failed to load marketplace posts:', marketplaceRes.status);
+        setMarketplacePosts([]);
+      }
+      
+      // Handle admin users
+      if (adminUsersRes.ok) {
+        const adminUsersData = await adminUsersRes.json();
+        console.log('AdminDashboard: Admin users loaded:', adminUsersData.length);
+        setAdminUsers(adminUsersData);
+      } else {
+        console.error('AdminDashboard: Failed to load admin users:', adminUsersRes.status);
+        setAdminUsers([]);
       }
     } catch (error) {
       console.error('AdminDashboard: Error fetching data:', error);
@@ -250,6 +278,47 @@ const AdminDashboard = () => {
     }
   };
 
+  // Cleanup functions
+  const handleCleanupPreview = async () => {
+    try {
+      setCleanupInProgress(true);
+      const preview = await getCleanupPreview(cleanupOptions);
+      setCleanupPreview(preview);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate cleanup preview",
+        variant: "destructive"
+      });
+    } finally {
+      setCleanupInProgress(false);
+    }
+  };
+
+  const handleCleanupExecute = async () => {
+    try {
+      setCleanupInProgress(true);
+      const result = await cleanupMarketplaceData({ ...cleanupOptions, dryRun: false });
+      
+      toast({
+        title: "Cleanup Complete",
+        description: formatCleanupStats(result)
+      });
+      
+      // Refresh marketplace data
+      fetchData();
+      setCleanupPreview(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to execute cleanup",
+        variant: "destructive"
+      });
+    } finally {
+      setCleanupInProgress(false);
+    }
+  };
+
   const quillModules = {
     toolbar: [
       [{ 'header': [1, 2, 3, false] }],
@@ -285,7 +354,7 @@ const AdminDashboard = () => {
             </Alert>
 
             <Tabs defaultValue="announcements" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="announcements" className="flex items-center gap-2">
                   <Megaphone className="w-4 h-4" />
                   Announcements
@@ -301,6 +370,10 @@ const AdminDashboard = () => {
                 <TabsTrigger value="marketplace" className="flex items-center gap-2">
                   <ShoppingCart className="w-4 h-4" />
                   Marketplace
+                </TabsTrigger>
+                <TabsTrigger value="cleanup" className="flex items-center gap-2">
+                  <Database className="w-4 h-4" />
+                  Cleanup
                 </TabsTrigger>
                 <TabsTrigger value="users" className="flex items-center gap-2">
                   <Users className="w-4 h-4" />
@@ -563,78 +636,6 @@ const AdminDashboard = () => {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="users" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Plus className="w-5 h-5" />
-                      Add New Administrator
-                    </CardTitle>
-                    <CardDescription>
-                      Password must be at least 8 characters with uppercase, lowercase, number, and special character.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <form onSubmit={createAdmin} className="space-y-4">
-                      <div>
-                        <Label htmlFor="admin-email">Email</Label>
-                        <Input
-                          id="admin-email"
-                          type="email"
-                          value={newAdmin.email}
-                          onChange={(e) => setNewAdmin({...newAdmin, email: e.target.value})}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="admin-password">Password</Label>
-                        <Input
-                          id="admin-password"
-                          type="password"
-                          value={newAdmin.password}
-                          onChange={(e) => setNewAdmin({...newAdmin, password: e.target.value})}
-                          required
-                        />
-                      </div>
-                      <Button type="submit">Create Administrator</Button>
-                    </form>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Current Administrators</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {adminUsers.length === 0 ? (
-                      <p className="text-gray-500">No administrators found.</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {adminUsers.map((user) => (
-                          <div key={user.id} className="flex justify-between items-center p-4 border rounded">
-                            <div>
-                              <p className="font-semibold">{user.email}</p>
-                              <p className="text-sm text-gray-500">
-                                Created: {new Date(user.createdAt).toLocaleDateString()}
-                              </p>
-                            </div>
-                            {adminUsers.length > 1 && user.id !== adminUser?.id && (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => deleteItem('admin/users', user.id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
               <TabsContent value="marketplace" className="space-y-6">
                 <Card>
                   <CardHeader>
@@ -700,6 +701,156 @@ const AdminDashboard = () => {
                                   </div>
                                 ))}
                               </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="cleanup" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Cleanup Options</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleCleanupPreview} className="space-y-4">
+                      <div>
+                        <Label htmlFor="delete-older-than-days">Delete items older than (days)</Label>
+                        <Input
+                          id="delete-older-than-days"
+                          type="number"
+                          value={cleanupOptions.deleteOlderThanDays}
+                          onChange={(e) => setCleanupOptions({...cleanupOptions, deleteOlderThanDays: Number(e.target.value)})}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="delete-sold-items">Delete sold items</Label>
+                        <Checkbox
+                          id="delete-sold-items"
+                          checked={cleanupOptions.deleteSoldItems}
+                          onCheckedChange={(value) => setCleanupOptions({...cleanupOptions, deleteSoldItems: value})}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="delete-inactive-posts">Delete inactive posts</Label>
+                        <Checkbox
+                          id="delete-inactive-posts"
+                          checked={cleanupOptions.deleteInactivePosts}
+                          onCheckedChange={(value) => setCleanupOptions({...cleanupOptions, deleteInactivePosts: value})}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="delete-orphaned-images">Delete orphaned images</Label>
+                        <Checkbox
+                          id="delete-orphaned-images"
+                          checked={cleanupOptions.deleteOrphanedImages}
+                          onCheckedChange={(value) => setCleanupOptions({...cleanupOptions, deleteOrphanedImages: value})}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="dry-run">Dry Run</Label>
+                        <Checkbox
+                          id="dry-run"
+                          checked={cleanupOptions.dryRun}
+                          onCheckedChange={(value) => setCleanupOptions({...cleanupOptions, dryRun: value})}
+                        />
+                      </div>
+                      <Button type="submit">Preview Cleanup</Button>
+                    </form>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Cleanup Preview</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {cleanupPreview && (
+                      <div className="space-y-4">
+                        <p>Items to be deleted: {cleanupPreview.itemsToDelete}</p>
+                        <p>Items to be kept: {cleanupPreview.itemsToKeep}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Execute Cleanup</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Button onClick={handleCleanupExecute}>Execute Cleanup</Button>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="users" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Plus className="w-5 h-5" />
+                      Add New Administrator
+                    </CardTitle>
+                    <CardDescription>
+                      Password must be at least 8 characters with uppercase, lowercase, number, and special character.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={createAdmin} className="space-y-4">
+                      <div>
+                        <Label htmlFor="admin-email">Email</Label>
+                        <Input
+                          id="admin-email"
+                          type="email"
+                          value={newAdmin.email}
+                          onChange={(e) => setNewAdmin({...newAdmin, email: e.target.value})}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="admin-password">Password</Label>
+                        <Input
+                          id="admin-password"
+                          type="password"
+                          value={newAdmin.password}
+                          onChange={(e) => setNewAdmin({...newAdmin, password: e.target.value})}
+                          required
+                        />
+                      </div>
+                      <Button type="submit">Create Administrator</Button>
+                    </form>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Current Administrators</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {adminUsers.length === 0 ? (
+                      <p className="text-gray-500">No administrators found.</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {adminUsers.map((user) => (
+                          <div key={user.id} className="flex justify-between items-center p-4 border rounded">
+                            <div>
+                              <p className="font-semibold">{user.email}</p>
+                              <p className="text-sm text-gray-500">
+                                Created: {new Date(user.createdAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                            {adminUsers.length > 1 && user.id !== adminUser?.id && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => deleteItem('admin/users', user.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
                             )}
                           </div>
                         ))}

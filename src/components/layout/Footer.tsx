@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 
@@ -8,16 +7,16 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="text-base font-semibold text-gray-900">Strata Council</h3>
+            <h3 className="text-base font-bold text-gray-900">Spectrum 4 Council</h3>
             <ul className="mt-4 space-y-2">
               <li>
-                <p className="text-sm text-gray-600">123 Main Street</p>
+                <p className="text-sm text-gray-600">602 Citadel Parade</p>
               </li>
               <li>
-                <p className="text-sm text-gray-600">City, State 12345</p>
+                <p className="text-sm text-gray-600">Vancouver, BC V6B 1X2</p>
               </li>
               <li>
-                <p className="text-sm text-gray-600">info@stratacouncil.com</p>
+                <p className="text-sm text-gray-600">Council@spectrum4.ca</p>
               </li>
             </ul>
           </div>

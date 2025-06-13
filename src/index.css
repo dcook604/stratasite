@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -128,4 +127,33 @@
   .page-content {
     @apply flex-grow;
   }
+}
+
+/* Homepage content styling */
+.homepage-content h1 {
+  @apply text-4xl md:text-5xl font-bold text-gray-900 mb-4;
+}
+
+.homepage-content h2 {
+  @apply text-xl text-gray-600 max-w-3xl mx-auto mb-4;
+}
+
+.homepage-content h3 {
+  @apply text-lg font-medium text-gray-700 mb-2;
+}
+
+.homepage-content p {
+  @apply text-xl text-gray-600 max-w-3xl mx-auto mb-4;
+}
+
+.homepage-content strong {
+  @apply font-semibold;
+}
+
+.homepage-content ul, .homepage-content ol {
+  @apply max-w-3xl mx-auto mb-4;
+}
+
+.homepage-content li {
+  @apply ml-4 text-gray-600;
 }

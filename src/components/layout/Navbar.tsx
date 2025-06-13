@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, Calendar, Image, Book, Mail, Menu, X, LogIn, ChevronDown } from 'lucide-react';
+import { Home, Calendar, Image, Book, Mail, Menu, X, LogIn, ChevronDown, ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAdminAuth } from '@/context/AdminAuthContext';
@@ -30,10 +29,6 @@ export const Navbar = () => {
 
   const navItems = [
     { name: 'Home', path: '/', icon: <Home className="h-4 w-4 mr-2" /> },
-    { name: 'Calendar', path: '/calendar', icon: <Calendar className="h-4 w-4 mr-2" /> },
-    { name: 'Gallery', path: '/gallery', icon: <Image className="h-4 w-4 mr-2" /> },
-    { name: 'Bylaws', path: '/bylaws', icon: <Book className="h-4 w-4 mr-2" /> },
-    { name: 'Contact', path: '/contact', icon: <Mail className="h-4 w-4 mr-2" /> },
   ];
 
   const informationItems = [
@@ -41,7 +36,13 @@ export const Navbar = () => {
     { name: 'Organics', path: '/organics' },
     { name: 'Fees', path: '/fees' },
     { name: 'Renovations', path: '/renovations' },
-    { name: 'Marketplace', path: '/marketplace' },
+  ];
+
+  const mainNavItems = [
+    { name: 'Marketplace', path: '/marketplace', icon: <ShoppingCart className="h-4 w-4 mr-2" /> },
+    { name: 'Bylaws', path: '/bylaws', icon: <Book className="h-4 w-4 mr-2" /> },
+    { name: 'Contact', path: '/contact', icon: <Mail className="h-4 w-4 mr-2" /> },
+    { name: 'Gallery', path: '/gallery', icon: <Image className="h-4 w-4 mr-2" /> },
   ];
 
   return (
@@ -57,6 +58,7 @@ export const Navbar = () => {
           {!isMobile && (
             <div className="hidden sm:ml-6 sm:flex sm:items-center">
               <div className="flex space-x-4">
+                {/* Home */}
                 {navItems.map((item) => (
                   <Button
                     key={item.name}
@@ -79,7 +81,7 @@ export const Navbar = () => {
                       <ChevronDown className="h-4 w-4 ml-1" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="bg-white">
+                  <DropdownMenuContent align="start" className="bg-white">
                     {informationItems.map((item) => (
                       <DropdownMenuItem key={item.name} asChild>
                         <Link to={item.path} className="w-full">
@@ -89,6 +91,21 @@ export const Navbar = () => {
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
+
+                {/* Main navigation items */}
+                {mainNavItems.map((item) => (
+                  <Button
+                    key={item.name}
+                    variant="ghost"
+                    className="text-gray-700 hover:text-primary"
+                    asChild
+                  >
+                    <Link to={item.path} className="flex items-center">
+                      {item.icon}
+                      {item.name}
+                    </Link>
+                  </Button>
+                ))}
 
                 {adminUser ? (
                   <Button
@@ -140,6 +157,7 @@ export const Navbar = () => {
         )}
       >
         <div className="px-2 pt-2 pb-3 space-y-1">
+          {/* Home */}
           {navItems.map((item) => (
             <Link
               key={item.name}
@@ -168,6 +186,19 @@ export const Navbar = () => {
               ))}
             </div>
           </div>
+
+          {/* Main navigation items in mobile */}
+          {mainNavItems.map((item) => (
+            <Link
+              key={item.name}
+              to={item.path}
+              className="flex items-center text-gray-700 hover:bg-gray-100 hover:text-primary px-3 py-2 rounded-md text-base font-medium"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              {item.icon}
+              {item.name}
+            </Link>
+          ))}
           
           {adminUser ? (
             <Link

@@ -5,6 +5,22 @@ const prisma = new PrismaClient();
 
 const pages = [
   {
+    slug: 'homepage',
+    title: 'Homepage Content',
+    content: `# Welcome to Spectrum 4
+
+A modern platform for our community Vancouver Community to stay informed, connected, and engaged.
+
+## Building Features
+Our building offers state-of-the-art amenities and a vibrant community atmosphere.
+
+## Stay Connected
+Use our platform to stay updated on events, announcements, and community activities.
+
+## Contact Information
+For any questions or concerns, please reach out to the Spectrum 4 Council.`
+  },
+  {
     slug: 'fees',
     title: 'Strata Fees & Payments',
     content: `# Strata Fees & Payments

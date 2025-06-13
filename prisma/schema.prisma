@@ -57,32 +57,39 @@ model Page {
 }
 
 model MarketplacePost {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  category    String
-  type        String   // "sell", "buy", "trade"
-  price       Float?
-  authorName  String   @map("author_name")
-  authorEmail String   @map("author_email")
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id              String   @id @default(cuid())
+  title           String
+  description     String
+  category        String
+  type            String   // "sell", "buy", "trade"
+  price           Float?
+  authorName      String   @map("author_name")
+  authorEmail     String   @map("author_email")
+  authorPhone     String?  @map("author_phone")
+  isSold          Boolean  @default(false) @map("is_sold")
+  isActive        Boolean  @default(true) @map("is_active")
+  images          String?  // JSON array of image URLs
+  recaptchaToken  String?  @map("recaptcha_token")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
   
-  replies     MarketplaceReply[]
+  replies         MarketplaceReply[]
   
   @@map("marketplace_posts")
 }
 
 model MarketplaceReply {
-  id          String   @id @default(cuid())
-  content     String
-  authorName  String   @map("author_name")
-  authorEmail String   @map("author_email")
-  postId      String   @map("post_id")
-  createdAt   DateTime @default(now()) @map("created_at")
+  id             String   @id @default(cuid())
+  content        String
+  authorName     String   @map("author_name")
+  authorEmail    String   @map("author_email")
+  authorPhone    String?  @map("author_phone")
+  postId         String   @map("post_id")
+  images         String?  // JSON array of image URLs
+  recaptchaToken String?  @map("recaptcha_token")
+  createdAt      DateTime @default(now()) @map("created_at")
   
-  post        MarketplacePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post           MarketplacePost @relation(fields: [postId], references: [id], onDelete: Cascade)
   
   @@map("marketplace_replies")
 }
