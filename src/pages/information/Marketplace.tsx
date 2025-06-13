@@ -428,36 +428,40 @@ const Marketplace = () => {
             
             <Dialog open={showNewPostDialog} onOpenChange={setShowNewPostDialog}>
               <DialogTrigger asChild>
-                <Button>Create New Post</Button>
+                <Button className="mb-4">
+                  <Upload className="mr-2 h-4 w-4" /> Create a New Post
+                </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+              <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Create New Post</DialogTitle>
+                  <DialogTitle>Create New Marketplace Post</DialogTitle>
                   <DialogDescription>
-                    Fill out the form below to create a new post in the marketplace.
+                    Fill out the form below to create a new post. Your email will be used for notifications but not displayed publicly.
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmitPost} className="space-y-4">
-                  <div>
-                    <Label htmlFor="title">Title *</Label>
-                    <Input
-                      id="title"
-                      placeholder="Post Title"
-                      value={newPost.title}
-                      onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
-                      required
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="description">Description *</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Description"
-                      value={newPost.description}
-                      onChange={(e) => setNewPost({ ...newPost, description: e.target.value })}
-                      required
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="title">Title *</Label>
+                      <Input
+                        id="title"
+                        placeholder="Post Title"
+                        value={newPost.title}
+                        onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="description">Description *</Label>
+                      <Textarea
+                        id="description"
+                        placeholder="Description"
+                        value={newPost.description}
+                        onChange={(e) => setNewPost({ ...newPost, description: e.target.value })}
+                        required
+                      />
+                    </div>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
@@ -728,16 +732,16 @@ const Marketplace = () => {
 
           {/* Reply Dialog */}
           <Dialog open={showReplyDialog} onOpenChange={setShowReplyDialog}>
-            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
-                <DialogTitle>Post a Reply</DialogTitle>
+                <DialogTitle>Reply to Post</DialogTitle>
                 <DialogDescription>
-                  Your reply will be visible to all residents. Please be respectful.
+                  Your reply will be publicly visible. Your email will not be shared.
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmitReply} className="space-y-4">
                 <div>
-                  <Label htmlFor="replyContent">Your Reply *</Label>
+                  <Label htmlFor="replyContent">Your Reply</Label>
                   <Textarea
                     id="replyContent"
                     placeholder="Your reply..."

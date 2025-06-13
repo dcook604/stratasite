@@ -4,6 +4,9 @@ import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import multer from 'multer';
+import sharp from 'sharp';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,6 +14,30 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3331;
+
+// Ensure the upload directory exists
+const uploadDir = path.join(__dirname, 'public', 'uploads', 'marketplace');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Multer storage configuration
+const storage = multer.memoryStorage(); // Use memory storage to process with sharp
+
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB file size limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|webp/;
+    const mimetype = allowedTypes.test(file.mimetype);
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    }
+    cb(new Error('Error: File upload only supports the following filetypes - ' + allowedTypes));
+  }
+});
 
 // Enhanced logging utility
 const logger = {
@@ -959,4 +986,31 @@ process.on('SIGINT', async () => {
     logger.info('Database connection closed');
     process.exit(0);
   });
+});
+
+// --- Image Upload API Route ---
+app.post('/api/upload/image', upload.single('image'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, error: 'No image file provided.' });
+  }
+
+  try {
+    const filename = `marketplace-${Date.now()}-${Math.round(Math.random() * 1E9)}.webp`;
+    const filepath = path.join(uploadDir, filename);
+
+    // Process image with sharp
+    await sharp(req.file.buffer)
+      .resize({ width: 800, withoutEnlargement: true }) // Resize to max 800px width
+      .webp({ quality: 80 }) // Convert to WebP with 80% quality
+      .toFile(filepath);
+
+    const imageUrl = `/uploads/marketplace/${filename}`;
+    
+    logger.info('Image uploaded successfully', { imageUrl });
+    res.json({ success: true, imageUrl });
+
+  } catch (error) {
+    logger.error('Error processing image upload', error);
+    res.status(500).json({ success: false, error: 'Failed to process image.' });
+  }
 });
