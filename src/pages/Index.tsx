@@ -291,20 +291,32 @@ Use our platform to stay updated on events, announcements, and community activit
             <section className="py-12 bg-white">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center">
-                  <div className="relative rounded-lg overflow-hidden shadow-xl mx-auto max-w-4xl">
+                  <div className="relative rounded-lg overflow-hidden shadow-xl mx-auto max-w-3xl">
                     <img 
                       src="/building-602.jpg" 
-                      alt="Spectrum 4 Building - 602 Residential Tower"
-                      className="w-full h-64 md:h-96 object-cover"
+                      alt="Spectrum 4 Building - 602 Citadel Parade, Vancouver"
+                      className="w-full h-52 md:h-80 object-cover"
                       onError={(e) => {
-                        // Fallback to a placeholder if image doesn't exist
-                        e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400' viewBox='0 0 800 400'%3E%3Crect width='800' height='400' fill='%23f3f4f6'/%3E%3Ctext x='400' y='200' text-anchor='middle' dominant-baseline='central' font-family='Arial, sans-serif' font-size='18' fill='%236b7280'%3ESpectrum 4 Building Image%3C/text%3E%3C/svg%3E";
+                        // Fallback to a placeholder if image doesn't load
+                        console.warn('Building image failed to load, showing fallback');
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling.style.display = 'flex';
                       }}
                     />
+                    {/* Fallback placeholder (hidden by default) */}
+                    <div className="w-full h-52 md:h-80 bg-gradient-to-br from-blue-100 via-gray-100 to-blue-50 items-center justify-center relative hidden">
+                      <div className="text-center">
+                        <h3 className="text-2xl font-bold text-gray-700 mb-2">Spectrum 4</h3>
+                        <p className="text-gray-600 mb-4">602 Citadel Parade</p>
+                        <p className="text-sm text-gray-500">Modern Vancouver Living</p>
+                      </div>
+                    </div>
+                    
+                    {/* Image overlay with building info */}
                     <div className="absolute inset-0 bg-black bg-opacity-20"></div>
                     <div className="absolute bottom-4 left-4 text-white">
                       <h3 className="text-xl font-semibold">Spectrum 4</h3>
-                      <p className="text-sm opacity-90">Modern Vancouver Living</p>
+                      <p className="text-sm opacity-90">602 Citadel Parade, Vancouver</p>
                     </div>
                   </div>
                 </div>
