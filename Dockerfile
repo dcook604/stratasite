@@ -42,5 +42,5 @@ ENV DATABASE_URL="file:/app/data/database.db"
 # Expose port
 EXPOSE 3331
 
-# Start command
-CMD ["npm", "start"]
+# Start command - push schema changes then start the server
+CMD ["sh", "-c", "npx prisma db push && npm start"]
