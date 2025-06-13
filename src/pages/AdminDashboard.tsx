@@ -18,6 +18,7 @@ import { Plus, Trash2, Edit2, Users, Calendar, FileText, Megaphone, ShoppingCart
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { cleanupMarketplaceData, getCleanupPreview, formatCleanupStats, CleanupOptions } from '@/utils/databaseCleanup';
+import ChangePasswordDialog from '@/components/shared/ChangePasswordDialog';
 
 const AdminDashboard = () => {
   const { adminUser, logout } = useAdminAuth();
@@ -310,6 +311,15 @@ const AdminDashboard = () => {
     } finally {
       setCleanupInProgress(false);
     }
+  };
+
+  const onPasswordChanged = () => {
+    // For enhanced security, you might want to force a re-login.
+    // For now, we just give a notification.
+    toast({
+      title: 'Password Changed',
+      description: 'The user password has been updated. If you changed your own password, you may need to log in again on other devices.',
+    });
   };
 
   const quillModules = {
@@ -840,15 +850,18 @@ const AdminDashboard = () => {
                                 Created: {new Date(user.createdAt).toLocaleDateString()}
                               </p>
                             </div>
-                            {adminUsers.length > 1 && user.id !== adminUser?.id && (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => deleteItem('admin/users', user.id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            )}
+                            <div className="flex items-center gap-2">
+                              <ChangePasswordDialog adminUserId={user.id} onPasswordChanged={onPasswordChanged} />
+                              {adminUsers.length > 1 && user.id !== adminUser?.id && (
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => deleteItem('admin/users', user.id)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>

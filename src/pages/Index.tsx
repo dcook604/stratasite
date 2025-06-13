@@ -8,7 +8,7 @@ import RecentAnnouncements from '@/components/widgets/RecentAnnouncements';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Calendar, Image, Book, Mail, Edit, Save, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import ReactQuill from 'react-quill';
@@ -28,6 +28,7 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const { adminUser } = useAdminAuth();
   const { toast } = useToast();
+  const location = useLocation();
   
   // Admin editing state
   const [isEditing, setIsEditing] = useState(false);
@@ -102,6 +103,16 @@ Use our platform to stay updated on events, announcements, and community activit
     fetchHomepageData();
   }, [toast]);
 
+  useEffect(() => {
+    if (location.state?.message) {
+      toast({
+        title: "Session Expired",
+        description: location.state.message,
+        variant: "destructive",
+      });
+    }
+  }, [location, toast]);
+
   const handleEditToggle = () => {
     if (isEditing && homepageData) {
       // Reset edit data when canceling
@@ -167,6 +178,21 @@ Use our platform to stay updated on events, announcements, and community activit
       .replace(/\n\n/g, '</p><p class="text-xl text-gray-600 max-w-3xl mx-auto mb-4">')
       .replace(/\n/g, '<br/>');
   };
+
+  useEffect(() => {
+    // Make announcement links open in new tab
+    const announcementsContainer = document.getElementById('announcements-content');
+    if (announcementsContainer) {
+      const links = announcementsContainer.getElementsByTagName('a');
+      for (const link of links) {
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        if (link instanceof HTMLElement) {
+          link.style.color = '#2563eb';
+        }
+      }
+    }
+  }, [homepageData?.content]);
 
   if (loading) {
     return (
@@ -300,7 +326,10 @@ Use our platform to stay updated on events, announcements, and community activit
                         // Fallback to a placeholder if image doesn't load
                         console.warn('Building image failed to load, showing fallback');
                         e.currentTarget.style.display = 'none';
-                        e.currentTarget.nextElementSibling.style.display = 'flex';
+                        const nextSibling = e.currentTarget.nextElementSibling;
+                        if (nextSibling instanceof HTMLElement) {
+                          nextSibling.style.display = 'flex';
+                        }
                       }}
                     />
                     {/* Fallback placeholder (hidden by default) */}

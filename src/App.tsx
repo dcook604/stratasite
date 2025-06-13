@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AdminAuthProvider } from "./context/AdminAuthContext";
 import Index from "./pages/Index";
 import Calendar from "./pages/Calendar";
-import Gallery from "./pages/Gallery";
+import GalleryPage from "./pages/Gallery";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
@@ -19,14 +18,14 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AdminAuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+      <BrowserRouter>
+        <AdminAuthProvider>
+          <Toaster />
+          <Sonner />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/calendar" element={<Calendar />} />
-            <Route path="/gallery" element={<DynamicPage />} />
+            <Route path="/gallery" element={<GalleryPage />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             {/* Dynamic pages - these will load from database */}
@@ -48,8 +47,8 @@ const App = () => (
             <Route path="/not-found" element={<NotFound />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
-      </AdminAuthProvider>
+        </AdminAuthProvider>
+      </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );

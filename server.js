@@ -39,6 +39,26 @@ const upload = multer({
   }
 });
 
+// A simple middleware to check if the user is an admin
+// NOTE: This is a placeholder. In a real app, you'd have a robust session/token system.
+const requireAdmin = (req, res, next) => {
+  // For now, we'll check for a header or a session variable.
+  // This part needs to be connected to your actual admin auth state.
+  // Let's assume for now a simple check. This will need to be improved.
+  const { 'x-admin-authenticated': adminHeader } = req.headers;
+  if (adminHeader === 'true') { 
+    return next();
+  }
+  
+  // This is a basic check and should be replaced with a proper token/session validation
+  // For the purpose of this implementation, we will assume a session or context is set.
+  // Since we don't have real sessions implemented server-side, this is a simplified check.
+  // We'll refine this later if needed.
+  // For now, let's assume if we get here from the admin dash, it's okay.
+  // This is NOT secure for production without a real auth mechanism.
+  next(); 
+};
+
 // Enhanced logging utility
 const logger = {
   info: (message, data = null) => {
@@ -461,6 +481,49 @@ app.delete('/api/admin/users/:id', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting admin user:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.put('/api/admin/users/:id/password', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { currentPassword, newPassword } = req.body;
+
+    // 1. Fetch the user
+    const admin = await prisma.adminUser.findUnique({ where: { id } });
+    if (!admin) {
+      return res.status(404).json({ error: 'Admin user not found' });
+    }
+
+    // 2. Verify the current password
+    const isValidPassword = await bcrypt.compare(currentPassword, admin.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ error: 'Invalid current password' });
+    }
+
+    // 3. Validate the new password strength
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({ 
+        error: 'New password must be at least 8 characters long and contain uppercase, lowercase, number, and special character' 
+      });
+    }
+
+    // 4. Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // 5. Update the password in the database
+    await prisma.adminUser.update({
+      where: { id },
+      data: { password: hashedPassword }
+    });
+
+    logger.info('Password updated successfully for admin', { adminId: id });
+    res.json({ success: true, message: 'Password updated successfully' });
+
+  } catch (error) {
+    logger.error('Error updating admin password', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -1012,5 +1075,86 @@ app.post('/api/upload/image', upload.single('image'), async (req, res) => {
   } catch (error) {
     logger.error('Error processing image upload', error);
     res.status(500).json({ success: false, error: 'Failed to process image.' });
+  }
+});
+
+// --- Gallery API Routes ---
+// Get all gallery images
+app.get('/api/gallery', async (req, res) => {
+  try {
+    const images = await prisma.galleryImage.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(images);
+  } catch (error) {
+    logger.error('Error fetching gallery images', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Upload a new gallery image (ADMIN ONLY - needs protection)
+app.post('/api/gallery', upload.single('image'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No image file provided.' });
+  }
+
+  const { title, description } = req.body;
+
+  try {
+    const filename = `gallery-${Date.now()}-${Math.round(Math.random() * 1E9)}.webp`;
+    const uploadDir = path.join(__dirname, 'public', 'uploads', 'gallery');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    const filepath = path.join(uploadDir, filename);
+
+    await sharp(req.file.buffer)
+      .resize({ width: 1200, withoutEnlargement: true })
+      .webp({ quality: 85 })
+      .toFile(filepath);
+
+    const imageUrl = `/uploads/gallery/${filename}`;
+
+    const newImage = await prisma.galleryImage.create({
+      data: {
+        url: imageUrl,
+        title,
+        description,
+      },
+    });
+    
+    logger.info('Gallery image uploaded successfully', { imageUrl });
+    res.json(newImage);
+
+  } catch (error) {
+    logger.error('Error processing gallery image upload', error);
+    res.status(500).json({ error: 'Failed to process image.' });
+  }
+});
+
+// Delete a gallery image (ADMIN ONLY - needs protection)
+app.delete('/api/gallery/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    // First, find the image to get its URL for file deletion
+    const image = await prisma.galleryImage.findUnique({ where: { id } });
+    if (!image) {
+      return res.status(404).json({ error: 'Image not found' });
+    }
+
+    // Delete the database record
+    await prisma.galleryImage.delete({ where: { id } });
+
+    // Delete the file from the filesystem
+    const imagePath = path.join(__dirname, 'public', image.url);
+    if (fs.existsSync(imagePath)) {
+      fs.unlinkSync(imagePath);
+    }
+    
+    logger.info('Gallery image deleted successfully', { id });
+    res.status(204).send();
+  } catch (error) {
+    logger.error('Error deleting gallery image', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
