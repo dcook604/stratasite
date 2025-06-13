@@ -294,15 +294,15 @@ async function main() {
         });
         
         if (existingPage) {
-          console.log(`Page "${pageData.slug}" already exists, updating...`);
-          await prisma.page.update({
-            where: { slug: pageData.slug },
-            data: {
-              title: pageData.title,
-              content: pageData.content,
-              isActive: true
-            }
-          });
+          if (!existingPage.isActive) {
+            console.log(`Page "${pageData.slug}" exists but is inactive, reactivating...`);
+            await prisma.page.update({
+              where: { slug: pageData.slug },
+              data: { isActive: true }
+            });
+          } else {
+            console.log(`Page "${pageData.slug}" already exists and is active, skipping to preserve existing content...`);
+          }
         } else {
           console.log(`Creating page "${pageData.slug}"...`);
           await prisma.page.create({
