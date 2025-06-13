@@ -70,70 +70,62 @@ const AdminDashboard = () => {
         marketplaceRes, 
         adminUsersRes
       ] = await Promise.all([
-        fetch('/api/announcements').catch(err => ({ ok: false, error: err })),
-        fetch('/api/events').catch(err => ({ ok: false, error: err })),
-        fetch('/api/pages').catch(err => ({ ok: false, error: err })),
-        fetch('/api/marketplace').catch(err => ({ ok: false, error: err })),
-        fetch('/api/admin/users').catch(err => ({ ok: false, error: err }))
+        fetch('/api/announcements').catch(err => err),
+        fetch('/api/events').catch(err => err),
+        fetch('/api/pages').catch(err => err),
+        fetch('/api/marketplace').catch(err => err),
+        fetch('/api/admin/users').catch(err => err)
       ]);
 
-      console.log('AdminDashboard: API responses:', {
-        announcements: announcementsRes.status,
-        events: eventsRes.status,
-        pages: pagesRes.status,
-        marketplace: marketplaceRes.status,
-        adminUsers: adminUsersRes.status
-      });
+      console.log('AdminDashboard: API responses received');
 
       // Handle announcements
-      if (announcementsRes.ok) {
+      if (announcementsRes instanceof Response && announcementsRes.ok) {
         const announcementsData = await announcementsRes.json();
         console.log('AdminDashboard: Announcements loaded:', announcementsData.length);
         setAnnouncements(announcementsData);
       } else {
-        console.error('AdminDashboard: Failed to load announcements:', announcementsRes.status);
+        console.error('AdminDashboard: Failed to load announcements', announcementsRes);
         setAnnouncements([]);
       }
       
       // Handle events
-      if (eventsRes.ok) {
+      if (eventsRes instanceof Response && eventsRes.ok) {
         const eventsData = await eventsRes.json();
         console.log('AdminDashboard: Events loaded:', eventsData.length);
         setEvents(eventsData);
       } else {
-        console.error('AdminDashboard: Failed to load events:', eventsRes.status);
+        console.error('AdminDashboard: Failed to load events:', eventsRes);
         setEvents([]);
       }
       
       // Handle pages
-      if (pagesRes.ok) {
+      if (pagesRes instanceof Response && pagesRes.ok) {
         const pagesData = await pagesRes.json();
-        console.log('AdminDashboard: Pages loaded:', pagesData.length, pagesData);
+        console.log('AdminDashboard: Pages loaded:', pagesData.length);
         setPages(pagesData);
       } else {
-        console.error('AdminDashboard: Failed to load pages:', pagesRes.status);
-        const errorText = await pagesRes.text();
-        console.error('AdminDashboard: Pages error details:', errorText);
+        console.error('AdminDashboard: Failed to load pages:', pagesRes);
         setPages([]);
       }
       
       // Handle marketplace
-      if (marketplaceRes.ok) {
+      if (marketplaceRes instanceof Response && marketplaceRes.ok) {
         const marketplaceData = await marketplaceRes.json();
         console.log('AdminDashboard: Marketplace posts loaded:', marketplaceData.length);
         setMarketplacePosts(marketplaceData);
       } else {
-        console.error('AdminDashboard: Failed to load marketplace posts:', marketplaceRes.status);
+        console.error('AdminDashboard: Failed to load marketplace posts:', marketplaceRes);
         setMarketplacePosts([]);
       }
       
       // Handle admin users
-      if (adminUsersRes.ok) {
+      if (adminUsersRes instanceof Response && adminUsersRes.ok) {
         const adminUsersData = await adminUsersRes.json();
         console.log('AdminDashboard: Admin users loaded:', adminUsersData.length);
         setAdminUsers(adminUsersData);
       } else {
-        console.error('AdminDashboard: Failed to load admin users:', adminUsersRes.status);
+        console.error('AdminDashboard: Failed to load admin users:', adminUsersRes);
         setAdminUsers([]);
       }
     } catch (error) {
@@ -355,7 +347,11 @@ const AdminDashboard = () => {
             </Alert>
 
             <Tabs defaultValue="announcements" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-6">
+              {/* 
+                This TabsList is styled to be a flex container that wraps on small screens,
+                and transitions to a 6-column grid on medium screens and larger.
+              */}
+              <TabsList className="h-auto flex-wrap justify-start md:grid md:grid-cols-6 md:h-10">
                 <TabsTrigger value="announcements" className="flex items-center gap-2">
                   <Megaphone className="w-4 h-4" />
                   Announcements
@@ -733,7 +729,7 @@ const AdminDashboard = () => {
                         <Checkbox
                           id="delete-sold-items"
                           checked={cleanupOptions.deleteSoldItems}
-                          onCheckedChange={(value) => setCleanupOptions({...cleanupOptions, deleteSoldItems: value})}
+                          onCheckedChange={(value) => setCleanupOptions({...cleanupOptions, deleteSoldItems: !!value})}
                         />
                       </div>
                       <div>
@@ -741,7 +737,7 @@ const AdminDashboard = () => {
                         <Checkbox
                           id="delete-inactive-posts"
                           checked={cleanupOptions.deleteInactivePosts}
-                          onCheckedChange={(value) => setCleanupOptions({...cleanupOptions, deleteInactivePosts: value})}
+                          onCheckedChange={(value) => setCleanupOptions({...cleanupOptions, deleteInactivePosts: !!value})}
                         />
                       </div>
                       <div>
@@ -749,7 +745,7 @@ const AdminDashboard = () => {
                         <Checkbox
                           id="delete-orphaned-images"
                           checked={cleanupOptions.deleteOrphanedImages}
-                          onCheckedChange={(value) => setCleanupOptions({...cleanupOptions, deleteOrphanedImages: value})}
+                          onCheckedChange={(value) => setCleanupOptions({...cleanupOptions, deleteOrphanedImages: !!value})}
                         />
                       </div>
                       <div>
@@ -757,7 +753,7 @@ const AdminDashboard = () => {
                         <Checkbox
                           id="dry-run"
                           checked={cleanupOptions.dryRun}
-                          onCheckedChange={(value) => setCleanupOptions({...cleanupOptions, dryRun: value})}
+                          onCheckedChange={(value) => setCleanupOptions({...cleanupOptions, dryRun: !!value})}
                         />
                       </div>
                       <Button type="submit">Preview Cleanup</Button>
