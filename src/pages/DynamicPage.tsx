@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useLocation, Navigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import PageHeader from '@/components/shared/PageHeader';
@@ -22,7 +22,8 @@ interface PageData {
 }
 
 const DynamicPage = () => {
-  const { slug } = useParams();
+  const location = useLocation();
+  const slug = location.pathname.split('/').pop() || 'homepage';
   const [page, setPage] = useState<PageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);

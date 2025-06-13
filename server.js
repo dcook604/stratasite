@@ -80,31 +80,6 @@ app.use(express.json());
 // Move request logger to be the first middleware to ensure all requests are logged
 app.use(requestLogger);
 
-// Domain handling middleware - redirect non-www to www for consistency
-app.use((req, res, next) => {
-  // Add security headers
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  
-  const host = req.get('host');
-  const protocol = req.get('x-forwarded-proto') || req.protocol || 'https';
-  
-  // Redirect non-www to www for spectrum4.ca (but not localhost)
-  if (host === 'spectrum4.ca') {
-    const redirectUrl = `https://www.spectrum4.ca${req.url}`;
-    logger.info(`Redirecting ${host}${req.url} to www version`);
-    return res.redirect(301, redirectUrl);
-  }
-  
-  // Set canonical URL header for SEO
-  if (host && host.includes('spectrum4.ca')) {
-    res.setHeader('Link', '<https://www.spectrum4.ca' + req.url + '>; rel="canonical"');
-  }
-  
-  next();
-});
-
 logger.info('Server starting...', {
   port: PORT,
   nodeEnv: process.env.NODE_ENV,
