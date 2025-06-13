@@ -31,6 +31,7 @@ const AdminDashboard = () => {
   const [adminUsers, setAdminUsers] = useState([]);
   const [marketplacePosts, setMarketplacePosts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [eventRequests, setEventRequests] = useState([]);
 
   // Form states
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' });
@@ -69,13 +70,15 @@ const AdminDashboard = () => {
         eventsRes, 
         pagesRes, 
         marketplaceRes, 
-        adminUsersRes
+        adminUsersRes,
+        eventRequestsRes
       ] = await Promise.all([
         fetch('/api/announcements').catch(err => err),
         fetch('/api/events').catch(err => err),
         fetch('/api/pages').catch(err => err),
         fetch('/api/marketplace').catch(err => err),
-        fetch('/api/admin/users').catch(err => err)
+        fetch('/api/admin/users').catch(err => err),
+        fetch('/api/event-requests').catch(err => err)
       ]);
 
       console.log('AdminDashboard: API responses received');
@@ -128,6 +131,16 @@ const AdminDashboard = () => {
       } else {
         console.error('AdminDashboard: Failed to load admin users:', adminUsersRes);
         setAdminUsers([]);
+      }
+      
+      // Handle event requests
+      if (eventRequestsRes instanceof Response && eventRequestsRes.ok) {
+        const eventRequestsData = await eventRequestsRes.json();
+        console.log('AdminDashboard: Event requests loaded:', eventRequestsData.length);
+        setEventRequests(eventRequestsData);
+      } else {
+        console.error('AdminDashboard: Failed to load event requests:', eventRequestsRes);
+        setEventRequests([]);
       }
     } catch (error) {
       console.error('AdminDashboard: Error fetching data:', error);
@@ -339,6 +352,24 @@ const AdminDashboard = () => {
     'link', 'blockquote', 'code-block'
   ];
 
+  const handleRequestStatusChange = async (requestId, status) => {
+    try {
+      const response = await fetch(`/api/event-requests/${requestId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      if (response.ok) {
+        toast({ title: "Success", description: `Event request has been ${status.toLowerCase()}.` });
+        fetchData(); // Refresh all data
+      } else {
+        throw new Error('Failed to update request status');
+      }
+    } catch (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
   return (
     <RequireAdminAuth>
       <div className="page-container">
@@ -377,6 +408,10 @@ const AdminDashboard = () => {
                 <TabsTrigger value="marketplace" className="flex items-center gap-2">
                   <ShoppingCart className="w-4 h-4" />
                   Marketplace
+                </TabsTrigger>
+                <TabsTrigger value="event-requests" className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  Event Requests
                 </TabsTrigger>
                 <TabsTrigger value="cleanup" className="flex items-center gap-2">
                   <Database className="w-4 h-4" />
@@ -709,6 +744,59 @@ const AdminDashboard = () => {
                                 ))}
                               </div>
                             )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="event-requests" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Pending Event Requests</CardTitle>
+                    <CardDescription>
+                      Review and approve or reject event requests from residents. Approving a request will automatically add it to the public calendar.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {eventRequests.filter(req => req.status === 'PENDING').length === 0 ? (
+                      <p className="text-gray-500">No pending event requests.</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {eventRequests.filter(req => req.status === 'PENDING').map((req) => (
+                          <div key={req.id} className="p-4 border rounded-lg">
+                            <h3 className="font-semibold text-lg">{req.eventTitle}</h3>
+                            <p className="text-gray-600 mt-1">{req.eventDescription}</p>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4 text-sm">
+                              <div>
+                                <Label className="font-medium">Requested By</Label>
+                                <p>{req.firstName} {req.lastName} (Unit: {req.unitNumber})</p>
+                              </div>
+                              <div>
+                                <Label className="font-medium">Contact</Label>
+                                <p>{req.email} / {req.phone}</p>
+                              </div>
+                              <div>
+                                <Label className="font-medium">Status</Label>
+                                <p>{req.isOwner ? 'Owner' : 'Tenant'}</p>
+                              </div>
+                              <div>
+                                <Label className="font-medium">Requested Date & Time</Label>
+                                <p>{new Date(req.requestedDateTime).toLocaleString()}</p>
+                              </div>
+                            </div>
+                            <div className="flex gap-2 mt-4">
+                              <Button size="sm" onClick={() => handleRequestStatusChange(req.id, 'APPROVED')}>
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Approve
+                              </Button>
+                              <Button size="sm" variant="destructive" onClick={() => handleRequestStatusChange(req.id, 'REJECTED')}>
+                                <X className="w-4 h-4 mr-2" />
+                                Reject
+                              </Button>
+                            </div>
                           </div>
                         ))}
                       </div>

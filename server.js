@@ -1077,3 +1077,89 @@ app.post('/api/upload/image', upload.single('image'), async (req, res) => {
     res.status(500).json({ success: false, error: 'Failed to process image.' });
   }
 });
+
+// --- Event Request API Routes ---
+// Submit a new event request
+app.post('/api/event-requests', async (req, res) => {
+  try {
+    const {
+      firstName, lastName, unitNumber, email, phone, isOwner,
+      eventTitle, eventDescription, requestedDateTime, recaptchaToken
+    } = req.body;
+
+    // Basic validation
+    if (!firstName || !lastName || !unitNumber || !email || !phone || !eventTitle || !requestedDateTime) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // reCAPTCHA verification
+    const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
+    if (!isRecaptchaValid) {
+      return res.status(400).json({ error: 'Invalid reCAPTCHA. Please try again.' });
+    }
+
+    const eventRequest = await prisma.eventRequest.create({
+      data: {
+        firstName, lastName, unitNumber, email, phone,
+        isOwner: Boolean(isOwner),
+        eventTitle,
+        eventDescription,
+        requestedDateTime: new Date(requestedDateTime),
+      },
+    });
+    res.status(201).json(eventRequest);
+  } catch (error) {
+    logger.error('Error creating event request', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get all event requests (for admin)
+app.get('/api/event-requests', async (req, res) => {
+  try {
+    const requests = await prisma.eventRequest.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(requests);
+  } catch (error) {
+    logger.error('Error fetching event requests', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update an event request status (for admin)
+app.put('/api/event-requests/:id', async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body; // Expecting 'APPROVED' or 'REJECTED'
+
+  if (!['APPROVED', 'REJECTED'].includes(status)) {
+    return res.status(400).json({ error: 'Invalid status provided.' });
+  }
+
+  try {
+    const updatedRequest = await prisma.eventRequest.update({
+      where: { id },
+      data: { status },
+    });
+
+    // If approved, create a new event in the main calendar
+    if (status === 'APPROVED') {
+      await prisma.event.create({
+        data: {
+          title: updatedRequest.eventTitle,
+          description: updatedRequest.eventDescription || `Event requested by ${updatedRequest.firstName} ${updatedRequest.lastName} (Unit ${updatedRequest.unitNumber}). Contact: ${updatedRequest.email}, ${updatedRequest.phone}.`,
+          startDate: updatedRequest.requestedDateTime,
+          // You might want to set a default duration here, e.g., 2 hours
+          endDate: new Date(new Date(updatedRequest.requestedDateTime).getTime() + 2 * 60 * 60 * 1000), 
+          location: 'As requested',
+        },
+      });
+      logger.info('Event created from approved request', { requestId: id });
+    }
+
+    res.json(updatedRequest);
+  } catch (error) {
+    logger.error('Error updating event request', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});

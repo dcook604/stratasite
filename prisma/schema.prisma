@@ -93,3 +93,28 @@ model MarketplaceReply {
   
   @@map("marketplace_replies")
 }
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model EventRequest {
+  id              String        @id @default(cuid())
+  firstName       String
+  lastName        String
+  unitNumber      String
+  email           String
+  phone           String
+  isOwner         Boolean
+  
+  eventTitle      String
+  eventDescription String?
+  requestedDateTime DateTime
+
+  status          RequestStatus @default(PENDING)
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
