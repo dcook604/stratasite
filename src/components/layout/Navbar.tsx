@@ -42,7 +42,6 @@ export const Navbar = () => {
     { name: 'Marketplace', path: '/marketplace', icon: <ShoppingCart className="h-4 w-4 mr-2" /> },
     { name: 'Bylaws', path: '/bylaws', icon: <Book className="h-4 w-4 mr-2" /> },
     { name: 'Contact', path: '/contact', icon: <Mail className="h-4 w-4 mr-2" /> },
-    { name: 'Gallery', path: '/gallery', icon: <Image className="h-4 w-4 mr-2" /> },
   ];
 
   return (
