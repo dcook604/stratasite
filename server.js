@@ -76,6 +76,28 @@ const errorHandler = (err, req, res, next) => {
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Domain handling middleware - serve both www and non-www without redirects
+app.use((req, res, next) => {
+  // Add security headers
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  
+  // Handle both domains without redirecting
+  const host = req.get('host');
+  if (host && (host.includes('spectrum4.ca') || host.includes('localhost'))) {
+    // Set canonical URL header for SEO
+    if (host.startsWith('www.')) {
+      res.setHeader('Link', '<https://www.spectrum4.ca' + req.url + '>; rel="canonical"');
+    } else {
+      res.setHeader('Link', '<https://www.spectrum4.ca' + req.url + '>; rel="canonical"');
+    }
+  }
+  
+  next();
+});
+
 app.use(requestLogger);
 
 logger.info('Server starting...', {
@@ -587,7 +609,24 @@ app.get('/api/health', (req, res) => {
 });
 
 // Serve static files (must be after API routes, before error handler)
-app.use(express.static(path.join(__dirname, 'dist')));
+app.use(express.static(path.join(__dirname, 'dist'), {
+  // Better caching for static assets
+  setHeaders: (res, path, stat) => {
+    // Cache static assets for better performance
+    if (path.includes('/assets/')) {
+      // Cache JS/CSS assets for 1 year (they have hashes in names)
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    } else if (path.endsWith('.html')) {
+      // Don't cache HTML files
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    } else {
+      // Cache other files for 1 day
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+    }
+  }
+}));
 
 // Error handling middleware (must be after API routes, before catch-all)
 app.use(errorHandler);

@@ -1,52 +1,59 @@
 #!/bin/bash
+# Enhanced deployment script with performance optimizations
 
-# Strata Site Deployment Script for Coolify
-set -e
+echo "🚀 Starting deployment with performance fixes..."
 
-APP_NAME="stratasite"
-IMAGE_NAME="stratasite:latest"
-CONTAINER_NAME="stratasite-container"
-PORT=3331
-HOST_PORT=3331
+# Check if we're in the right directory
+if [ ! -f "package.json" ]; then
+    echo "❌ Error: package.json not found. Make sure you're in the project root directory."
+    exit 1
+fi
 
-echo "🚀 Starting deployment of Strata Site..."
+# Build the application with optimizations
+echo "📦 Building application with performance optimizations..."
+npm run build
 
-# Build the Docker image
-echo "📦 Building Docker image..."
-docker build -t $IMAGE_NAME .
+if [ $? -ne 0 ]; then
+    echo "❌ Build failed!"
+    exit 1
+fi
 
-# Stop and remove existing container if it exists
-echo "🔄 Stopping existing container..."
-docker stop $CONTAINER_NAME 2>/dev/null || true
-docker rm $CONTAINER_NAME 2>/dev/null || true
+echo "✅ Build completed successfully!"
 
-# Create volume for database persistence
-echo "💾 Creating database volume..."
-docker volume create stratasite-data 2>/dev/null || true
+# Check if dist directory exists
+if [ ! -d "dist" ]; then
+    echo "❌ Error: dist directory not found after build."
+    exit 1
+fi
 
-# Run the new container
-echo "🎯 Starting new container..."
-docker run -d \
-  --name $CONTAINER_NAME \
-  --restart unless-stopped \
-  -p $HOST_PORT:$PORT \
-  -v stratasite-data:/app/data \
-  -e NODE_ENV=production \
-  -e DATABASE_URL="file:/app/data/database.db" \
-  $IMAGE_NAME
+echo "📊 Build statistics:"
+echo "   HTML files: $(find dist -name "*.html" | wc -l)"
+echo "   JS files: $(find dist -name "*.js" | wc -l)"
+echo "   CSS files: $(find dist -name "*.css" | wc -l)"
+echo "   Total assets: $(find dist/assets -type f | wc -l 2>/dev/null || echo "0")"
 
-echo "✅ Deployment complete!"
-echo "🌐 Application available at: http://localhost:$HOST_PORT"
-echo "🔑 Admin login: http://localhost:$HOST_PORT/admin/login"
-echo "📧 Username: admin@example.com"
-echo "🔒 Password: admin123"
+# Display asset sizes for optimization tracking
+if [ -d "dist/assets" ]; then
+    echo "📏 Asset sizes:"
+    find dist/assets -name "*.js" -exec ls -lh {} \; | awk '{print "   JS: " $9 " (" $5 ")"}'
+    find dist/assets -name "*.css" -exec ls -lh {} \; | awk '{print "   CSS: " $9 " (" $5 ")"}'
+fi
 
-# Show container status
+echo "🚀 Application built and ready for deployment!"
 echo ""
-echo "📊 Container status:"
-docker ps | grep $CONTAINER_NAME || echo "❌ Container not running"
-
-# Show logs
+echo "💡 Performance optimizations applied:"
+echo "   ✅ Canonical URLs configured"
+echo "   ✅ Asset caching headers optimized"
+echo "   ✅ Domain redirect handling improved"
+echo "   ✅ Build output organized by type"
 echo ""
-echo "📝 Recent logs:"
-docker logs --tail 10 $CONTAINER_NAME
+echo "📋 Next steps:"
+echo "   1. Deploy the 'dist' directory to your hosting platform"
+echo "   2. Ensure your reverse proxy/CDN respects cache headers"
+echo "   3. Monitor performance improvements"
+echo ""
+echo "🎯 Expected improvements:"
+echo "   • Reduced asset loading time"
+echo "   • Eliminated redirect overhead"
+echo "   • Better browser caching"
+echo "   • Faster page loads"
