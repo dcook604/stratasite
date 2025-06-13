@@ -36,12 +36,13 @@ const App = () => (
             <Route path="/recycling" element={<DynamicPage />} />
             <Route path="/organics" element={<DynamicPage />} />
             <Route path="/renovations" element={<DynamicPage />} />
+            {/* Interactive Marketplace */}
+            <Route path="/marketplace" element={<Marketplace />} />
             {/* Legacy information routes - redirect to new slugs */}
             <Route path="/information/recycling" element={<DynamicPage />} />
             <Route path="/information/organics" element={<DynamicPage />} />
             <Route path="/information/fees" element={<DynamicPage />} />
             <Route path="/information/renovations" element={<DynamicPage />} />
-            <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/information/marketplace" element={<Marketplace />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="/not-found" element={<NotFound />} />

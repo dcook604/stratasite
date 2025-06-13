@@ -37,11 +37,11 @@ export const Navbar = () => {
   ];
 
   const informationItems = [
-    { name: 'Recycling', path: '/information/recycling' },
-    { name: 'Organics', path: '/information/organics' },
-    { name: 'Fees', path: '/information/fees' },
-    { name: 'Renovations', path: '/information/renovations' },
-    { name: 'Marketplace', path: '/information/marketplace' },
+    { name: 'Recycling', path: '/recycling' },
+    { name: 'Organics', path: '/organics' },
+    { name: 'Fees', path: '/fees' },
+    { name: 'Renovations', path: '/renovations' },
+    { name: 'Marketplace', path: '/marketplace' },
   ];
 
   return (

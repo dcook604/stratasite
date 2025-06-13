@@ -3,6 +3,7 @@ import { useParams, Navigate, useLocation } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import PageHeader from '@/components/shared/PageHeader';
+import { logger } from '@/lib/logger';
 
 interface PageData {
   id: string;
@@ -34,25 +35,44 @@ const DynamicPage = () => {
         slug = currentPath.replace('/', '');
       }
 
+      logger.pageView(currentPath, { slug, rawPath: currentPath });
+
       if (!slug) {
+        logger.warn('No slug found for path', { currentPath });
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
+
+      // Validate slug format
+      if (slug.includes(':') || slug.includes('?') || slug.includes('#')) {
+        logger.warn('Invalid slug format detected', { slug, currentPath });
         setNotFound(true);
         setLoading(false);
         return;
       }
 
       try {
+        const startTime = Date.now();
+        logger.apiRequest('GET', `/api/pages/${slug}`);
+        
         const response = await fetch(`/api/pages/${slug}`);
+        const duration = Date.now() - startTime;
+        
+        logger.apiResponse('GET', `/api/pages/${slug}`, response.status, duration);
         
         if (response.ok) {
           const pageData = await response.json();
+          logger.info('Page loaded successfully', { slug, title: pageData.title });
           setPage(pageData);
         } else if (response.status === 404) {
+          logger.warn('Page not found', { slug, path: currentPath });
           setNotFound(true);
         } else {
-          throw new Error('Failed to fetch page');
+          throw new Error(`HTTP ${response.status}: Failed to fetch page`);
         }
       } catch (error) {
-        console.error('Error fetching page:', error);
+        logger.apiError('GET', `/api/pages/${slug}`, error as Error);
         setNotFound(true);
       } finally {
         setLoading(false);

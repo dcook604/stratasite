@@ -12,30 +12,102 @@ const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3331;
 
+// Enhanced logging utility
+const logger = {
+  info: (message, data = null) => {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] INFO: ${message}`, data ? JSON.stringify(data, null, 2) : '');
+  },
+  error: (message, error = null) => {
+    const timestamp = new Date().toISOString();
+    console.error(`[${timestamp}] ERROR: ${message}`);
+    if (error) {
+      console.error('Error details:', error instanceof Error ? error.stack : error);
+    }
+  },
+  warn: (message, data = null) => {
+    const timestamp = new Date().toISOString();
+    console.warn(`[${timestamp}] WARN: ${message}`, data ? JSON.stringify(data, null, 2) : '');
+  },
+  debug: (message, data = null) => {
+    if (process.env.NODE_ENV !== 'production') {
+      const timestamp = new Date().toISOString();
+      console.log(`[${timestamp}] DEBUG: ${message}`, data ? JSON.stringify(data, null, 2) : '');
+    }
+  }
+};
+
+// Request logging middleware
+const requestLogger = (req, res, next) => {
+  const start = Date.now();
+  const timestamp = new Date().toISOString();
+  
+  // Log incoming request
+  logger.info(`${req.method} ${req.url}`, {
+    ip: req.ip || req.connection.remoteAddress,
+    userAgent: req.get('User-Agent'),
+    body: req.method === 'POST' || req.method === 'PUT' ? req.body : undefined
+  });
+
+  // Log response when finished
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const logLevel = res.statusCode >= 400 ? 'error' : 'info';
+    logger[logLevel](`${req.method} ${req.url} - ${res.statusCode} - ${duration}ms`);
+  });
+
+  next();
+};
+
+// Error handling middleware
+const errorHandler = (err, req, res, next) => {
+  logger.error(`Unhandled error on ${req.method} ${req.url}`, err);
+  
+  if (res.headersSent) {
+    return next(err);
+  }
+  
+  res.status(500).json({ 
+    error: 'Internal server error',
+    message: process.env.NODE_ENV === 'production' ? 'Something went wrong' : err.message
+  });
+};
+
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(requestLogger);
 app.use(express.static(path.join(__dirname, 'dist')));
+
+logger.info('Server starting...', {
+  port: PORT,
+  nodeEnv: process.env.NODE_ENV,
+  timestamp: new Date().toISOString()
+});
 
 // API Routes
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    logger.debug('Login attempt', { email });
 
     const admin = await prisma.adminUser.findUnique({
       where: { email }
     });
 
     if (!admin) {
+      logger.warn('Login failed - user not found', { email });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     const isValidPassword = await bcrypt.compare(password, admin.password);
     
     if (!isValidPassword) {
+      logger.warn('Login failed - invalid password', { email });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    logger.info('Login successful', { email, adminId: admin.id });
     res.json({
       user: {
         id: admin.id,
@@ -43,7 +115,7 @@ app.post('/api/auth/login', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error('Login error', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -51,6 +123,7 @@ app.post('/api/auth/login', async (req, res) => {
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { email, password } = req.body;
+    logger.debug('Registration attempt', { email });
 
     // Check if admin already exists
     const existingAdmin = await prisma.adminUser.findUnique({
@@ -58,6 +131,7 @@ app.post('/api/auth/register', async (req, res) => {
     });
 
     if (existingAdmin) {
+      logger.warn('Registration failed - user already exists', { email });
       return res.status(400).json({ error: 'Admin user already exists' });
     }
 
@@ -70,6 +144,7 @@ app.post('/api/auth/register', async (req, res) => {
       }
     });
 
+    logger.info('Registration successful', { email, adminId: admin.id });
     res.json({
       user: {
         id: admin.id,
@@ -77,7 +152,7 @@ app.post('/api/auth/register', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Registration error:', error);
+    logger.error('Registration error', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -91,7 +166,7 @@ app.get('/api/announcements', async (req, res) => {
     });
     res.json(announcements);
   } catch (error) {
-    console.error('Error fetching announcements:', error);
+    logger.error('Error fetching announcements', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -99,12 +174,14 @@ app.get('/api/announcements', async (req, res) => {
 app.post('/api/announcements', async (req, res) => {
   try {
     const { title, content } = req.body;
+    logger.debug('Creating announcement', { title });
     const announcement = await prisma.announcement.create({
       data: { title, content }
     });
+    logger.info('Announcement created', { id: announcement.id, title });
     res.json(announcement);
   } catch (error) {
-    console.error('Error creating announcement:', error);
+    logger.error('Error creating announcement', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -113,13 +190,15 @@ app.put('/api/announcements/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { title, content, isActive } = req.body;
+    logger.debug('Updating announcement', { id, title });
     const announcement = await prisma.announcement.update({
       where: { id },
       data: { title, content, isActive }
     });
+    logger.info('Announcement updated', { id, title });
     res.json(announcement);
   } catch (error) {
-    console.error('Error updating announcement:', error);
+    logger.error('Error updating announcement', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -127,13 +206,15 @@ app.put('/api/announcements/:id', async (req, res) => {
 app.delete('/api/announcements/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    logger.debug('Deleting announcement', { id });
     await prisma.announcement.update({
       where: { id },
       data: { isActive: false }
     });
+    logger.info('Announcement deleted', { id });
     res.json({ success: true });
   } catch (error) {
-    console.error('Error deleting announcement:', error);
+    logger.error('Error deleting announcement', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -210,13 +291,15 @@ app.delete('/api/events/:id', async (req, res) => {
 // Pages CRUD
 app.get('/api/pages', async (req, res) => {
   try {
+    logger.debug('Fetching all active pages');
     const pages = await prisma.page.findMany({
       where: { isActive: true },
       orderBy: { title: 'asc' }
     });
+    logger.info('Pages fetched successfully', { count: pages.length });
     res.json(pages);
   } catch (error) {
-    console.error('Error fetching pages:', error);
+    logger.error('Error fetching pages', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -224,15 +307,18 @@ app.get('/api/pages', async (req, res) => {
 app.get('/api/pages/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
+    logger.debug('Fetching page by slug', { slug });
     const page = await prisma.page.findUnique({
       where: { slug, isActive: true }
     });
     if (!page) {
+      logger.warn('Page not found', { slug });
       return res.status(404).json({ error: 'Page not found' });
     }
+    logger.info('Page fetched successfully', { slug, title: page.title });
     res.json(page);
   } catch (error) {
-    console.error('Error fetching page:', error);
+    logger.error('Error fetching page', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -491,28 +577,52 @@ app.delete('/api/marketplace/:postId/replies/:replyId', async (req, res) => {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  const healthData = { 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    port: PORT,
+    nodeEnv: process.env.NODE_ENV || 'development'
+  };
+  logger.debug('Health check requested', healthData);
+  res.json(healthData);
 });
 
-// Serve React app for all other routes
+// Error handling middleware (must be after API routes, before catch-all)
+app.use(errorHandler);
+
+// Serve React app for all other routes (must be last)
 app.get('*', (req, res) => {
+  logger.debug('Serving React app for route', { path: req.path });
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
+const server = app.listen(PORT, '0.0.0.0', () => {
+  logger.info('Server started successfully', {
+    port: PORT,
+    host: '0.0.0.0',
+    nodeEnv: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Handle graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  await prisma.$disconnect();
-  process.exit(0);
+  logger.info('SIGTERM received, shutting down gracefully');
+  server.close(async () => {
+    logger.info('Server closed');
+    await prisma.$disconnect();
+    logger.info('Database connection closed');
+    process.exit(0);
+  });
 });
 
 process.on('SIGINT', async () => {
-  console.log('SIGINT received, shutting down gracefully');
-  await prisma.$disconnect();
-  process.exit(0);
+  logger.info('SIGINT received, shutting down gracefully');
+  server.close(async () => {
+    logger.info('Server closed');
+    await prisma.$disconnect();
+    logger.info('Database connection closed');
+    process.exit(0);
+  });
 });
