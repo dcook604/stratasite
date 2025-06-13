@@ -11,6 +11,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import DynamicPage from "./pages/DynamicPage";
 import Marketplace from "./pages/information/Marketplace";
+import Documents from "./pages/information/Documents";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,8 @@ const App = () => (
             <Route path="/recycling" element={<DynamicPage />} />
             <Route path="/organics" element={<DynamicPage />} />
             <Route path="/renovations" element={<DynamicPage />} />
+            {/* Documents page */}
+            <Route path="/documents" element={<Documents />} />
             {/* Interactive Marketplace */}
             <Route path="/marketplace" element={<Marketplace />} />
             {/* Legacy information routes - redirect to new slugs */}

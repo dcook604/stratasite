@@ -11,17 +11,30 @@ const UpcomingEvents = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
+        console.log('[UpcomingEvents] Fetching events...');
         const response = await fetch('/api/events');
         if (response.ok) {
           const data = await response.json();
+          console.log('[UpcomingEvents] All events:', data);
+          
           // Filter to only show future events and limit to 3
+          const now = new Date();
           const futureEvents = data
-            .filter((event: any) => new Date(event.startDate) > new Date())
+            .filter((event: any) => {
+              const eventDate = new Date(event.startDate);
+              const isFuture = eventDate > now;
+              console.log(`[UpcomingEvents] Event "${event.title}" - Date: ${eventDate}, Is Future: ${isFuture}`);
+              return isFuture;
+            })
             .slice(0, 3);
+          
+          console.log('[UpcomingEvents] Future events:', futureEvents);
           setEvents(futureEvents);
+        } else {
+          console.error('[UpcomingEvents] Failed to fetch events:', response.status);
         }
       } catch (error) {
-        console.error('Failed to fetch events:', error);
+        console.error('[UpcomingEvents] Failed to fetch events:', error);
       } finally {
         setLoading(false);
       }

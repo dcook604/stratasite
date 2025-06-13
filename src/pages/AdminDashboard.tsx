@@ -30,6 +30,7 @@ const AdminDashboard = () => {
   const [pages, setPages] = useState([]);
   const [adminUsers, setAdminUsers] = useState([]);
   const [marketplacePosts, setMarketplacePosts] = useState([]);
+  const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [eventRequests, setEventRequests] = useState([]);
 
@@ -38,6 +39,7 @@ const AdminDashboard = () => {
   const [newEvent, setNewEvent] = useState({ title: '', description: '', startDate: '', endDate: '', location: '' });
   const [newPage, setNewPage] = useState({ slug: '', title: '', content: '' });
   const [newAdmin, setNewAdmin] = useState({ email: '', password: '' });
+  const [newDocument, setNewDocument] = useState({ title: '', description: '', file: null });
   
   // Edit states
   const [editingPage, setEditingPage] = useState(null);
@@ -71,14 +73,16 @@ const AdminDashboard = () => {
         pagesRes, 
         marketplaceRes, 
         adminUsersRes,
-        eventRequestsRes
+        eventRequestsRes,
+        documentsRes
       ] = await Promise.all([
         fetch('/api/announcements').catch(err => err),
         fetch('/api/events').catch(err => err),
         fetch('/api/pages').catch(err => err),
         fetch('/api/marketplace').catch(err => err),
         fetch('/api/admin/users').catch(err => err),
-        fetch('/api/event-requests').catch(err => err)
+        fetch('/api/event-requests').catch(err => err),
+        fetch('/api/documents').catch(err => err)
       ]);
 
       console.log('AdminDashboard: API responses received');
@@ -141,6 +145,16 @@ const AdminDashboard = () => {
       } else {
         console.error('AdminDashboard: Failed to load event requests:', eventRequestsRes);
         setEventRequests([]);
+      }
+      
+      // Handle documents
+      if (documentsRes instanceof Response && documentsRes.ok) {
+        const documentsData = await documentsRes.json();
+        console.log('AdminDashboard: Documents loaded:', documentsData.length);
+        setDocuments(documentsData);
+      } else {
+        console.error('AdminDashboard: Failed to load documents:', documentsRes);
+        setDocuments([]);
       }
     } catch (error) {
       console.error('AdminDashboard: Error fetching data:', error);
@@ -211,6 +225,40 @@ const AdminDashboard = () => {
         fetchData();
       } else {
         throw new Error('Failed to create page');
+      }
+    } catch (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const createDocument = async (e) => {
+    e.preventDefault();
+    try {
+      if (!newDocument.file) {
+        toast({ title: "Error", description: "Please select a file", variant: "destructive" });
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('title', newDocument.title);
+      formData.append('description', newDocument.description);
+      formData.append('document', newDocument.file);
+
+      const response = await fetch('/api/documents', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (response.ok) {
+        toast({ title: "Success", description: "Document uploaded successfully" });
+        setNewDocument({ title: '', description: '', file: null });
+        // Reset file input
+        const fileInput = document.getElementById('document-file') as HTMLInputElement;
+        if (fileInput) fileInput.value = '';
+        fetchData();
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to upload document');
       }
     } catch (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -404,6 +452,10 @@ const AdminDashboard = () => {
                 <TabsTrigger value="pages" className="flex items-center gap-2">
                   <FileText className="w-4 h-4" />
                   Pages
+                </TabsTrigger>
+                <TabsTrigger value="documents" className="flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Documents
                 </TabsTrigger>
                 <TabsTrigger value="marketplace" className="flex items-center gap-2">
                   <ShoppingCart className="w-4 h-4" />
@@ -666,6 +718,108 @@ const AdminDashboard = () => {
                                 variant="destructive"
                                 size="sm"
                                 onClick={() => deleteItem('pages', page.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="documents" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Plus className="w-5 h-5" />
+                      Upload New Document
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={createDocument} className="space-y-4">
+                      <div>
+                        <Label htmlFor="document-title">Document Title</Label>
+                        <Input
+                          id="document-title"
+                          value={newDocument.title}
+                          onChange={(e) => setNewDocument({...newDocument, title: e.target.value})}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="document-description">Description (Optional)</Label>
+                        <Textarea
+                          id="document-description"
+                          value={newDocument.description}
+                          onChange={(e) => setNewDocument({...newDocument, description: e.target.value})}
+                          rows={3}
+                          placeholder="Brief description of the document..."
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="document-file">Document File (PDF, DOC, DOCX)</Label>
+                        <Input
+                          id="document-file"
+                          type="file"
+                          accept=".pdf,.doc,.docx"
+                          onChange={(e) => setNewDocument({...newDocument, file: e.target.files[0]})}
+                          required
+                        />
+                        <p className="text-sm text-gray-500 mt-1">
+                          Maximum file size: 10MB. Supported formats: PDF, DOC, DOCX
+                        </p>
+                      </div>
+                      <Button type="submit">Upload Document</Button>
+                    </form>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Existing Documents</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {documents.length === 0 ? (
+                      <p className="text-gray-500">No documents uploaded yet.</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {documents.map((document) => (
+                          <div key={document.id} className="flex justify-between items-start p-4 border rounded">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h3 className="font-semibold">{document.title}</h3>
+                                <span className={`px-2 py-1 text-xs rounded ${
+                                  document.fileType === 'pdf' ? 'bg-red-100 text-red-800' :
+                                  document.fileType === 'doc' || document.fileType === 'docx' ? 'bg-blue-100 text-blue-800' :
+                                  'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {document.fileType.toUpperCase()}
+                                </span>
+                              </div>
+                              {document.description && (
+                                <p className="text-gray-600 mb-2">{document.description}</p>
+                              )}
+                              <div className="text-sm text-gray-500">
+                                <p>File: {document.fileName}</p>
+                                <p>Size: {(document.fileSize / 1024 / 1024).toFixed(2)} MB</p>
+                                <p>Uploaded: {new Date(document.createdAt).toLocaleDateString()}</p>
+                              </div>
+                            </div>
+                            <div className="flex gap-2 ml-4">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => window.open(`/api/documents/${document.id}/download`, '_blank')}
+                              >
+                                <FileText className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => deleteItem('documents', document.id)}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>

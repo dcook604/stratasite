@@ -132,6 +132,7 @@ const CalendarPage = () => {
 
 // Event Request Dialog Component
 const EventRequestDialog = ({ selectedDate, onSubmitted }) => {
+  const [requestedDate, setRequestedDate] = useState(selectedDate);
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -148,6 +149,11 @@ const EventRequestDialog = ({ selectedDate, onSubmitted }) => {
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const recaptchaRef = useRef<ReCAPTCHA>(null);
   const { toast } = useToast();
+
+  // Update requestedDate when selectedDate changes (e.g., when dialog opens)
+  useEffect(() => {
+    setRequestedDate(selectedDate);
+  }, [selectedDate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -167,7 +173,7 @@ const EventRequestDialog = ({ selectedDate, onSubmitted }) => {
     setSubmitting(true);
 
     const [hours, minutes] = formData.time.split(':');
-    const requestedDateTime = new Date(selectedDate);
+    const requestedDateTime = new Date(requestedDate);
     requestedDateTime.setHours(parseInt(hours), parseInt(minutes));
 
     try {
@@ -248,8 +254,17 @@ const EventRequestDialog = ({ selectedDate, onSubmitted }) => {
           </div>
           <hr />
           <div>
-            <Label>Requested Date</Label>
-            <Input value={selectedDate.toLocaleDateString()} disabled />
+            <Label htmlFor="requestedDate">Requested Date</Label>
+            <Input 
+              id="requestedDate"
+              type="date" 
+              value={requestedDate.toISOString().split('T')[0]} 
+              onChange={(e) => {
+                const newDate = new Date(e.target.value);
+                setRequestedDate(newDate);
+              }}
+              required
+            />
           </div>
           <div>
             <Label htmlFor="time">Requested Time</Label>

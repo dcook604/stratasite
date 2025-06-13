@@ -36,6 +36,7 @@ export const Navbar = () => {
     { name: 'Organics', path: '/organics' },
     { name: 'Fees', path: '/fees' },
     { name: 'Renovations', path: '/renovations' },
+    { name: 'Documents', path: '/documents' },
   ];
 
   const mainNavItems = [

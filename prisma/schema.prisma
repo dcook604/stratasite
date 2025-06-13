@@ -118,3 +118,18 @@ model EventRequest {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 }
+
+model Document {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  fileName    String   @map("file_name")
+  filePath    String   @map("file_path")
+  fileType    String   @map("file_type") // "pdf", "doc", "docx"
+  fileSize    Int      @map("file_size") // in bytes
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  @@map("documents")
+}

@@ -26,16 +26,33 @@ const storage = multer.memoryStorage(); // Use memory storage to process with sh
 
 const upload = multer({ 
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB file size limit
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB file size limit for documents
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|webp/;
-    const mimetype = allowedTypes.test(file.mimetype);
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    // Check if this is for image upload (marketplace) or document upload
+    const isImageUpload = req.path.includes('/image');
     
-    if (mimetype && extname) {
-      return cb(null, true);
+    if (isImageUpload) {
+      const allowedTypes = /jpeg|jpg|png|webp/;
+      const mimetype = allowedTypes.test(file.mimetype);
+      const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+      
+      if (mimetype && extname) {
+        return cb(null, true);
+      }
+      cb(new Error('Error: Image upload only supports JPEG, JPG, PNG, and WebP filetypes'));
+    } else {
+      // Document upload
+      const allowedMimeTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ];
+      
+      if (allowedMimeTypes.includes(file.mimetype)) {
+        return cb(null, true);
+      }
+      cb(new Error('Error: Document upload only supports PDF and Word document filetypes'));
     }
-    cb(new Error('Error: File upload only supports the following filetypes - ' + allowedTypes));
   }
 });
 
@@ -412,6 +429,160 @@ app.delete('/api/pages/:id', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting page:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Documents CRUD
+app.get('/api/documents', async (req, res) => {
+  try {
+    const documents = await prisma.document.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(documents);
+  } catch (error) {
+    logger.error('Error fetching documents', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/documents/:id/download', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const document = await prisma.document.findUnique({
+      where: { id, isActive: true }
+    });
+    
+    if (!document) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+    
+    const filePath = path.join(__dirname, document.filePath);
+    
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      logger.error('Document file not found on disk', { id, filePath });
+      return res.status(404).json({ error: 'Document file not found' });
+    }
+    
+    // Set appropriate headers for download
+    res.setHeader('Content-Disposition', `attachment; filename="${document.fileName}"`);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    
+    // Stream the file
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+    
+    logger.info('Document downloaded', { id, fileName: document.fileName });
+  } catch (error) {
+    logger.error('Error downloading document', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/documents', upload.single('document'), async (req, res) => {
+  try {
+    const { title, description } = req.body;
+    
+    if (!req.file) {
+      return res.status(400).json({ error: 'No document file provided' });
+    }
+    
+    // Validate file type
+    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!allowedTypes.includes(req.file.mimetype)) {
+      return res.status(400).json({ error: 'Only PDF and Word documents are allowed' });
+    }
+    
+    // Create documents directory if it doesn't exist
+    const documentsDir = path.join(__dirname, 'public', 'uploads', 'documents');
+    if (!fs.existsSync(documentsDir)) {
+      fs.mkdirSync(documentsDir, { recursive: true });
+    }
+    
+    // Generate unique filename
+    const fileExtension = path.extname(req.file.originalname);
+    const fileName = `document-${Date.now()}-${Math.round(Math.random() * 1E9)}${fileExtension}`;
+    const filePath = path.join(documentsDir, fileName);
+    
+    // Save file to disk
+    fs.writeFileSync(filePath, req.file.buffer);
+    
+    // Determine file type
+    let fileType = 'unknown';
+    if (req.file.mimetype === 'application/pdf') {
+      fileType = 'pdf';
+    } else if (req.file.mimetype === 'application/msword') {
+      fileType = 'doc';
+    } else if (req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      fileType = 'docx';
+    }
+    
+    // Save document info to database
+    const document = await prisma.document.create({
+      data: {
+        title,
+        description,
+        fileName: req.file.originalname,
+        filePath: `public/uploads/documents/${fileName}`,
+        fileType,
+        fileSize: req.file.size
+      }
+    });
+    
+    logger.info('Document uploaded', { id: document.id, title, fileName: req.file.originalname });
+    res.json(document);
+  } catch (error) {
+    logger.error('Error uploading document', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.put('/api/documents/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, description, isActive } = req.body;
+    
+    const document = await prisma.document.update({
+      where: { id },
+      data: { title, description, isActive }
+    });
+    
+    logger.info('Document updated', { id, title });
+    res.json(document);
+  } catch (error) {
+    logger.error('Error updating document', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.delete('/api/documents/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Get document info before deletion
+    const document = await prisma.document.findUnique({ where: { id } });
+    if (!document) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+    
+    // Soft delete in database
+    await prisma.document.update({
+      where: { id },
+      data: { isActive: false }
+    });
+    
+    // Optionally delete file from disk (commented out for safety)
+    // const filePath = path.join(__dirname, document.filePath);
+    // if (fs.existsSync(filePath)) {
+    //   fs.unlinkSync(filePath);
+    // }
+    
+    logger.info('Document deleted', { id, title: document.title });
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Error deleting document', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
