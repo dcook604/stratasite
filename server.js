@@ -77,22 +77,26 @@ const errorHandler = (err, req, res, next) => {
 app.use(cors());
 app.use(express.json());
 
-// Domain handling middleware - serve both www and non-www without redirects
+// Domain handling middleware - redirect non-www to www for consistency
 app.use((req, res, next) => {
   // Add security headers
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   
-  // Handle both domains without redirecting
   const host = req.get('host');
-  if (host && (host.includes('spectrum4.ca') || host.includes('localhost'))) {
-    // Set canonical URL header for SEO
-    if (host.startsWith('www.')) {
-      res.setHeader('Link', '<https://www.spectrum4.ca' + req.url + '>; rel="canonical"');
-    } else {
-      res.setHeader('Link', '<https://www.spectrum4.ca' + req.url + '>; rel="canonical"');
-    }
+  const protocol = req.get('x-forwarded-proto') || req.protocol || 'https';
+  
+  // Redirect non-www to www for spectrum4.ca (but not localhost)
+  if (host === 'spectrum4.ca') {
+    const redirectUrl = `https://www.spectrum4.ca${req.url}`;
+    logger.info(`Redirecting ${host}${req.url} to www version`);
+    return res.redirect(301, redirectUrl);
+  }
+  
+  // Set canonical URL header for SEO
+  if (host && host.includes('spectrum4.ca')) {
+    res.setHeader('Link', '<https://www.spectrum4.ca' + req.url + '>; rel="canonical"');
   }
   
   next();
