@@ -93,12 +93,3 @@ model MarketplaceReply {
   
   @@map("marketplace_replies")
 }
-
-model GalleryImage {
-  id          String   @id @default(cuid())
-  url         String
-  title       String?
-  description String?
-  order       Int?
-  createdAt   DateTime @default(now())
-}

@@ -7,7 +7,7 @@ import UpcomingEvents from '@/components/widgets/UpcomingEvents';
 import RecentAnnouncements from '@/components/widgets/RecentAnnouncements';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar, Image, Book, Mail, Edit, Save, X } from 'lucide-react';
+import { Calendar, Image, Book, Mail, Edit, Save, X, ShoppingCart } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -373,14 +373,14 @@ Use our platform to stay updated on events, announcements, and community activit
                 <Card className="bg-gradient-to-br from-green-50 to-green-100 border-none shadow-md">
                   <CardContent className="p-6 flex flex-col items-center text-center">
                     <div className="h-12 w-12 bg-green-500 rounded-full flex items-center justify-center mb-4">
-                      <Image className="h-6 w-6 text-white" />
+                      <ShoppingCart className="h-6 w-6 text-white" />
                     </div>
-                    <h3 className="font-semibold text-lg mb-2">Photo Gallery</h3>
+                    <h3 className="font-semibold text-lg mb-2">Strata Marketplace</h3>
                     <p className="text-gray-600 mb-4">
-                      Browse photos from community events and building improvements.
+                      Buy, sell, or trade items with others in the community.
                     </p>
                     <Button variant="ghost" asChild className="mt-auto">
-                      <Link to="/gallery">Browse Gallery</Link>
+                      <Link to="/marketplace">Visit Marketplace</Link>
                     </Button>
                   </CardContent>
                 </Card>
