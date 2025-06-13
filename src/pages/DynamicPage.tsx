@@ -1,9 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Navigate, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useParams, Navigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import PageHeader from '@/components/shared/PageHeader';
-import { logger } from '@/lib/logger';
+import { useAdminAuth } from '@/context/AdminAuthContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { Edit, Save, X } from 'lucide-react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 interface PageData {
   id: string;
@@ -15,64 +22,49 @@ interface PageData {
 }
 
 const DynamicPage = () => {
-  const params = useParams();
-  const location = useLocation();
+  const { slug } = useParams();
   const [page, setPage] = useState<PageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const { adminUser } = useAdminAuth();
+  const { toast } = useToast();
+  
+  // Admin editing state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({ slug: '', title: '', content: '' });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchPage = async () => {
-      // Extract slug from URL path using React Router location
-      const currentPath = location.pathname;
-      let slug = '';
+      if (!slug) return;
       
-      if (currentPath.startsWith('/information/')) {
-        // Legacy information routes - extract the page name
-        slug = currentPath.replace('/information/', '');
-      } else {
-        // Direct routes - remove leading slash
-        slug = currentPath.replace('/', '');
-      }
-
-      logger.pageView(currentPath, { slug, rawPath: currentPath });
-
-      if (!slug) {
-        logger.warn('No slug found for path', { currentPath });
-        setNotFound(true);
-        setLoading(false);
-        return;
-      }
-
-      // Validate slug format
-      if (slug.includes(':') || slug.includes('?') || slug.includes('#')) {
-        logger.warn('Invalid slug format detected', { slug, currentPath });
-        setNotFound(true);
-        setLoading(false);
-        return;
-      }
-
+      const startTime = performance.now();
       try {
-        const startTime = Date.now();
-        logger.apiRequest('GET', `/api/pages/${slug}`);
+        setLoading(true);
+        console.log(`[DynamicPage] Fetching page: ${slug}`);
         
         const response = await fetch(`/api/pages/${slug}`);
-        const duration = Date.now() - startTime;
-        
-        logger.apiResponse('GET', `/api/pages/${slug}`, response.status, duration);
+        const duration = Math.round(performance.now() - startTime);
+        console.log(`[DynamicPage] Response: ${response.status} (${duration}ms)`);
         
         if (response.ok) {
           const pageData = await response.json();
-          logger.info('Page loaded successfully', { slug, title: pageData.title });
+          console.log(`[DynamicPage] Page loaded:`, pageData.title);
           setPage(pageData);
+          setEditData({
+            slug: pageData.slug,
+            title: pageData.title,
+            content: pageData.content
+          });
+          setNotFound(false);
         } else if (response.status === 404) {
-          logger.warn('Page not found', { slug, path: currentPath });
+          console.warn(`[DynamicPage] Page not found: ${slug}`);
           setNotFound(true);
         } else {
-          throw new Error(`HTTP ${response.status}: Failed to fetch page`);
+          throw new Error(`HTTP ${response.status}`);
         }
       } catch (error) {
-        logger.apiError('GET', `/api/pages/${slug}`, error as Error);
+        console.error(`[DynamicPage] Error fetching page:`, error);
         setNotFound(true);
       } finally {
         setLoading(false);
@@ -80,7 +72,69 @@ const DynamicPage = () => {
     };
 
     fetchPage();
-  }, [location.pathname]);
+  }, [slug]);
+
+  const handleEditToggle = () => {
+    if (isEditing) {
+      // Reset edit data when canceling
+      setEditData({
+        slug: page.slug,
+        title: page.title,
+        content: page.content
+      });
+    }
+    setIsEditing(!isEditing);
+  };
+
+  const handleSave = async () => {
+    if (!page) return;
+    
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/pages/${page.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editData)
+      });
+      
+      if (response.ok) {
+        const updatedPage = await response.json();
+        setPage(updatedPage);
+        setIsEditing(false);
+        toast({ 
+          title: "Success", 
+          description: "Page updated successfully!" 
+        });
+      } else {
+        throw new Error('Failed to update page');
+      }
+    } catch (error) {
+      toast({ 
+        title: "Error", 
+        description: "Failed to update page. Please try again.", 
+        variant: "destructive" 
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const quillModules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'color': [] }, { 'background': [] }],
+      ['link', 'blockquote', 'code-block'],
+      ['clean']
+    ],
+  };
+
+  const quillFormats = [
+    'header', 'bold', 'italic', 'underline', 'strike',
+    'list', 'bullet', 'color', 'background',
+    'link', 'blockquote', 'code-block'
+  ];
 
   // Format content - handle both markdown and HTML content
   const formatContent = (content: string) => {
@@ -130,18 +184,106 @@ const DynamicPage = () => {
     <div className="page-container">
       <Navbar />
       <div className="page-content">
-        <PageHeader 
-          title={page.title}
-          description={`Last updated: ${new Date(page.updatedAt).toLocaleDateString()}`}
-        />
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div 
-            className="prose prose-lg max-w-none [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:mb-6 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mb-4 [&_h2]:mt-8 [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:mb-3 [&_h3]:mt-6 [&_p]:mb-4 [&_ul]:ml-6 [&_ol]:ml-6 [&_li]:mb-2 [&_table]:border-collapse [&_td]:border [&_td]:px-4 [&_td]:py-2 [&_th]:border [&_th]:px-4 [&_th]:py-2 [&_th]:bg-gray-50"
-            dangerouslySetInnerHTML={{ 
-              __html: formatContent(page.content)
-            }}
-          />
-        </div>
+        {isEditing ? (
+          <div className="max-w-4xl mx-auto px-4 py-8">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-yellow-800">Editing Mode</h2>
+                  <p className="text-yellow-700">You are currently editing this page.</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    {saving ? 'Saving...' : 'Save'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleEditToggle}
+                    disabled={saving}
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-6">
+              <div>
+                <Label htmlFor="edit-title">Page Title</Label>
+                <Input
+                  id="edit-title"
+                  value={editData.title}
+                  onChange={(e) => setEditData({...editData, title: e.target.value})}
+                  className="text-2xl font-bold"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-slug">Page URL Slug</Label>
+                <Input
+                  id="edit-slug"
+                  value={editData.slug}
+                  onChange={(e) => setEditData({...editData, slug: e.target.value})}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-content">Page Content</Label>
+                <div className="border rounded-md">
+                  <ReactQuill
+                    theme="snow"
+                    value={editData.content}
+                    onChange={(content) => setEditData({...editData, content})}
+                    modules={quillModules}
+                    formats={quillFormats}
+                    style={{ minHeight: '400px' }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            <PageHeader 
+              title={page.title}
+              description={`Last updated: ${new Date(page.updatedAt).toLocaleDateString()}`}
+            />
+            {adminUser && (
+              <div className="bg-blue-50 border-b border-blue-200">
+                <div className="max-w-4xl mx-auto px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-blue-700 text-sm">
+                      🔧 Admin Mode: You can edit this page
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleEditToggle}
+                      className="bg-blue-600 text-white hover:bg-blue-700"
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Page
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div className="max-w-4xl mx-auto px-4 py-8">
+              <div 
+                className="prose prose-lg max-w-none [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:mb-6 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mb-4 [&_h2]:mt-8 [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:mb-3 [&_h3]:mt-6 [&_p]:mb-4 [&_ul]:ml-6 [&_ol]:ml-6 [&_li]:mb-2 [&_table]:border-collapse [&_td]:border [&_td]:px-4 [&_td]:py-2 [&_th]:border [&_th]:px-4 [&_th]:py-2 [&_th]:bg-gray-50"
+                dangerouslySetInnerHTML={{ 
+                  __html: formatContent(page.content)
+                }}
+              />
+            </div>
+          </>
+        )}
       </div>
       <Footer />
     </div>

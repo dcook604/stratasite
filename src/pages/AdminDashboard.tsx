@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '@/context/AdminAuthContext';
@@ -49,6 +48,8 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
+      console.log('AdminDashboard: Starting data fetch...');
+      
       const [announcementsRes, eventsRes, pagesRes, adminUsersRes, marketplaceRes] = await Promise.all([
         fetch('/api/announcements'),
         fetch('/api/events'),
@@ -57,12 +58,57 @@ const AdminDashboard = () => {
         fetch('/api/marketplace')
       ]);
 
-      if (announcementsRes.ok) setAnnouncements(await announcementsRes.json());
-      if (eventsRes.ok) setEvents(await eventsRes.json());
-      if (pagesRes.ok) setPages(await pagesRes.json());
-      if (adminUsersRes.ok) setAdminUsers(await adminUsersRes.json());
-      if (marketplaceRes.ok) setMarketplacePosts(await marketplaceRes.json());
+      console.log('AdminDashboard: API responses:', {
+        announcements: announcementsRes.status,
+        events: eventsRes.status,
+        pages: pagesRes.status,
+        adminUsers: adminUsersRes.status,
+        marketplace: marketplaceRes.status
+      });
+
+      if (announcementsRes.ok) {
+        const announcementsData = await announcementsRes.json();
+        console.log('AdminDashboard: Announcements loaded:', announcementsData.length);
+        setAnnouncements(announcementsData);
+      } else {
+        console.error('AdminDashboard: Failed to load announcements:', announcementsRes.status);
+      }
+      
+      if (eventsRes.ok) {
+        const eventsData = await eventsRes.json();
+        console.log('AdminDashboard: Events loaded:', eventsData.length);
+        setEvents(eventsData);
+      } else {
+        console.error('AdminDashboard: Failed to load events:', eventsRes.status);
+      }
+      
+      if (pagesRes.ok) {
+        const pagesData = await pagesRes.json();
+        console.log('AdminDashboard: Pages loaded:', pagesData.length, pagesData);
+        setPages(pagesData);
+      } else {
+        console.error('AdminDashboard: Failed to load pages:', pagesRes.status);
+        const errorText = await pagesRes.text();
+        console.error('AdminDashboard: Pages error details:', errorText);
+      }
+      
+      if (adminUsersRes.ok) {
+        const adminUsersData = await adminUsersRes.json();
+        console.log('AdminDashboard: Admin users loaded:', adminUsersData.length);
+        setAdminUsers(adminUsersData);
+      } else {
+        console.error('AdminDashboard: Failed to load admin users:', adminUsersRes.status);
+      }
+      
+      if (marketplaceRes.ok) {
+        const marketplaceData = await marketplaceRes.json();
+        console.log('AdminDashboard: Marketplace posts loaded:', marketplaceData.length);
+        setMarketplacePosts(marketplaceData);
+      } else {
+        console.error('AdminDashboard: Failed to load marketplace posts:', marketplaceRes.status);
+      }
     } catch (error) {
+      console.error('AdminDashboard: Error fetching data:', error);
       toast({ title: "Error", description: "Failed to fetch data", variant: "destructive" });
     } finally {
       setLoading(false);
