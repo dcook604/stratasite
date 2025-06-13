@@ -1,1 +1,440 @@
- 
+# Spectrum 4 Strata Council Website - Cursor Rules
+
+## 📋 Project Overview
+
+**Project Name**: Spectrum 4 Strata Council Website  
+**Domain**: spectrum4.ca (production), www.spectrum4.ca  
+**Type**: Full-stack React web application for strata council management  
+**Deployment**: Coolify with automatic Git deployment  
+
+### Purpose
+A comprehensive strata council website providing:
+- Resident information and resources
+- Marketplace for buying/selling items
+- Event and announcement management
+- Administrative dashboard
+- Document management and bylaws
+- Contact information and gallery
+
+## 🏗️ Architecture & Tech Stack
+
+### Frontend
+- **Framework**: React 18.3.1 with TypeScript
+- **Build Tool**: Vite 5.4.1
+- **Styling**: Tailwind CSS with shadcn/ui components
+- **State Management**: React Context (AdminAuthContext)
+- **Routing**: React Router DOM 6.26.2
+- **Forms**: React Hook Form with Zod validation
+- **Rich Text**: ReactQuill for WYSIWYG editing
+- **UI Components**: Radix UI primitives via shadcn/ui
+
+### Backend
+- **Runtime**: Node.js with Express 4.18.2
+- **Database**: PostgreSQL with Prisma ORM 6.9.0
+- **Authentication**: bcryptjs for password hashing
+- **File Upload**: Multer with Sharp for image processing
+- **CAPTCHA**: Google reCAPTCHA v2
+- **CORS**: Enabled for cross-origin requests
+
+### Key Dependencies
+```json
+{
+  "prisma": "^6.9.0",
+  "react": "^18.3.1",
+  "react-router-dom": "^6.26.2",
+  "react-quill": "^2.0.0",
+  "react-google-recaptcha": "^3.1.0",
+  "express": "^4.18.2",
+  "multer": "^2.0.1",
+  "sharp": "^0.34.2",
+  "bcryptjs": "^3.0.2",
+  "zod": "^3.23.8"
+}
+```
+
+## 📁 Project Structure
+
+```
+strata-compass-web/
+├── src/
+│   ├── components/
+│   │   ├── ui/               # shadcn/ui components
+│   │   ├── layout/           # Navbar, Footer
+│   │   ├── hoc/              # Higher-order components (RequireAdminAuth)
+│   │   ├── widgets/          # Reusable widgets
+│   │   ├── shared/           # Shared components
+│   │   └── calendar/         # Calendar components
+│   ├── pages/
+│   │   ├── information/      # Information pages (Marketplace, etc.)
+│   │   ├── AdminDashboard.tsx
+│   │   ├── Index.tsx         # Homepage
+│   │   └── DynamicPage.tsx   # Content-editable pages
+│   ├── context/
+│   │   └── AdminAuthContext.tsx
+│   ├── utils/
+│   │   ├── imageUpload.ts    # Image handling utilities
+│   │   └── databaseCleanup.ts # Admin cleanup utilities
+│   └── hooks/
+│       └── use-toast.ts
+├── server/
+│   └── api/                  # API route handlers
+├── prisma/
+│   ├── schema.prisma         # Database schema
+│   └── migrations/           # Database migrations
+├── scripts/
+│   └── seed.js               # Database seeding
+├── public/                   # Static assets
+├── server.js                 # Main server file
+└── dist/                     # Production build output
+```
+
+## 🗃️ Database Schema
+
+### Key Models
+```prisma
+model Page {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  content     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model MarketplacePost {
+  id           String             @id @default(cuid())
+  title        String
+  description  String
+  price        Float
+  authorName   String
+  authorEmail  String
+  authorPhone  String?
+  images       String[]
+  isSold       Boolean            @default(false)
+  createdAt    DateTime           @default(now())
+  replies      MarketplaceReply[]
+}
+
+model MarketplaceReply {
+  id          String          @id @default(cuid())
+  content     String
+  authorName  String
+  authorEmail String
+  authorPhone String?
+  images      String[]
+  postId      String
+  post        MarketplacePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt   DateTime        @default(now())
+}
+
+model AdminUser {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  startDate   DateTime
+  endDate     DateTime?
+  location    String?
+  createdAt   DateTime  @default(now())
+}
+```
+
+## 🎨 UI/UX Patterns
+
+### Design System
+- **Colors**: Custom Tailwind theme with primary/secondary colors
+- **Typography**: @tailwindcss/typography for rich content
+- **Components**: Consistent use of shadcn/ui for forms, dialogs, cards
+- **Responsive**: Mobile-first design with breakpoint considerations
+- **Loading States**: Consistent spinner and skeleton patterns
+
+### Navigation Structure
+```
+Home
+Information ↓
+  ├── Recycling
+  ├── Organics  
+  ├── Fees
+  └── Renovations
+Marketplace
+Bylaws
+Contact
+Gallery
+Admin ↓
+  ├── Login
+  └── Dashboard
+```
+
+## 🔧 Development Patterns
+
+### Component Patterns
+```typescript
+// Functional components with TypeScript
+interface ComponentProps {
+  title: string;
+  children?: React.ReactNode;
+}
+
+const Component: React.FC<ComponentProps> = ({ title, children }) => {
+  return (
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold">{title}</h1>
+      {children}
+    </div>
+  );
+};
+```
+
+### State Management
+- Use React Context for global state (authentication)
+- Local state with useState for component-specific data
+- React Query for server state management
+
+### Form Handling
+```typescript
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const schema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  content: z.string().min(1, 'Content is required'),
+});
+
+const { register, handleSubmit, formState: { errors } } = useForm({
+  resolver: zodResolver(schema)
+});
+```
+
+### API Patterns
+```typescript
+// Frontend API calls
+const response = await fetch('/api/endpoint', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(data)
+});
+
+// Backend Express routes
+app.post('/api/endpoint', async (req, res) => {
+  try {
+    const result = await prisma.model.create({ data: req.body });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+```
+
+## 🚀 Development Workflow
+
+### Setup Commands
+```bash
+npm install                 # Install dependencies
+npm run db:generate        # Generate Prisma client
+npm run db:push            # Push schema to database
+npm run db:seed            # Seed database with initial data
+npm run dev                # Start development server
+```
+
+### Build & Deploy
+```bash
+npm run build              # Production build
+npm run start              # Start production server
+```
+
+### Scripts Available
+- `start-dev.sh` - Starts development environment safely
+- `deploy.sh` - Production deployment script
+- `view-logs.sh` - View application logs
+- `restart.sh` - Restart production server
+
+## 🔒 Security Patterns
+
+### Authentication
+- Admin authentication via JWT-like session management
+- Password hashing with bcryptjs
+- Protected routes with RequireAdminAuth HOC
+
+### Input Validation
+- Server-side validation with Zod schemas
+- Client-side form validation with React Hook Form
+- reCAPTCHA integration for spam prevention
+
+### File Upload Security
+- Image validation (JPEG, PNG, WebP only)
+- File size limits (5MB max)
+- Automatic image compression with Sharp
+- Safe file storage in public/uploads directory
+
+## 🎯 Key Features
+
+### Admin Dashboard
+- Content management (pages, announcements, events)
+- User management (admin users)
+- Marketplace moderation
+- Database cleanup tools with dry-run mode
+- Real-time statistics and monitoring
+
+### WYSIWYG Editing
+- Inline page editing for admins
+- ReactQuill integration with rich text features
+- Auto-save functionality
+- Admin mode indicators
+
+### Marketplace
+- Item posting with image uploads
+- Reply system with threaded conversations
+- Sold status tracking
+- Search and filter capabilities
+- Admin moderation tools
+
+### Image Management
+- Multi-image uploads (3 per post, 2 per reply)
+- Automatic compression and resizing
+- WebP/JPEG/PNG support
+- Orphaned image cleanup
+
+## 🐛 Common Issues & Solutions
+
+### Build Issues
+- **Import errors**: Check file paths and export/import patterns
+- **Missing components**: Verify component exists in correct directory
+- **TypeScript errors**: Ensure proper typing and interface definitions
+
+### Production Issues
+- **Domain redirects**: Ensure both www and non-www domains are handled
+- **Asset loading**: Check vite.config.ts for proper asset handling
+- **Database connections**: Verify DATABASE_URL environment variable
+
+### Performance
+- **Large bundle size**: Consider code splitting with dynamic imports
+- **Image optimization**: Use Sharp for compression and WebP format
+- **Caching**: Implement proper cache headers for static assets
+
+## 📝 File Naming Conventions
+
+- **Components**: PascalCase (`AdminDashboard.tsx`)
+- **Pages**: PascalCase (`DynamicPage.tsx`)
+- **Utilities**: camelCase (`imageUpload.ts`)
+- **Constants**: UPPER_SNAKE_CASE
+- **Directories**: kebab-case or camelCase
+
+## 🔄 State Management Patterns
+
+### Context Usage
+```typescript
+// AdminAuthContext pattern
+const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
+
+export const useAdminAuth = () => {
+  const context = useContext(AdminAuthContext);
+  if (context === undefined) {
+    throw new Error('useAdminAuth must be used within AdminAuthProvider');
+  }
+  return context;
+};
+```
+
+### Loading States
+```typescript
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState<string | null>(null);
+
+const fetchData = async () => {
+  setLoading(true);
+  setError(null);
+  try {
+    // API call
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+```
+
+## 📊 Deployment Configuration
+
+### Environment Variables
+```bash
+DATABASE_URL=postgresql://...
+PORT=3000
+NODE_ENV=production
+RECAPTCHA_SECRET_KEY=...
+```
+
+### Coolify Deployment
+- Automatic deployment on git push to main branch
+- Docker-based containerization
+- Environment variable management
+- SSL certificate automation
+
+### Production URLs
+- Primary: https://spectrum4.ca
+- Alternative: https://www.spectrum4.ca
+- Both handle redirects properly without performance impact
+
+## 🧪 Testing Patterns
+
+### Manual Testing Checklist
+- [ ] Admin login/logout functionality
+- [ ] Page creation and editing
+- [ ] Marketplace post creation
+- [ ] Image uploads work correctly
+- [ ] reCAPTCHA verification
+- [ ] Responsive design on mobile
+- [ ] Database cleanup functionality
+
+### Error Handling
+- Consistent error boundaries
+- User-friendly error messages
+- Console logging for debugging
+- Toast notifications for user feedback
+
+## 📚 Documentation Files
+
+Keep these files updated:
+- `README.md` - Basic project information
+- `.cursorrules` - This comprehensive guide
+- `PRODUCTION_FIX_SUMMARY.md` - Production issue tracking
+- `DEPLOYMENT.md` - Deployment procedures
+- `DOMAIN_SETUP.md` - Domain configuration details
+
+## 🎯 Future Enhancements
+
+### Planned Features
+- Email notifications for marketplace replies
+- Advanced search and filtering
+- User registration system for residents
+- Document upload and management
+- Calendar integration for events
+- Mobile app development
+
+### Technical Improvements
+- Code splitting for better performance
+- PWA capabilities
+- Advanced caching strategies
+- Database query optimization
+- Automated testing suite
+
+---
+
+**Last Updated**: December 2024  
+**Version**: 2.0  
+**Maintainer**: Development Team  
+
+This document should be updated whenever significant changes are made to the project structure, patterns, or technologies used. 
