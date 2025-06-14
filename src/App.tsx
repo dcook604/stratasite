@@ -10,6 +10,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import DynamicPage from "./pages/DynamicPage";
+import Bylaws from "./pages/Bylaws";
 import Marketplace from "./pages/information/Marketplace";
 import Documents from "./pages/information/Documents";
 
@@ -28,8 +29,9 @@ const App = () => (
             <Route path="/gallery" element={<DynamicPage />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            {/* Interactive Bylaws */}
+            <Route path="/bylaws" element={<Bylaws />} />
             {/* Dynamic pages - these will load from database */}
-            <Route path="/bylaws" element={<DynamicPage />} />
             <Route path="/contact" element={<DynamicPage />} />
             <Route path="/fees" element={<DynamicPage />} />
             <Route path="/recycling" element={<DynamicPage />} />
