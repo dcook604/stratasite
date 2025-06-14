@@ -146,6 +146,8 @@ app.use(requestLogger);
 
 // Serve uploaded files statically from the 'public' directory
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+// Serve persistent uploaded files from data directory
+app.use('/data/uploads', express.static(path.join(__dirname, 'data', 'uploads')));
 
 logger.info('Server starting...', {
   port: PORT,
@@ -495,8 +497,8 @@ app.post('/api/documents', upload.single('document'), async (req, res) => {
       return res.status(400).json({ error: 'Only PDF and Word documents are allowed' });
     }
     
-    // Create documents directory if it doesn't exist
-    const documentsDir = path.join(__dirname, 'public', 'uploads', 'documents');
+    // Create documents directory if it doesn't exist (in persistent data directory)
+    const documentsDir = path.join(__dirname, 'data', 'uploads', 'documents');
     if (!fs.existsSync(documentsDir)) {
       fs.mkdirSync(documentsDir, { recursive: true });
     }
@@ -525,7 +527,7 @@ app.post('/api/documents', upload.single('document'), async (req, res) => {
         title,
         description,
         fileName: req.file.originalname,
-        filePath: `public/uploads/documents/${fileName}`,
+        filePath: `data/uploads/documents/${fileName}`,
         fileType,
         fileSize: req.file.size
       }

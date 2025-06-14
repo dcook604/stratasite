@@ -32,8 +32,8 @@ COPY --from=builder /app/scripts ./scripts/
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/server.js ./
 
-# Create data directory for SQLite
-RUN mkdir -p /app/data
+# Create data directory for SQLite and persistent uploads
+RUN mkdir -p /app/data/uploads/documents /app/data/uploads/marketplace /app/public/uploads/marketplace
 
 # Set environment variables
 ENV NODE_ENV=production
