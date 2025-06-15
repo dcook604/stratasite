@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import * as pdfjsLib from 'pdfjs-dist';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import PageHeader from '@/components/shared/PageHeader';
@@ -12,9 +11,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Book, Search, FileText, ChevronRight, Home, Users, Car, Shield, Trash2, Building, Gavel, Download, AlertCircle } from 'lucide-react';
-
-// Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+import { configurePDFJS, pdfjsLib } from '@/utils/pdfConfig';
 
 interface BylawSection {
   id: string;
@@ -61,6 +58,9 @@ const Bylaws = () => {
     try {
       setLoading(true);
       setError(null);
+
+      // Configure PDF.js
+      configurePDFJS();
 
       // Load the PDF document
       const loadingTask = pdfjsLib.getDocument('/documents/bylaws_2025.pdf');

@@ -162,6 +162,10 @@ app.use((req, res, next) => {
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
 // Serve persistent uploaded files from data directory
 app.use('/data/uploads', express.static(path.join(__dirname, 'data', 'uploads')));
+// Serve documents and other public files
+app.use('/documents', express.static(path.join(__dirname, 'public', 'documents')));
+app.use('/pdf.worker.mjs', express.static(path.join(__dirname, 'public', 'pdf.worker.mjs')));
+app.use('/pdf.worker.min.mjs', express.static(path.join(__dirname, 'public', 'pdf.worker.min.mjs')));
 
 logger.info('Server starting...', {
   port: PORT,
