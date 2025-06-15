@@ -68,12 +68,41 @@ const Bylaws = () => {
       
       let fullText = '';
       
-      // Extract text from all pages
+      // Extract text from all pages, preserving line breaks
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         const page = await pdf.getPage(pageNum);
         const textContent = await page.getTextContent();
-        const pageText = textContent.items.map((item: any) => item.str).join(' ');
-        fullText += pageText + '\n';
+        
+        let lastY = -1;
+        let pageText = '';
+        
+        // Sort items by vertical position to ensure correct order
+        const items = [...textContent.items].sort((a: any, b: any) => {
+          const aY = a.transform[5];
+          const bY = b.transform[5];
+          const aX = a.transform[4];
+          const bX = b.transform[4];
+          
+          if (aY > bY) return -1; // Higher y => higher on page
+          if (aY < bY) return 1;
+          if (aX < bX) return -1; // Lower x => earlier on line
+          if (aX > bX) return 1;
+          return 0;
+        });
+
+        for (const item of items) {
+            const y = item.transform[5];
+
+            // Add a newline if the Y position has changed significantly
+            if (lastY !== -1 && Math.abs(y - lastY) > 5) {
+                pageText += '\n';
+            }
+            
+            pageText += item.str + ' ';
+            lastY = y;
+        }
+
+        fullText += pageText + '\n\n'; // Add space between pages
       }
       
       setPdfText(fullText);
