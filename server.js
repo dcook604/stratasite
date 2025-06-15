@@ -103,26 +103,24 @@ const logger = {
 };
 
 // Request logging middleware
-const requestLogger = (req, res, next) => {
-  const start = Date.now();
-  const timestamp = new Date().toISOString();
+// const requestLogger = (req, res, next) => {
+//   const start = Date.now();
+//   const timestamp = new Date().toISOString();
   
-  // Log incoming request
-  logger.info(`${req.method} ${req.url}`, {
-    ip: req.ip || req.connection.remoteAddress,
-    userAgent: req.get('User-Agent'),
-    body: req.method === 'POST' || req.method === 'PUT' ? req.body : undefined
-  });
+//   logger.info(`${req.method} ${req.url}`, {
+//     ip: req.ip || req.connection.remoteAddress,
+//     userAgent: req.get('User-Agent'),
+//     body: req.method === 'POST' || req.method === 'PUT' ? req.body : undefined
+//   });
 
-  // Log response when finished
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-    const logLevel = res.statusCode >= 400 ? 'error' : 'info';
-    logger[logLevel](`${req.method} ${req.url} - ${res.statusCode} - ${duration}ms`);
-  });
+//   res.on('finish', () => {
+//     const duration = Date.now() - start;
+//     const logLevel = res.statusCode >= 400 ? 'error' : 'info';
+//     logger[logLevel](`${req.method} ${req.url} - ${res.statusCode} - ${duration}ms`);
+//   });
 
-  next();
-};
+//   next();
+// };
 
 // Error handling middleware
 const errorHandler = (err, req, res, next) => {
@@ -144,7 +142,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 // Move request logger to be the first middleware to ensure all requests are logged
-app.use(requestLogger);
+// app.use(requestLogger);
 
 // Middleware to generate authorId if it doesn't exist
 app.use((req, res, next) => {
