@@ -199,15 +199,35 @@ const EventRequestDialog = ({ selectedDate, onSubmitted }) => {
     }
   };
 
+  const handleDialogClose = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
+      // Reset form and reCAPTCHA when dialog closes
+      setFormData({
+        firstName: '',
+        lastName: '',
+        unitNumber: '',
+        email: '',
+        phone: '',
+        isOwner: 'true',
+        eventTitle: 'Move Event',
+        eventDescription: '',
+        time: '09:00',
+      });
+      setRecaptchaToken(null);
+      recaptchaRef.current?.reset();
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleDialogClose}>
       <DialogTrigger asChild>
         <Button className="w-full">
           <PlusCircle className="mr-2 h-4 w-4" />
           Request New Event
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] overflow-y-auto" style={{ zIndex: 100 }}>
         <DialogHeader>
           <DialogTitle>Request a New Event</DialogTitle>
           <DialogDescription>
@@ -278,7 +298,18 @@ const EventRequestDialog = ({ selectedDate, onSubmitted }) => {
             <Label htmlFor="eventDescription">Event Description (optional)</Label>
             <Textarea id="eventDescription" name="eventDescription" value={formData.eventDescription} onChange={handleInputChange} placeholder="e.g., Details about your move, elevator booking requirements." />
           </div>
-          <ReCAPTCHA ref={recaptchaRef} sitekey={RECAPTCHA_CONFIG.siteKey} onChange={setRecaptchaToken} />
+          <div className="recaptcha-container">
+            <ReCAPTCHA 
+              ref={recaptchaRef} 
+              sitekey={RECAPTCHA_CONFIG.siteKey} 
+              onChange={setRecaptchaToken}
+              onExpired={() => setRecaptchaToken(null)}
+              onErrored={() => {
+                console.error('reCAPTCHA error occurred');
+                toast({ title: 'Error', description: 'reCAPTCHA failed to load. Please refresh the page.', variant: 'destructive' });
+              }}
+            />
+          </div>
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Submitting...' : 'Submit Request'}

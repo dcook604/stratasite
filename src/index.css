@@ -157,3 +157,24 @@
 .homepage-content li {
   @apply ml-4 text-gray-600;
 }
+
+/* reCAPTCHA styling for dialog compatibility */
+.recaptcha-container {
+  position: relative;
+  z-index: 1000;
+}
+
+.recaptcha-container iframe {
+  z-index: 1001 !important;
+}
+
+/* Ensure reCAPTCHA challenge popup appears above dialog */
+div[style*="z-index: 2000000000"] {
+  z-index: 2000000001 !important;
+}
+
+/* reCAPTCHA challenge container */
+.rc-anchor-normal {
+  position: relative !important;
+  z-index: 1000 !important;
+}
