@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import * as pdfjsLib from 'pdfjs-dist';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import PageHeader from '@/components/shared/PageHeader';
@@ -10,9 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Book, Search, FileText, ChevronRight, Home, Users, Car, Shield, Trash2, Building, Gavel } from 'lucide-react';
-import { XMLParser } from 'fast-xml-parser';
-import xmlContent from '@/data/bylaws.xml?raw';
+import { Book, Search, FileText, ChevronRight, Home, Users, Car, Shield, Trash2, Building, Gavel, Download, AlertCircle } from 'lucide-react';
+
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface BylawSection {
   id: string;
@@ -20,6 +22,7 @@ interface BylawSection {
   content: string;
   subsections: BylawSubsection[];
   part: string;
+  partNumber: number;
   icon: React.ReactNode;
 }
 
@@ -33,146 +36,160 @@ interface BylawSubsection {
 const Bylaws = () => {
   const [bylaws, setBylaws] = useState<BylawSection[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSection, setSelectedSection] = useState<BylawSection | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
-
-  // Parse XML content and extract bylaw sections
-  const parseXMLContent = (xmlContent: string) => {
-    const parser = new XMLParser({
-      ignoreAttributes: false,
-      textNodeName: '#text',
-      attributeNamePrefix: '@_',
-      parseAttributeValue: true,
-      trimValues: true,
-      parseTrueNumberOnly: false,
-      arrayMode: false
-    });
-
-    try {
-      const result = parser.parse(xmlContent);
-      const sections: BylawSection[] = [];
-      
-      // Extract text content from the parsed XML
-      const extractTextContent = (node: any): string => {
-        if (typeof node === 'string') return node;
-        if (typeof node === 'number') return node.toString();
-        if (node && typeof node === 'object') {
-          if (node['#text']) return node['#text'];
-          if (Array.isArray(node)) {
-            return node.map(extractTextContent).join(' ');
-          }
-          return Object.values(node).map(extractTextContent).join(' ');
-        }
-        return '';
-      };
-
-      // Parse the office:body content
-      const body = result['office:document-content']?.['office:body']?.['office:text'];
-      if (body && body['text:p']) {
-        const paragraphs = Array.isArray(body['text:p']) ? body['text:p'] : [body['text:p']];
-        
-        let currentSection: BylawSection | null = null;
-        let currentSubsection: BylawSubsection | null = null;
-        
-        paragraphs.forEach((p: any, index: number) => {
-          const text = extractTextContent(p).trim();
-          
-          if (!text) return;
-          
-          // Detect section headers (PART X)
-          if (text.match(/^PART\s+\d+/i)) {
-            if (currentSection) {
-              sections.push(currentSection);
-            }
-            
-            const partMatch = text.match(/^PART\s+(\d+)\s*-\s*(.+)/i);
-            if (partMatch) {
-              currentSection = {
-                id: `part-${partMatch[1]}`,
-                title: partMatch[2].trim(),
-                content: '',
-                subsections: [],
-                part: `Part ${partMatch[1]}`,
-                icon: getIconForSection(partMatch[2])
-              };
-              currentSubsection = null;
-            }
-          }
-          // Detect section headers (Section X)
-          else if (text.match(/^Section\s+\d+/i)) {
-            const sectionMatch = text.match(/^Section\s+(\d+)\s*-\s*(.+)/i);
-            if (sectionMatch && currentSection) {
-              if (currentSubsection) {
-                currentSection.subsections.push(currentSubsection);
-              }
-              
-              currentSubsection = {
-                id: `section-${sectionMatch[1]}`,
-                title: sectionMatch[2].trim(),
-                content: '',
-                items: []
-              };
-            }
-          }
-          // Regular content
-          else if (text.length > 10) {
-            if (currentSubsection) {
-              if (text.match(/^\d+\.\d+/)) {
-                currentSubsection.items.push(text);
-              } else {
-                currentSubsection.content += (currentSubsection.content ? ' ' : '') + text;
-              }
-            } else if (currentSection) {
-              currentSection.content += (currentSection.content ? ' ' : '') + text;
-            }
-          }
-        });
-        
-        // Add the last section
-        if (currentSection) {
-          if (currentSubsection) {
-            currentSection.subsections.push(currentSubsection);
-          }
-          sections.push(currentSection);
-        }
-      }
-      
-      return sections;
-    } catch (error) {
-      console.error('Error parsing XML:', error);
-      return [];
-    }
-  };
+  const [pdfText, setPdfText] = useState<string>('');
 
   const getIconForSection = (title: string): React.ReactNode => {
     const lowerTitle = title.toLowerCase();
-    if (lowerTitle.includes('owner') || lowerTitle.includes('tenant') || lowerTitle.includes('duties')) {
+    if (lowerTitle.includes('interpretation') || lowerTitle.includes('effect')) {
+      return <FileText className="h-5 w-5" />;
+    } else if (lowerTitle.includes('owner') || lowerTitle.includes('tenant') || lowerTitle.includes('duties')) {
       return <Users className="h-5 w-5" />;
-    } else if (lowerTitle.includes('parking')) {
-      return <Car className="h-5 w-5" />;
+    } else if (lowerTitle.includes('powers') || lowerTitle.includes('strata corporation')) {
+      return <Building className="h-5 w-5" />;
     } else if (lowerTitle.includes('council')) {
       return <Gavel className="h-5 w-5" />;
-    } else if (lowerTitle.includes('security')) {
-      return <Shield className="h-5 w-5" />;
-    } else if (lowerTitle.includes('garbage') || lowerTitle.includes('recycling')) {
-      return <Trash2 className="h-5 w-5" />;
-    } else if (lowerTitle.includes('appearance') || lowerTitle.includes('strata lot')) {
-      return <Building className="h-5 w-5" />;
     } else {
       return <FileText className="h-5 w-5" />;
     }
   };
 
-  useEffect(() => {
+  const extractTextFromPDF = async () => {
     try {
-      const parsedSections = parseXMLContent(xmlContent);
+      setLoading(true);
+      setError(null);
+
+      // Load the PDF document
+      const loadingTask = pdfjsLib.getDocument('/documents/bylaws_2025.pdf');
+      const pdf = await loadingTask.promise;
+      
+      let fullText = '';
+      
+      // Extract text from all pages
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map((item: any) => item.str).join(' ');
+        fullText += pageText + '\n';
+      }
+      
+      setPdfText(fullText);
+      
+      // Parse the text into structured sections
+      const parsedSections = parseTextIntoSections(fullText);
       setBylaws(parsedSections);
-    } catch (error) {
-      console.error('Error processing bylaws:', error);
+      
+    } catch (err) {
+      console.error('Error loading PDF:', err);
+      setError('Failed to load the bylaws PDF. Please try again later.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const parseTextIntoSections = (text: string): BylawSection[] => {
+    const sections: BylawSection[] = [];
+    const lines = text.split('\n').filter(line => line.trim().length > 0);
+    
+    let currentSection: BylawSection | null = null;
+    let currentSubsection: BylawSubsection | null = null;
+    let currentContent = '';
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      // Skip empty lines
+      if (!line) continue;
+      
+      // Detect PART headers (e.g., "PART 1 - INTERPRETATION AND EFFECT")
+      const partMatch = line.match(/^PART\s+(\d+)\s*-\s*(.+)$/i);
+      if (partMatch) {
+        // Save previous section
+        if (currentSection) {
+          if (currentSubsection) {
+            currentSection.subsections.push(currentSubsection);
+          }
+          if (currentContent.trim()) {
+            currentSection.content = currentContent.trim();
+          }
+          sections.push(currentSection);
+        }
+        
+        // Create new section
+        const partNumber = parseInt(partMatch[1]);
+        const partTitle = partMatch[2].trim();
+        
+        currentSection = {
+          id: `part-${partNumber}`,
+          title: partTitle,
+          content: '',
+          subsections: [],
+          part: `Part ${partNumber}`,
+          partNumber: partNumber,
+          icon: getIconForSection(partTitle)
+        };
+        currentSubsection = null;
+        currentContent = '';
+        continue;
+      }
+      
+      // Detect Section headers (e.g., "Section 1 - Force and Effect")
+      const sectionMatch = line.match(/^Section\s+(\d+)\s*-\s*(.+)$/i);
+      if (sectionMatch && currentSection) {
+        // Save previous subsection
+        if (currentSubsection) {
+          if (currentContent.trim()) {
+            currentSubsection.content = currentContent.trim();
+          }
+          currentSection.subsections.push(currentSubsection);
+        }
+        
+        // Create new subsection
+        const sectionNumber = parseInt(sectionMatch[1]);
+        const sectionTitle = sectionMatch[2].trim();
+        
+        currentSubsection = {
+          id: `section-${sectionNumber}`,
+          title: sectionTitle,
+          content: '',
+          items: []
+        };
+        currentContent = '';
+        continue;
+      }
+      
+      // Regular content
+      if (currentSubsection || currentSection) {
+        // Check if it's a numbered item (e.g., "1.1", "2.3", etc.)
+        if (line.match(/^\d+\.\d+/) && currentSubsection) {
+          currentSubsection.items.push(line);
+        } else {
+          currentContent += (currentContent ? ' ' : '') + line;
+        }
+      }
+    }
+    
+    // Save the last section
+    if (currentSection) {
+      if (currentSubsection) {
+        if (currentContent.trim()) {
+          currentSubsection.content = currentContent.trim();
+        }
+        currentSection.subsections.push(currentSubsection);
+      } else if (currentContent.trim()) {
+        currentSection.content = currentContent.trim();
+      }
+      sections.push(currentSection);
+    }
+    
+    return sections;
+  };
+
+  useEffect(() => {
+    extractTextFromPDF();
   }, []);
 
   const filteredBylaws = bylaws.filter(bylaw => {
@@ -190,30 +207,22 @@ const Bylaws = () => {
 
   const categories = [
     { id: 'overview', name: 'Overview', icon: <Home className="h-4 w-4" /> },
+    { id: 'interpretation', name: 'Interpretation & Effect', icon: <FileText className="h-4 w-4" /> },
     { id: 'duties', name: 'Duties & Responsibilities', icon: <Users className="h-4 w-4" /> },
-    { id: 'council', name: 'Council', icon: <Gavel className="h-4 w-4" /> },
-    { id: 'enforcement', name: 'Enforcement', icon: <Shield className="h-4 w-4" /> },
-    { id: 'meetings', name: 'Meetings', icon: <Building className="h-4 w-4" /> },
-    { id: 'other', name: 'Other', icon: <FileText className="h-4 w-4" /> }
+    { id: 'powers', name: 'Powers & Corporation', icon: <Building className="h-4 w-4" /> },
+    { id: 'council', name: 'Council', icon: <Gavel className="h-4 w-4" /> }
   ];
 
   const getCategoryBylaws = (categoryId: string) => {
     switch (categoryId) {
+      case 'interpretation':
+        return filteredBylaws.filter(b => b.partNumber === 1);
       case 'duties':
-        return filteredBylaws.filter(b => b.title.toLowerCase().includes('duties') || b.title.toLowerCase().includes('owner') || b.title.toLowerCase().includes('tenant'));
+        return filteredBylaws.filter(b => b.partNumber === 2);
+      case 'powers':
+        return filteredBylaws.filter(b => b.partNumber === 3);
       case 'council':
-        return filteredBylaws.filter(b => b.title.toLowerCase().includes('council'));
-      case 'enforcement':
-        return filteredBylaws.filter(b => b.title.toLowerCase().includes('enforcement') || b.title.toLowerCase().includes('bylaw'));
-      case 'meetings':
-        return filteredBylaws.filter(b => b.title.toLowerCase().includes('meeting'));
-      case 'other':
-        return filteredBylaws.filter(b => 
-          !b.title.toLowerCase().includes('duties') && 
-          !b.title.toLowerCase().includes('council') && 
-          !b.title.toLowerCase().includes('enforcement') && 
-          !b.title.toLowerCase().includes('meeting')
-        );
+        return filteredBylaws.filter(b => b.partNumber === 4);
       default:
         return filteredBylaws;
     }
@@ -223,12 +232,9 @@ const Bylaws = () => {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
-        <PageHeader
-          title="Building Bylaws"
-          description="Interactive access to all strata bylaws, rules, and regulations."
-        />
+        <PageHeader title="Strata Bylaws" description="Official bylaws governing Spectrum 4 Strata Corporation" />
         <main className="flex-grow container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center h-64">
+          <div className="flex items-center justify-center py-12">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
               <p className="text-gray-600">Loading bylaws...</p>
@@ -240,30 +246,56 @@ const Bylaws = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <PageHeader title="Strata Bylaws" description="Official bylaws governing Spectrum 4 Strata Corporation" />
+        <main className="flex-grow container mx-auto px-4 py-8">
+          <Card className="max-w-2xl mx-auto">
+            <CardContent className="text-center py-12">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Error Loading Bylaws</h3>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <Button onClick={() => window.location.reload()}>
+                Try Again
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <PageHeader
-        title="Building Bylaws"
-        description="Interactive access to all strata bylaws, rules, and regulations for Spectrum IV (BCS2611)."
-      />
+      <PageHeader title="Strata Bylaws" description="Official bylaws governing Spectrum 4 Strata Corporation" />
+      
       <main className="flex-grow container mx-auto px-4 py-8">
-        {/* Search Bar */}
-        <div className="mb-8 max-w-md mx-auto">
-          <div className="relative">
+        {/* Header with Search and Download */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Search bylaws, sections, or content..."
+              placeholder="Search bylaws..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
           </div>
+          <Button asChild variant="outline">
+            <a href="/documents/bylaws_2025.pdf" target="_blank" rel="noopener noreferrer">
+              <Download className="mr-2 h-4 w-4" />
+              Download PDF
+            </a>
+          </Button>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
-            {categories.map(category => (
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5">
+            {categories.map((category) => (
               <TabsTrigger key={category.id} value={category.id} className="flex items-center gap-2">
                 {category.icon}
                 <span className="hidden sm:inline">{category.name}</span>
@@ -271,197 +303,167 @@ const Bylaws = () => {
             ))}
           </TabsList>
 
-          {categories.map(category => (
+          {categories.map((category) => (
             <TabsContent key={category.id} value={category.id} className="mt-6">
-              {activeTab === 'overview' ? (
+              {category.id === 'overview' ? (
                 <div className="space-y-6">
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <Book className="h-5 w-5" />
-                        Strata Plan BCS2611 - "Spectrum IV"
+                        About These Bylaws
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-gray-600 mb-4">
-                        Located at 602 Citadel Parade, Vancouver, BC. These bylaws govern the operation and management of our strata corporation.
+                      <p className="text-gray-700 mb-4">
+                        These are the official bylaws for Spectrum 4 Strata Corporation, updated for 2025. 
+                        The bylaws are organized into parts covering different aspects of strata governance and operations.
                       </p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {bylaws.map(bylaw => (
-                          <Card key={bylaw.id} className="hover:shadow-md transition-shadow">
-                            <CardContent className="p-4">
-                              <div className="flex items-start gap-3">
-                                <div className="p-2 bg-primary/10 rounded-lg">
-                                  {bylaw.icon}
-                                </div>
-                                <div className="flex-1">
-                                  <h3 className="font-medium text-sm mb-1">{bylaw.title}</h3>
-                                  <Badge variant="outline" className="text-xs">{bylaw.part}</Badge>
-                                  <p className="text-xs text-gray-600 mt-2 line-clamp-2">
-                                    {bylaw.content.substring(0, 100)}...
-                                  </p>
-                                  <Dialog>
-                                    <DialogTrigger asChild>
-                                      <Button variant="ghost" size="sm" className="mt-2 p-0 h-auto text-primary">
-                                        View Details <ChevronRight className="h-3 w-3 ml-1" />
-                                      </Button>
-                                    </DialogTrigger>
-                                    <DialogContent className="max-w-4xl max-h-[80vh]">
-                                      <DialogHeader>
-                                        <DialogTitle className="flex items-center gap-2">
-                                          {bylaw.icon}
-                                          {bylaw.part}: {bylaw.title}
-                                        </DialogTitle>
-                                      </DialogHeader>
-                                      <ScrollArea className="h-[60vh] pr-4">
-                                        <div className="space-y-4">
-                                          {bylaw.content && (
-                                            <div>
-                                              <h4 className="font-medium mb-2">Overview</h4>
-                                              <p className="text-gray-700 text-sm leading-relaxed">{bylaw.content}</p>
-                                            </div>
-                                          )}
-                                          {bylaw.subsections.length > 0 && (
-                                            <Accordion type="single" collapsible className="w-full">
-                                              {bylaw.subsections.map(subsection => (
-                                                <AccordionItem key={subsection.id} value={subsection.id}>
-                                                  <AccordionTrigger className="text-left">
-                                                    {subsection.title}
-                                                  </AccordionTrigger>
-                                                  <AccordionContent>
-                                                    {subsection.content && (
-                                                      <p className="text-gray-700 text-sm mb-3 leading-relaxed">
-                                                        {subsection.content}
-                                                      </p>
-                                                    )}
-                                                    {subsection.items.length > 0 && (
-                                                      <ul className="space-y-2">
-                                                        {subsection.items.map((item, idx) => (
-                                                          <li key={idx} className="text-sm text-gray-700 pl-4 border-l-2 border-gray-200">
-                                                            {item}
-                                                          </li>
-                                                        ))}
-                                                      </ul>
-                                                    )}
-                                                  </AccordionContent>
-                                                </AccordionItem>
-                                              ))}
-                                            </Accordion>
-                                          )}
-                                        </div>
-                                      </ScrollArea>
-                                    </DialogContent>
-                                  </Dialog>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 border rounded-lg">
+                          <h3 className="font-semibold mb-2">Total Parts</h3>
+                          <p className="text-2xl font-bold text-primary">{bylaws.length}</p>
+                        </div>
+                        <div className="p-4 border rounded-lg">
+                          <h3 className="font-semibold mb-2">Total Sections</h3>
+                          <p className="text-2xl font-bold text-primary">
+                            {bylaws.reduce((sum, part) => sum + part.subsections.length, 0)}
+                          </p>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {bylaws.map((bylaw) => (
+                      <Card key={bylaw.id} className="hover:shadow-md transition-shadow cursor-pointer">
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-3">
+                            {bylaw.icon}
+                            <div>
+                              <div className="text-sm text-gray-500">{bylaw.part}</div>
+                              <div className="text-lg">{bylaw.title}</div>
+                            </div>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-gray-600 text-sm mb-3">
+                            {bylaw.content.substring(0, 150)}...
+                          </p>
+                          <div className="flex items-center justify-between">
+                            <Badge variant="secondary">
+                              {bylaw.subsections.length} sections
+                            </Badge>
+                            <Button variant="ghost" size="sm" onClick={() => setSelectedSection(bylaw)}>
+                              View Details <ChevronRight className="ml-1 h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {getCategoryBylaws(category.id).map(bylaw => (
-                    <Card key={bylaw.id} className="hover:shadow-md transition-shadow">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                          {bylaw.icon}
-                          {bylaw.title}
-                        </CardTitle>
-                        <Badge variant="outline">{bylaw.part}</Badge>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-gray-600 text-sm mb-4 leading-relaxed">
-                          {bylaw.content.substring(0, 200)}...
-                        </p>
-                        <div className="space-y-2">
-                          <h4 className="font-medium text-sm">Sections ({bylaw.subsections.length})</h4>
-                          <div className="space-y-1">
-                            {bylaw.subsections.slice(0, 3).map(subsection => (
-                              <div key={subsection.id} className="text-xs text-gray-600 flex items-center gap-2">
-                                <ChevronRight className="h-3 w-3" />
-                                {subsection.title}
-                              </div>
-                            ))}
-                            {bylaw.subsections.length > 3 && (
-                              <div className="text-xs text-gray-500">
-                                +{bylaw.subsections.length - 3} more sections
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button className="w-full mt-4">
-                              View Full Details
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-4xl max-h-[80vh]">
-                            <DialogHeader>
-                              <DialogTitle className="flex items-center gap-2">
-                                {bylaw.icon}
-                                {bylaw.part}: {bylaw.title}
-                              </DialogTitle>
-                            </DialogHeader>
-                            <ScrollArea className="h-[60vh] pr-4">
-                              <div className="space-y-4">
-                                {bylaw.content && (
-                                  <div>
-                                    <h4 className="font-medium mb-2">Overview</h4>
-                                    <p className="text-gray-700 text-sm leading-relaxed">{bylaw.content}</p>
-                                  </div>
-                                )}
-                                {bylaw.subsections.length > 0 && (
-                                  <Accordion type="single" collapsible className="w-full">
-                                    {bylaw.subsections.map(subsection => (
-                                      <AccordionItem key={subsection.id} value={subsection.id}>
-                                        <AccordionTrigger className="text-left">
-                                          {subsection.title}
-                                        </AccordionTrigger>
-                                        <AccordionContent>
-                                          {subsection.content && (
-                                            <p className="text-gray-700 text-sm mb-3 leading-relaxed">
-                                              {subsection.content}
-                                            </p>
-                                          )}
-                                          {subsection.items.length > 0 && (
-                                            <ul className="space-y-2">
-                                              {subsection.items.map((item, idx) => (
-                                                <li key={idx} className="text-sm text-gray-700 pl-4 border-l-2 border-gray-200">
-                                                  {item}
-                                                </li>
-                                              ))}
-                                            </ul>
-                                          )}
-                                        </AccordionContent>
-                                      </AccordionItem>
-                                    ))}
-                                  </Accordion>
-                                )}
-                              </div>
-                            </ScrollArea>
-                          </DialogContent>
-                        </Dialog>
+                <div className="space-y-4">
+                  {getCategoryBylaws(category.id).length === 0 ? (
+                    <Card>
+                      <CardContent className="text-center py-12">
+                        <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-500">No bylaws found for this category.</p>
                       </CardContent>
                     </Card>
-                  ))}
-                  {getCategoryBylaws(category.id).length === 0 && (
-                    <div className="col-span-full text-center py-12">
-                      <Book className="h-10 w-10 text-gray-400 mx-auto mb-4" />
-                      <h3 className="font-medium text-lg">No bylaws found</h3>
-                      <p className="text-gray-600 mt-1">
-                        {searchTerm ? 'Try adjusting your search terms' : 'No bylaws in this category'}
-                      </p>
-                    </div>
+                  ) : (
+                    getCategoryBylaws(category.id).map((bylaw) => (
+                      <Card key={bylaw.id}>
+                        <CardHeader>
+                          <CardTitle className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              {bylaw.icon}
+                              <div>
+                                <div className="text-sm text-gray-500">{bylaw.part}</div>
+                                <div>{bylaw.title}</div>
+                              </div>
+                            </div>
+                            <Button variant="ghost" size="sm" onClick={() => setSelectedSection(bylaw)}>
+                              View Full <ChevronRight className="ml-1 h-4 w-4" />
+                            </Button>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          {bylaw.content && (
+                            <p className="text-gray-700 mb-4">{bylaw.content}</p>
+                          )}
+                          {bylaw.subsections.length > 0 && (
+                            <Accordion type="single" collapsible className="w-full">
+                              {bylaw.subsections.map((subsection) => (
+                                <AccordionItem key={subsection.id} value={subsection.id}>
+                                  <AccordionTrigger className="text-left">
+                                    {subsection.title}
+                                  </AccordionTrigger>
+                                  <AccordionContent>
+                                    {subsection.content && (
+                                      <p className="text-gray-700 mb-3">{subsection.content}</p>
+                                    )}
+                                    {subsection.items.length > 0 && (
+                                      <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
+                                        {subsection.items.map((item, index) => (
+                                          <li key={index}>{item}</li>
+                                        ))}
+                                      </ul>
+                                    )}
+                                  </AccordionContent>
+                                </AccordionItem>
+                              ))}
+                            </Accordion>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))
                   )}
                 </div>
               )}
             </TabsContent>
           ))}
         </Tabs>
+
+        {/* Section Detail Dialog */}
+        <Dialog open={!!selectedSection} onOpenChange={() => setSelectedSection(null)}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-3">
+                {selectedSection?.icon}
+                <div>
+                  <div className="text-sm text-gray-500">{selectedSection?.part}</div>
+                  <div>{selectedSection?.title}</div>
+                </div>
+              </DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="max-h-[60vh]">
+              <div className="space-y-4">
+                {selectedSection?.content && (
+                  <p className="text-gray-700">{selectedSection.content}</p>
+                )}
+                {selectedSection?.subsections.map((subsection) => (
+                  <div key={subsection.id} className="border-l-4 border-primary pl-4">
+                    <h3 className="font-semibold mb-2">{subsection.title}</h3>
+                    {subsection.content && (
+                      <p className="text-gray-700 mb-2">{subsection.content}</p>
+                    )}
+                    {subsection.items.length > 0 && (
+                      <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
+                        {subsection.items.map((item, index) => (
+                          <li key={index}>{item}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
       </main>
+      
       <Footer />
     </div>
   );

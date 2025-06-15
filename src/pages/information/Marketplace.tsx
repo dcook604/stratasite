@@ -362,7 +362,169 @@ const Marketplace = () => {
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Create a New Marketplace Post</DialogTitle></DialogHeader>
           <form onSubmit={handleSubmitPost} className="space-y-4">
-            {/* Form fields ... */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="title">Title *</Label>
+                <Input
+                  id="title"
+                  value={newPost.title}
+                  onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="category">Category</Label>
+                <Select value={newPost.category} onValueChange={(value) => setNewPost({ ...newPost, category: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category}>{category}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="type">Type *</Label>
+                <Select value={newPost.type} onValueChange={(value) => setNewPost({ ...newPost, type: value as 'sell' | 'buy' | 'trade' })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sell">For Sale</SelectItem>
+                    <SelectItem value="buy">Looking to Buy</SelectItem>
+                    <SelectItem value="trade">For Trade</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {newPost.type === 'sell' && (
+                <div>
+                  <Label htmlFor="price">Price ($)</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    step="0.01"
+                    value={newPost.price}
+                    onChange={(e) => setNewPost({ ...newPost, price: e.target.value })}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="description">Description *</Label>
+              <Textarea
+                id="description"
+                rows={4}
+                value={newPost.description}
+                onChange={(e) => setNewPost({ ...newPost, description: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="authorName">Your Name *</Label>
+                <Input
+                  id="authorName"
+                  value={newPost.authorName}
+                  onChange={(e) => setNewPost({ ...newPost, authorName: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="authorEmail">Your Email *</Label>
+                <Input
+                  id="authorEmail"
+                  type="email"
+                  value={newPost.authorEmail}
+                  onChange={(e) => setNewPost({ ...newPost, authorEmail: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="authorPhone">Your Phone (Optional)</Label>
+              <Input
+                id="authorPhone"
+                type="tel"
+                value={newPost.authorPhone}
+                onChange={(e) => setNewPost({ ...newPost, authorPhone: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <Label>Images (Optional - Max 3)</Label>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file && postImages.length < 3) {
+                        handleImageUpload(file, false);
+                      }
+                    }}
+                    disabled={uploadingPost || postImages.length >= 3}
+                    className="hidden"
+                    id="post-image-upload"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={uploadingPost || postImages.length >= 3}
+                    onClick={() => document.getElementById('post-image-upload')?.click()}
+                  >
+                    <ImageIcon className="h-4 w-4 mr-2" />
+                    {uploadingPost ? 'Uploading...' : 'Add Image'}
+                  </Button>
+                  <span className="text-sm text-gray-500">
+                    {postImages.length}/3 images
+                  </span>
+                </div>
+                {postImages.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {postImages.map((image, index) => (
+                      <div key={index} className="relative">
+                        <img src={image} alt={`Upload ${index + 1}`} className="w-full h-20 object-cover rounded" />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="absolute top-1 right-1 h-6 w-6 p-0"
+                          onClick={() => removeImage(index, false)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <ReCAPTCHA
+                ref={recaptchaRef}
+                sitekey={RECAPTCHA_CONFIG.siteKey}
+                onChange={setRecaptchaToken}
+                theme="light"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setShowNewPostDialog(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Create Post</Button>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
@@ -372,7 +534,116 @@ const Marketplace = () => {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader><DialogTitle>Reply to Post</DialogTitle></DialogHeader>
           <form onSubmit={handleSubmitReply} className="space-y-4">
-            {/* Form fields ... */}
+            <div>
+              <Label htmlFor="replyContent">Your Reply *</Label>
+              <Textarea
+                id="replyContent"
+                rows={4}
+                value={replyForm.content}
+                onChange={(e) => setReplyForm({ ...replyForm, content: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="replyAuthorName">Your Name *</Label>
+                <Input
+                  id="replyAuthorName"
+                  value={replyForm.authorName}
+                  onChange={(e) => setReplyForm({ ...replyForm, authorName: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="replyAuthorEmail">Your Email *</Label>
+                <Input
+                  id="replyAuthorEmail"
+                  type="email"
+                  value={replyForm.authorEmail}
+                  onChange={(e) => setReplyForm({ ...replyForm, authorEmail: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="replyAuthorPhone">Your Phone (Optional)</Label>
+              <Input
+                id="replyAuthorPhone"
+                type="tel"
+                value={replyForm.authorPhone}
+                onChange={(e) => setReplyForm({ ...replyForm, authorPhone: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <Label>Images (Optional - Max 2)</Label>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file && replyImages.length < 2) {
+                        handleImageUpload(file, true);
+                      }
+                    }}
+                    disabled={uploadingReply || replyImages.length >= 2}
+                    className="hidden"
+                    id="reply-image-upload"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={uploadingReply || replyImages.length >= 2}
+                    onClick={() => document.getElementById('reply-image-upload')?.click()}
+                  >
+                    <ImageIcon className="h-4 w-4 mr-2" />
+                    {uploadingReply ? 'Uploading...' : 'Add Image'}
+                  </Button>
+                  <span className="text-sm text-gray-500">
+                    {replyImages.length}/2 images
+                  </span>
+                </div>
+                {replyImages.length > 0 && (
+                  <div className="grid grid-cols-2 gap-2">
+                    {replyImages.map((image, index) => (
+                      <div key={index} className="relative">
+                        <img src={image} alt={`Reply ${index + 1}`} className="w-full h-20 object-cover rounded" />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="absolute top-1 right-1 h-6 w-6 p-0"
+                          onClick={() => removeImage(index, true)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <ReCAPTCHA
+                ref={replyRecaptchaRef}
+                sitekey={RECAPTCHA_CONFIG.siteKey}
+                onChange={setReplyRecaptchaToken}
+                theme="light"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setShowReplyDialog(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Post Reply</Button>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
