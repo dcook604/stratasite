@@ -49,15 +49,15 @@ const Documents = () => {
     }
   };
 
-  const handleDownload = async (document: Document) => {
+  const handleDownload = async (doc: Document) => {
     try {
-      const response = await fetch(`/api/documents/${document.id}/download`);
+      const response = await fetch(`/api/documents/${doc.id}/download`);
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = document.fileName;
+        a.download = doc.fileName;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -65,7 +65,7 @@ const Documents = () => {
         
         toast({
           title: "Success",
-          description: `Downloaded ${document.title}`
+          description: `Downloaded ${doc.title}`
         });
       } else {
         throw new Error('Download failed');
