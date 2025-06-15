@@ -16,8 +16,8 @@ const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3331;
 
-// Ensure the upload directory exists
-const uploadDir = path.join(__dirname, 'public', 'uploads', 'marketplace');
+// Ensure the upload directory exists in the persistent data volume
+const uploadDir = path.join(__dirname, 'data', 'uploads', 'marketplace');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -1094,10 +1094,12 @@ app.post('/api/admin/cleanup', async (req, res) => {
           for (const imageUrl of imagesToDelete) {
             try {
               const filename = imageUrl.split('/').pop();
-              const filepath = path.join(process.cwd(), 'public', 'uploads', 'marketplace', filename);
+              if (!filename) continue;
+              const filepath = path.join(process.cwd(), 'data', 'uploads', 'marketplace', filename);
               await fs.unlink(filepath);
             } catch (error) {
-              console.error('Error deleting image file:', error);
+              // Log error but continue, as file might already be deleted
+              logger.warn('Could not delete image file during cleanup (may already be gone)', { imageUrl, error: error.message });
             }
           }
         }
@@ -1110,48 +1112,54 @@ app.post('/api/admin/cleanup', async (req, res) => {
         const fs = require('fs').promises;
         const path = require('path');
         
-        const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'marketplace');
-        const files = await fs.readdir(uploadsDir);
-        
-        // Get all image URLs currently in use
-        const activePosts = await prisma.marketplacePost.findMany({
-          where: { isActive: true },
-          select: { images: true }
-        });
-        
-        const activeReplies = await prisma.marketplaceReply.findMany({
-          select: { images: true }
-        });
-        
-        const activeImages = new Set();
-        
-        [...activePosts, ...activeReplies].forEach(item => {
-          if (item.images) {
-            try {
-              const images = JSON.parse(item.images);
-              images.forEach(img => {
-                const filename = img.split('/').pop();
-                activeImages.add(filename);
-              });
-            } catch (e) {
-              console.error('Error parsing images during cleanup:', e);
+        const uploadsDir = path.join(process.cwd(), 'data', 'uploads', 'marketplace');
+        if (!fs.existsSync(uploadsDir)) {
+           logger.info('Marketplace uploads directory does not exist, skipping orphaned image cleanup.');
+        } else {
+            const files = await fs.readdir(uploadsDir);
+            
+            // Get all image URLs currently in use
+            const activePosts = await prisma.marketplacePost.findMany({
+              where: { isActive: true },
+              select: { images: true }
+            });
+            
+            const activeReplies = await prisma.marketplaceReply.findMany({
+              select: { images: true }
+            });
+            
+            const activeImages = new Set();
+            
+            [...activePosts, ...activeReplies].forEach(item => {
+              if (item.images) {
+                try {
+                  const images = JSON.parse(item.images);
+                  images.forEach(img => {
+                    if (typeof img === 'string') {
+                      const filename = img.split('/').pop();
+                      if (filename) activeImages.add(filename);
+                    }
+                  });
+                } catch (e) {
+                  logger.error('Error parsing images during cleanup:', e);
+                }
+              }
+            });
+            
+            // Delete orphaned files
+            for (const file of files) {
+              if (!activeImages.has(file)) {
+                try {
+                  await fs.unlink(path.join(uploadsDir, file));
+                  stats.imagesDeleted++;
+                } catch (error) {
+                  logger.warn('Error deleting orphaned image', { file, error: error.message });
+                }
+              }
             }
-          }
-        });
-        
-        // Delete orphaned files
-        for (const file of files) {
-          if (!activeImages.has(file)) {
-            try {
-              await fs.unlink(path.join(uploadsDir, file));
-              stats.imagesDeleted++;
-            } catch (error) {
-              console.error('Error deleting orphaned image:', error);
-            }
-          }
         }
       } catch (error) {
-        console.error('Error during orphaned images cleanup:', error);
+        logger.error('Error during orphaned images cleanup:', error);
       }
     }
 
@@ -1203,7 +1211,7 @@ app.post('/api/upload/image', upload.single('image'), async (req, res) => {
       .webp({ quality: 80 }) // Convert to WebP with 80% quality
       .toFile(filepath);
 
-    const imageUrl = `/uploads/marketplace/${filename}`;
+    const imageUrl = `/data/uploads/marketplace/${filename}`;
     
     logger.info('Image uploaded successfully', { imageUrl });
     res.json({ success: true, imageUrl });
