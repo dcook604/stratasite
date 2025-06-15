@@ -63,6 +63,7 @@ model MarketplacePost {
   category        String
   type            String   // "sell", "buy", "trade"
   price           Float?
+  authorId        String   @map("author_id")
   authorName      String   @map("author_name")
   authorEmail     String   @map("author_email")
   authorPhone     String?  @map("author_phone")
@@ -81,6 +82,7 @@ model MarketplacePost {
 model MarketplaceReply {
   id             String   @id @default(cuid())
   content        String
+  authorId       String   @map("author_id")
   authorName     String   @map("author_name")
   authorEmail    String   @map("author_email")
   authorPhone    String?  @map("author_phone")

@@ -7,6 +7,8 @@ import { fileURLToPath } from 'url';
 import multer from 'multer';
 import sharp from 'sharp';
 import fs from 'fs';
+import session from 'express-session';
+import cookieParser from 'cookie-parser';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -140,6 +142,21 @@ const errorHandler = (err, req, res, next) => {
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
+
+// Middleware to generate authorId if it doesn't exist
+app.use((req, res, next) => {
+  if (!req.cookies.authorId) {
+    const authorId = `anon_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+    res.cookie('authorId', authorId, { 
+      maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year
+      httpOnly: true,
+      sameSite: 'lax'
+    });
+    req.cookies.authorId = authorId; // Make it available immediately
+  }
+  next();
+});
 
 // Move request logger to be the first middleware to ensure all requests are logged
 app.use(requestLogger);
@@ -778,19 +795,13 @@ app.get('/api/marketplace', async (req, res) => {
 
 app.post('/api/marketplace', async (req, res) => {
   try {
-    const { 
-      title, 
-      description, 
-      category, 
-      type, 
-      price, 
-      authorName, 
-      authorEmail, 
-      authorPhone,
-      images,
-      recaptchaToken 
-    } = req.body;
-    
+    const { title, description, category, type, price, authorName, authorEmail, authorPhone, images, recaptchaToken } = req.body;
+    const authorId = req.cookies.authorId;
+
+    if (!authorId) {
+      return res.status(400).json({ error: 'Author ID is missing.' });
+    }
+
     // Basic validation
     if (!title || !description || !authorName || !authorEmail) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -823,6 +834,7 @@ app.post('/api/marketplace', async (req, res) => {
         category,
         type,
         price: price ? parseFloat(price) : null,
+        authorId,
         authorName,
         authorEmail,
         authorPhone,
@@ -864,14 +876,28 @@ app.put('/api/marketplace/:id', async (req, res) => {
 });
 
 // New endpoint for marking posts as sold
-app.put('/api/marketplace/:id/sold', async (req, res) => {
+app.put('/api/marketplace/:postId/sold', async (req, res) => {
+  const { postId } = req.params;
+  const { authorId } = req.cookies;
+
   try {
-    const { id } = req.params;
-    const post = await prisma.marketplacePost.update({
-      where: { id },
-      data: { isSold: true }
+    const post = await prisma.marketplacePost.findUnique({ where: { id: postId } });
+
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    // Allow admin to mark as sold (implement admin check if needed)
+    // For now, only the author can mark as sold
+    if (post.authorId !== authorId) {
+      return res.status(403).json({ error: 'You are not authorized to perform this action' });
+    }
+
+    const updatedPost = await prisma.marketplacePost.update({
+      where: { id: postId },
+      data: { isSold: true },
     });
-    res.json(post);
+    res.json(updatedPost);
   } catch (error) {
     console.error('Error marking post as sold:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -892,63 +918,56 @@ app.delete('/api/marketplace/:id', async (req, res) => {
   }
 });
 
-app.post('/api/marketplace/:id/replies', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { 
-      content, 
-      authorName, 
-      authorEmail, 
-      authorPhone,
-      images,
-      recaptchaToken 
-    } = req.body;
-    
-    // Basic validation
-    if (!content || !authorName || !authorEmail) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-    
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(authorEmail)) {
-      return res.status(400).json({ error: 'Invalid email address' });
-    }
-    
-    // Phone validation (optional)
-    if (authorPhone) {
-      const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-      if (!phoneRegex.test(authorPhone.replace(/[\s\-\(\)]/g, ''))) {
-        return res.status(400).json({ error: 'Invalid phone number' });
-      }
-    }
-    
-    // reCAPTCHA verification
-    const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
-    if (!isRecaptchaValid) {
-      return res.status(400).json({ error: 'Invalid reCAPTCHA. Please try again.' });
-    }
-    
-    const reply = await prisma.marketplaceReply.create({
-      data: {
-        content,
-        authorName,
-        authorEmail,
-        authorPhone,
-        images: images && images.length > 0 ? JSON.stringify(images) : null,
-        recaptchaToken,
-        postId: id
-      }
-    });
-    
-    res.json({
-      ...reply,
-      images: reply.images ? JSON.parse(reply.images) : []
-    });
-  } catch (error) {
-    console.error('Error creating marketplace reply:', error);
-    res.status(500).json({ error: 'Internal server error' });
+app.post('/api/marketplace/:postId/replies', async (req, res) => {
+  const { postId } = req.params;
+  const { content, authorName, authorEmail, authorPhone, images, recaptchaToken } = req.body;
+  const { authorId } = req.cookies;
+
+  if (!authorId) {
+    return res.status(400).json({ error: 'Author ID is missing.' });
   }
+
+  if (!content || !authorName || !authorEmail) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  
+  // Email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(authorEmail)) {
+    return res.status(400).json({ error: 'Invalid email address' });
+  }
+  
+  // Phone validation (optional)
+  if (authorPhone) {
+    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+    if (!phoneRegex.test(authorPhone.replace(/[\s\-\(\)]/g, ''))) {
+      return res.status(400).json({ error: 'Invalid phone number' });
+    }
+  }
+  
+  // reCAPTCHA verification
+  const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
+  if (!isRecaptchaValid) {
+    return res.status(400).json({ error: 'Invalid reCAPTCHA. Please try again.' });
+  }
+  
+  const reply = await prisma.marketplaceReply.create({
+    data: {
+      content,
+      authorId,
+      authorName,
+      authorEmail,
+      authorPhone,
+      images: images && images.length > 0 ? JSON.stringify(images) : null,
+      recaptchaToken,
+      postId
+    }
+  });
+  
+  res.json({
+    ...reply,
+    images: reply.images ? JSON.parse(reply.images) : []
+  });
 });
 
 app.delete('/api/marketplace/:postId/replies/:replyId', async (req, res) => {
