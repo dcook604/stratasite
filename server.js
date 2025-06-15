@@ -7,7 +7,6 @@ import { fileURLToPath } from 'url';
 import multer from 'multer';
 import sharp from 'sharp';
 import fs from 'fs';
-import session from 'express-session';
 import cookieParser from 'cookie-parser';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -144,6 +143,9 @@ app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 
+// Move request logger to be the first middleware to ensure all requests are logged
+app.use(requestLogger);
+
 // Middleware to generate authorId if it doesn't exist
 app.use((req, res, next) => {
   if (!req.cookies.authorId) {
@@ -157,9 +159,6 @@ app.use((req, res, next) => {
   }
   next();
 });
-
-// Move request logger to be the first middleware to ensure all requests are logged
-app.use(requestLogger);
 
 // Serve uploaded files statically from the 'public' directory
 app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
