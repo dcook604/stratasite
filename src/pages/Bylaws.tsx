@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Book, Search, FileText, ChevronRight, Home, Users, Car, Shield, Trash2, Building, Gavel } from 'lucide-react';
 import { XMLParser } from 'fast-xml-parser';
+import xmlContent from '@/data/bylaws.xml?raw';
 
 interface BylawSection {
   id: string;
@@ -164,20 +165,14 @@ const Bylaws = () => {
   };
 
   useEffect(() => {
-    const fetchBylaws = async () => {
-      try {
-        const response = await fetch('/bylaws.xml');
-        const xmlContent = await response.text();
-        const parsedSections = parseXMLContent(xmlContent);
-        setBylaws(parsedSections);
-      } catch (error) {
-        console.error('Error fetching bylaws:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchBylaws();
+    try {
+      const parsedSections = parseXMLContent(xmlContent);
+      setBylaws(parsedSections);
+    } catch (error) {
+      console.error('Error processing bylaws:', error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const filteredBylaws = bylaws.filter(bylaw => {

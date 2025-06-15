@@ -30,9 +30,7 @@ const Footer = () => {
               <li>
                 <Link to="/calendar" className="text-sm text-gray-600 hover:text-primary">Calendar</Link>
               </li>
-              <li>
-                <Link to="/gallery" className="text-sm text-gray-600 hover:text-primary">Gallery</Link>
-              </li>
+
               <li>
                 <Link to="/bylaws" className="text-sm text-gray-600 hover:text-primary">Bylaws</Link>
               </li>
@@ -45,9 +43,7 @@ const Footer = () => {
               <li>
                 <Link to="/contact" className="text-sm text-gray-600 hover:text-primary">Contact Us</Link>
               </li>
-              <li>
-                <a href="#" className="text-sm text-gray-600 hover:text-primary">Emergency Contact</a>
-              </li>
+
               <li>
                 <a href="#" className="text-sm text-gray-600 hover:text-primary">Privacy Policy</a>
               </li>
@@ -56,7 +52,7 @@ const Footer = () => {
         </div>
         
         <div className="mt-8 pt-8 border-t border-gray-200">
-          <p className="text-sm text-gray-500 text-center">&copy; {new Date().getFullYear()} Strata Council. All rights reserved.</p>
+          <p className="text-sm text-gray-500 text-center">&copy; {new Date().getFullYear()} Spectrum 4 BCS2611. All rights reserved.</p>
         </div>
       </div>
     </footer>
