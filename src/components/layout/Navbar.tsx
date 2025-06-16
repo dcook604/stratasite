@@ -42,6 +42,7 @@ export const Navbar = () => {
   const mainNavItems = [
     { name: 'Marketplace', path: '/marketplace', icon: <ShoppingCart className="h-4 w-4 mr-2" /> },
     { name: 'Bylaws', path: '/bylaws', icon: <Book className="h-4 w-4 mr-2" /> },
+    { name: 'Calendar', path: 'https://www.spectrum4.ca/calendar', icon: <Calendar className="h-4 w-4 mr-2" />, external: true },
     { name: 'Contact', path: '/contact', icon: <Mail className="h-4 w-4 mr-2" /> },
   ];
 
@@ -100,10 +101,17 @@ export const Navbar = () => {
                     className="text-gray-700 hover:text-primary"
                     asChild
                   >
-                    <Link to={item.path} className="flex items-center">
-                      {item.icon}
-                      {item.name}
-                    </Link>
+                    {(item as any).external ? (
+                      <a href={item.path} target="_blank" rel="noopener noreferrer" className="flex items-center">
+                        {item.icon}
+                        {item.name}
+                      </a>
+                    ) : (
+                      <Link to={item.path} className="flex items-center">
+                        {item.icon}
+                        {item.name}
+                      </Link>
+                    )}
                   </Button>
                 ))}
 
@@ -189,15 +197,29 @@ export const Navbar = () => {
 
           {/* Main navigation items in mobile */}
           {mainNavItems.map((item) => (
-            <Link
-              key={item.name}
-              to={item.path}
-              className="flex items-center text-gray-700 hover:bg-gray-100 hover:text-primary px-3 py-2 rounded-md text-base font-medium"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              {item.icon}
-              {item.name}
-            </Link>
+            (item as any).external ? (
+              <a
+                key={item.name}
+                href={item.path}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center text-gray-700 hover:bg-gray-100 hover:text-primary px-3 py-2 rounded-md text-base font-medium"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {item.icon}
+                {item.name}
+              </a>
+            ) : (
+              <Link
+                key={item.name}
+                to={item.path}
+                className="flex items-center text-gray-700 hover:bg-gray-100 hover:text-primary px-3 py-2 rounded-md text-base font-medium"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {item.icon}
+                {item.name}
+              </Link>
+            )
           ))}
           
           {adminUser ? (
