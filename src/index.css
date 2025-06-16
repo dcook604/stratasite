@@ -162,19 +162,126 @@
 .recaptcha-container {
   position: relative;
   z-index: 1000;
+  /* iOS mobile fixes */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  /* Ensure proper touch handling on iOS */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .recaptcha-container iframe {
   z-index: 1001 !important;
+  /* iOS specific iframe fixes */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  position: relative !important;
+  /* Enable touch events on iOS */
+  pointer-events: auto !important;
+  -webkit-touch-callout: auto;
+  -webkit-user-select: auto;
+  -webkit-tap-highlight-color: rgba(0,0,0,0.1);
 }
 
 /* Ensure reCAPTCHA challenge popup appears above dialog */
 div[style*="z-index: 2000000000"] {
   z-index: 2000000001 !important;
+  /* iOS mobile fixes for challenge popup */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  position: fixed !important;
 }
 
 /* reCAPTCHA challenge container */
 .rc-anchor-normal {
   position: relative !important;
   z-index: 1000 !important;
+  /* iOS touch improvements */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-touch-callout: auto;
+  -webkit-user-select: auto;
+}
+
+/* iOS specific reCAPTCHA fixes */
+@supports (-webkit-touch-callout: none) {
+  /* Target iOS Safari specifically */
+  .recaptcha-container {
+    /* Force hardware acceleration on iOS */
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    /* Improve scroll behavior */
+    -webkit-overflow-scrolling: touch;
+    /* Prevent zoom on double tap */
+    touch-action: manipulation;
+  }
+  
+  /* Fix for reCAPTCHA checkbox */
+  .rc-anchor-checkbox {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    /* Ensure checkbox is clickable on iOS */
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  
+  /* Fix for reCAPTCHA challenge images */
+  .rc-imageselect-table-wrapper,
+  .rc-imageselect-table {
+    /* Enable smooth scrolling and touch events */
+    -webkit-overflow-scrolling: touch;
+    touch-action: manipulation;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+  
+  /* Fix for individual challenge image tiles */
+  .rc-imageselect-tile {
+    /* Ensure tiles are clickable on iOS */
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+  }
+  
+  /* Fix for challenge modal overlay */
+  .rc-defaultchallenge-payload {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-overflow-scrolling: touch;
+    touch-action: manipulation;
+  }
+}
+
+/* Additional fixes for modal/dialog interference */
+.dialog-content .recaptcha-container {
+  /* Ensure reCAPTCHA works within modals on iOS */
+  isolation: isolate;
+  contain: layout;
+}
+
+/* Prevent iOS zoom issues */
+.recaptcha-container,
+.recaptcha-container * {
+  /* Prevent zoom on double tap for reCAPTCHA elements */
+  touch-action: manipulation;
+}
+
+/* Fix for reCAPTCHA in responsive dialogs */
+@media (max-width: 768px) {
+  .recaptcha-container {
+    /* Ensure proper sizing on mobile */
+    width: 100%;
+    max-width: 304px;
+    margin: 0 auto;
+    /* Improve positioning */
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+    -webkit-transform: translateX(-50%);
+  }
 }

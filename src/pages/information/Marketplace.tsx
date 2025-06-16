@@ -19,6 +19,7 @@ import { RECAPTCHA_CONFIG } from '@/config/recaptcha';
 import { uploadImage, validateImage, ImageUploadResult } from '@/utils/imageUpload';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 import { getAuthorId } from '@/utils/authorId';
+import { initIOSRecaptchaFixes, applyIOSRecaptchaFixes } from '@/utils/recaptchaHelpers';
 
 interface MarketplacePost {
   id: string;
@@ -83,14 +84,35 @@ const Marketplace = () => {
   const [authorId, setAuthorId] = useState<string>('');
 
   const categories = [
-    'Electronics', 'Furniture', 'Appliances', 'Books & Media', 'Clothing', 
+    'Free Donations', 'Services', 'Volunteer', 'Electronics', 'Furniture', 'Appliances', 'Books & Media', 'Clothing', 
     'Sports & Recreation', 'Tools & Hardware', 'Home Decor', 'Other'
   ];
 
   useEffect(() => {
     setAuthorId(getAuthorId());
     fetchPosts();
+    
+    // Initialize iOS reCAPTCHA fixes
+    initIOSRecaptchaFixes();
   }, []);
+
+  // Apply iOS fixes when new post dialog opens
+  useEffect(() => {
+    if (showNewPostDialog) {
+      setTimeout(() => {
+        applyIOSRecaptchaFixes();
+      }, 500);
+    }
+  }, [showNewPostDialog]);
+
+  // Apply iOS fixes when reply dialog opens
+  useEffect(() => {
+    if (showReplyDialog) {
+      setTimeout(() => {
+        applyIOSRecaptchaFixes();
+      }, 500);
+    }
+  }, [showReplyDialog]);
 
   const fetchPosts = async () => {
     try {
@@ -274,7 +296,7 @@ const Marketplace = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <PageHeader title="Strata Marketplace" description="Buy, sell, and trade items with your neighbors" />
+      <PageHeader title="Spectrum 4 Marketplace" description="Donate, Buy, Sell, and trade with your neighbours" />
       <main className="flex-grow container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <Select value={filter} onValueChange={setFilter}>
@@ -510,12 +532,28 @@ const Marketplace = () => {
               </div>
             </div>
 
-            <div>
+            <div className="recaptcha-container">
               <ReCAPTCHA
                 ref={recaptchaRef}
                 sitekey={RECAPTCHA_CONFIG.siteKey}
                 onChange={setRecaptchaToken}
+                onExpired={() => setRecaptchaToken(null)}
+                onErrored={() => {
+                  console.error('reCAPTCHA error occurred');
+                  toast({ title: 'Error', description: 'reCAPTCHA failed to load. Please refresh the page.', variant: 'destructive' });
+                }}
                 theme="light"
+                size="normal"
+                badge="bottomright"
+                hl="en"
+                tabindex={0}
+                isolated={false}
+                style={{
+                  transform: 'scale(1)',
+                  transformOrigin: '0 0',
+                  width: '304px',
+                  height: '78px'
+                }}
               />
             </div>
 
@@ -629,12 +667,28 @@ const Marketplace = () => {
               </div>
             </div>
 
-            <div>
+            <div className="recaptcha-container">
               <ReCAPTCHA
                 ref={replyRecaptchaRef}
                 sitekey={RECAPTCHA_CONFIG.siteKey}
                 onChange={setReplyRecaptchaToken}
+                onExpired={() => setReplyRecaptchaToken(null)}
+                onErrored={() => {
+                  console.error('reCAPTCHA error occurred in reply');
+                  toast({ title: 'Error', description: 'reCAPTCHA failed to load. Please refresh the page.', variant: 'destructive' });
+                }}
                 theme="light"
+                size="normal"
+                badge="bottomright"
+                hl="en"
+                tabindex={0}
+                isolated={false}
+                style={{
+                  transform: 'scale(1)',
+                  transformOrigin: '0 0',
+                  width: '304px',
+                  height: '78px'
+                }}
               />
             </div>
 

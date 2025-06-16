@@ -38,6 +38,7 @@ const Bylaws = () => {
   const [selectedSection, setSelectedSection] = useState<BylawSection | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [pdfText, setPdfText] = useState<string>('');
+  const [fallbackSearchText, setFallbackSearchText] = useState<string>('');
 
   const getIconForSection = (title: string): React.ReactNode => {
     const lowerTitle = title.toLowerCase();
@@ -58,26 +59,39 @@ const Bylaws = () => {
     try {
       setLoading(true);
       setError(null);
+      
+      console.log('Starting PDF extraction...');
 
       // Configure PDF.js
       configurePDFJS();
+      console.log('PDF.js configured');
 
       // Load the PDF document
       const loadingTask = pdfjsLib.getDocument('/documents/bylaws_2025.pdf');
+      console.log('PDF loading task created');
+      
       const pdf = await loadingTask.promise;
+      console.log(`PDF loaded successfully. Pages: ${pdf.numPages}`);
       
       let fullText = '';
       
       // Extract text from all pages, preserving line breaks
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        console.log(`Processing page ${pageNum}/${pdf.numPages}`);
+        
         const page = await pdf.getPage(pageNum);
         const textContent = await page.getTextContent();
+        
+        console.log(`Page ${pageNum} text items: ${textContent.items.length}`);
         
         let lastY = -1;
         let pageText = '';
         
         // Sort items by vertical position to ensure correct order
         const items = [...textContent.items].sort((a: any, b: any) => {
+          // Type guard for sorting
+          if (!('transform' in a) || !('transform' in b)) return 0;
+          
           const aY = a.transform[5];
           const bY = b.transform[5];
           const aX = a.transform[4];
@@ -91,29 +105,66 @@ const Bylaws = () => {
         });
 
         for (const item of items) {
-            const y = item.transform[5];
+            // Type guard to ensure we're dealing with a TextItem
+            if ('transform' in item && 'str' in item) {
+              const y = item.transform[5];
 
-            // Add a newline if the Y position has changed significantly
-            if (lastY !== -1 && Math.abs(y - lastY) > 5) {
-                pageText += '\n';
+              // Add a newline if the Y position has changed significantly
+              if (lastY !== -1 && Math.abs(y - lastY) > 5) {
+                  pageText += '\n';
+              }
+              
+              pageText += item.str + ' ';
+              lastY = y;
             }
-            
-            pageText += item.str + ' ';
-            lastY = y;
         }
 
         fullText += pageText + '\n\n'; // Add space between pages
+        console.log(`Page ${pageNum} extracted ${pageText.length} characters`);
       }
+      
+      console.log(`Total extracted text length: ${fullText.length} characters`);
+      console.log('First 200 characters:', fullText.substring(0, 200));
       
       setPdfText(fullText);
       
       // Parse the text into structured sections
       const parsedSections = parseTextIntoSections(fullText);
+      console.log(`Parsed ${parsedSections.length} sections from PDF`);
+      
       setBylaws(parsedSections);
       
+      // Log first few sections for debugging
+      if (parsedSections.length > 0) {
+        console.log('First parsed section:', parsedSections[0]);
+      }
+      
     } catch (err) {
-      console.error('Error loading PDF:', err);
-      setError('Failed to load the bylaws PDF. Please try again later.');
+      console.error('Detailed PDF loading error:', err);
+      console.error('Error stack:', err instanceof Error ? err.stack : 'No stack trace');
+      
+      // Try to provide more specific error information
+      if (err instanceof Error) {
+        if (err.message.includes('network')) {
+          setError('Network error loading bylaws PDF. Please check your internet connection and try again.');
+        } else if (err.message.includes('worker')) {
+          setError('PDF worker failed to load. Please refresh the page and try again.');
+        } else if (err.message.includes('Invalid PDF')) {
+          setError('The bylaws PDF file appears to be corrupted. Please contact support.');
+        } else {
+          setError(`Failed to load the bylaws PDF: ${err.message}`);
+        }
+      } else {
+        setError('Failed to load the bylaws PDF. Please try again later.');
+      }
+      
+      // Log environment information for debugging
+      console.log('Environment info:', {
+        userAgent: navigator.userAgent,
+        location: window.location.href,
+        pdfjsVersion: pdfjsLib.version,
+        timestamp: new Date().toISOString()
+      });
     } finally {
       setLoading(false);
     }
@@ -219,20 +270,78 @@ const Bylaws = () => {
 
   useEffect(() => {
     extractTextFromPDF();
+    
+    // Also load fallback search data in parallel
+    loadFallbackSearchData();
   }, []);
 
-  const filteredBylaws = bylaws.filter(bylaw => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      bylaw.title.toLowerCase().includes(searchLower) ||
-      bylaw.content.toLowerCase().includes(searchLower) ||
-      bylaw.subsections.some(sub => 
-        sub.title.toLowerCase().includes(searchLower) ||
-        sub.content.toLowerCase().includes(searchLower) ||
-        sub.items.some(item => item.toLowerCase().includes(searchLower))
-      )
-    );
-  });
+  // Fallback function to load XML bylaws data for search
+  const loadFallbackSearchData = async () => {
+    try {
+      console.log('Loading fallback XML data for search...');
+      const response = await fetch('/bylaws.xml');
+      const xmlText = await response.text();
+      
+      // Extract readable text from XML (simple approach)
+      const textContent = xmlText
+        .replace(/<[^>]*>/g, ' ') // Remove XML tags
+        .replace(/\s+/g, ' ') // Normalize whitespace
+        .trim();
+      
+      setFallbackSearchText(textContent);
+      console.log(`Fallback search data loaded: ${textContent.length} characters`);
+      
+      return textContent;
+    } catch (error) {
+      console.error('Failed to load fallback search data:', error);
+      return '';
+    }
+  };
+
+  // Enhanced search that works with both PDF and fallback data
+  const performSearch = (searchTerm: string) => {
+    if (!searchTerm.trim()) return [];
+    
+    const searchLower = searchTerm.toLowerCase().trim();
+    
+    // If we have parsed bylaws from PDF, use the structured search
+    if (bylaws.length > 0) {
+      return bylaws.filter(bylaw => {
+        const titleMatch = bylaw.title.toLowerCase().includes(searchLower);
+        const contentMatch = bylaw.content.toLowerCase().includes(searchLower);
+        const partMatch = bylaw.part.toLowerCase().includes(searchLower);
+        
+        const subsectionMatch = bylaw.subsections.some(sub => 
+          sub.title.toLowerCase().includes(searchLower) ||
+          sub.content.toLowerCase().includes(searchLower) ||
+          sub.items.some(item => item.toLowerCase().includes(searchLower))
+        );
+        
+        return titleMatch || contentMatch || partMatch || subsectionMatch;
+      });
+    }
+    
+    // Fallback: if no structured bylaws but we have fallback text
+    if (fallbackSearchText.length > 0) {
+      const isMatch = fallbackSearchText.toLowerCase().includes(searchLower);
+      console.log(`Fallback search for "${searchTerm}": ${isMatch ? 'found' : 'not found'}`);
+      
+      // Return a simple result structure for fallback
+      return isMatch ? [{
+        id: 'fallback-search',
+        title: `Search Results for "${searchTerm}"`,
+        content: `Found matches in bylaws document. Please download the PDF for detailed viewing.`,
+        subsections: [],
+        part: 'Search Result',
+        partNumber: 0,
+        icon: <FileText className="h-5 w-5" />
+      }] : [];
+    }
+    
+    return [];
+  };
+
+  const filteredBylaws = performSearch(searchTerm);
 
   const categories = [
     { id: 'overview', name: 'Overview', icon: <Home className="h-4 w-4" /> },
@@ -243,18 +352,45 @@ const Bylaws = () => {
   ];
 
   const getCategoryBylaws = (categoryId: string) => {
-    switch (categoryId) {
-      case 'interpretation':
-        return filteredBylaws.filter(b => b.partNumber === 1);
-      case 'duties':
-        return filteredBylaws.filter(b => b.partNumber === 2);
-      case 'powers':
-        return filteredBylaws.filter(b => b.partNumber === 3);
-      case 'council':
-        return filteredBylaws.filter(b => b.partNumber === 4);
-      default:
-        return filteredBylaws;
+    const searchResults = performSearch(searchTerm);
+    
+    if (categoryId === 'overview') {
+      return searchResults.length > 0 ? searchResults : bylaws;
     }
+    
+    // Filter search results by category
+    const filteredResults = searchResults.filter(bylaw => {
+      switch (categoryId) {
+        case 'interpretation':
+          return bylaw.partNumber === 1;
+        case 'duties':
+          return bylaw.partNumber === 2;
+        case 'powers':
+          return bylaw.partNumber === 3;
+        case 'council':
+          return bylaw.partNumber === 4;
+        default:
+          return true;
+      }
+    });
+    
+    // If no search term, show all bylaws for the category
+    if (!searchTerm.trim()) {
+      switch (categoryId) {
+        case 'interpretation':
+          return bylaws.filter(b => b.partNumber === 1);
+        case 'duties':
+          return bylaws.filter(b => b.partNumber === 2);
+        case 'powers':
+          return bylaws.filter(b => b.partNumber === 3);
+        case 'council':
+          return bylaws.filter(b => b.partNumber === 4);
+        default:
+          return bylaws;
+      }
+    }
+    
+    return filteredResults;
   };
 
   if (loading) {
@@ -313,6 +449,18 @@ const Bylaws = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
+            {/* Search status indicator */}
+            {searchTerm && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                {bylaws.length === 0 && fallbackSearchText.length === 0 ? (
+                  <span className="text-xs text-red-500" title="Bylaws not loaded - search unavailable">⚠️</span>
+                ) : (
+                  <span className="text-xs text-green-500" title={`Found ${performSearch(searchTerm).length} results`}>
+                    {performSearch(searchTerm).length}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <Button asChild variant="outline">
             <a href="/documents/bylaws_2025.pdf" target="_blank" rel="noopener noreferrer">
@@ -321,6 +469,29 @@ const Bylaws = () => {
             </a>
           </Button>
         </div>
+
+        {/* Search results summary */}
+        {searchTerm && (bylaws.length > 0 || fallbackSearchText.length > 0) && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <p className="text-sm text-blue-700">
+              {performSearch(searchTerm).length === 0 
+                ? `No results found for "${searchTerm}". Try different keywords or check spelling.`
+                : performSearch(searchTerm).length === 1 && performSearch(searchTerm)[0]?.id === 'fallback-search'
+                ? `Found matches for "${searchTerm}" in bylaws (fallback search). Download PDF for detailed viewing.`
+                : `Found ${performSearch(searchTerm).length} result${performSearch(searchTerm).length === 1 ? '' : 's'} for "${searchTerm}"`
+              }
+            </p>
+          </div>
+        )}
+
+        {/* Warning if search attempted but no bylaws loaded */}
+        {searchTerm && bylaws.length === 0 && fallbackSearchText.length === 0 && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+            <p className="text-sm text-yellow-700">
+              ⚠️ Search is not available - bylaws are still loading or failed to load. Please wait or refresh the page.
+            </p>
+          </div>
+        )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5">

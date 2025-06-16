@@ -22,6 +22,7 @@ import { Calendar as CalendarIcon, Clock, PlusCircle } from 'lucide-react';
 import { Calendar as ShadCalendar } from '@/components/ui/calendar';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { RECAPTCHA_CONFIG } from '@/config/recaptcha';
+import { initIOSRecaptchaFixes, applyIOSRecaptchaFixes } from '@/utils/recaptchaHelpers';
 
 interface Event {
   id: string;
@@ -39,6 +40,9 @@ const CalendarPage = () => {
 
   useEffect(() => {
     fetchEvents();
+    
+    // Initialize iOS reCAPTCHA fixes
+    initIOSRecaptchaFixes();
   }, []);
 
   const fetchEvents = async () => {
@@ -154,6 +158,16 @@ const EventRequestDialog = ({ selectedDate, onSubmitted }) => {
   useEffect(() => {
     setRequestedDate(selectedDate);
   }, [selectedDate]);
+
+  // Apply iOS fixes when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      // Apply iOS fixes with a delay to ensure reCAPTCHA has loaded
+      setTimeout(() => {
+        applyIOSRecaptchaFixes();
+      }, 500);
+    }
+  }, [isOpen]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -307,6 +321,18 @@ const EventRequestDialog = ({ selectedDate, onSubmitted }) => {
               onErrored={() => {
                 console.error('reCAPTCHA error occurred');
                 toast({ title: 'Error', description: 'reCAPTCHA failed to load. Please refresh the page.', variant: 'destructive' });
+              }}
+              theme="light"
+              size="normal"
+              badge="bottomright"
+              hl="en"
+              tabindex={0}
+              isolated={false}
+              style={{
+                transform: 'scale(1)',
+                transformOrigin: '0 0',
+                width: '304px',
+                height: '78px'
               }}
             />
           </div>
