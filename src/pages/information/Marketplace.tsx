@@ -19,7 +19,7 @@ import { RECAPTCHA_CONFIG } from '@/config/recaptcha';
 import { uploadImage, validateImage, ImageUploadResult } from '@/utils/imageUpload';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 import { getAuthorId } from '@/utils/authorId';
-import { initIOSRecaptchaFixes, applyIOSRecaptchaFixes } from '@/utils/recaptchaHelpers';
+import { initIOSRecaptchaFixes, applyIOSRecaptchaFixes, isIOS } from '@/utils/recaptchaHelpers';
 
 interface MarketplacePost {
   id: string;
@@ -99,18 +99,70 @@ const Marketplace = () => {
   // Apply iOS fixes when new post dialog opens
   useEffect(() => {
     if (showNewPostDialog) {
-      setTimeout(() => {
-        applyIOSRecaptchaFixes();
-      }, 500);
+      // Apply immediate fixes
+      applyIOSRecaptchaFixes();
+      
+      // Multiple attempts to ensure fixes are applied
+      const timeouts = [100, 300, 500, 1000, 2000];
+      timeouts.forEach(delay => {
+        setTimeout(() => {
+          applyIOSRecaptchaFixes();
+          
+          // Additional iOS-specific modal fixes
+          if (isIOS()) {
+            // Ensure modal doesn't interfere with reCAPTCHA
+            const modal = document.querySelector('[data-radix-dialog-content]');
+            if (modal) {
+              (modal as HTMLElement).style.setProperty('-webkit-overflow-scrolling', 'touch', 'important');
+              (modal as HTMLElement).style.setProperty('touch-action', 'manipulation', 'important');
+            }
+            
+            // Fix overlay interference
+            const overlay = document.querySelector('[data-radix-dialog-overlay]');
+            if (overlay) {
+              (overlay as HTMLElement).style.setProperty('pointer-events', 'none', 'important');
+              setTimeout(() => {
+                (overlay as HTMLElement).style.setProperty('pointer-events', 'auto', 'important');
+              }, 200);
+            }
+          }
+        }, delay);
+      });
     }
   }, [showNewPostDialog]);
 
   // Apply iOS fixes when reply dialog opens
   useEffect(() => {
     if (showReplyDialog) {
-      setTimeout(() => {
-        applyIOSRecaptchaFixes();
-      }, 500);
+      // Apply immediate fixes
+      applyIOSRecaptchaFixes();
+      
+      // Multiple attempts to ensure fixes are applied
+      const timeouts = [100, 300, 500, 1000, 2000];
+      timeouts.forEach(delay => {
+        setTimeout(() => {
+          applyIOSRecaptchaFixes();
+          
+          // Additional iOS-specific modal fixes
+          if (isIOS()) {
+            // Ensure modal doesn't interfere with reCAPTCHA
+            const modal = document.querySelector('[data-radix-dialog-content]');
+            if (modal) {
+              (modal as HTMLElement).style.setProperty('-webkit-overflow-scrolling', 'touch', 'important');
+              (modal as HTMLElement).style.setProperty('touch-action', 'manipulation', 'important');
+            }
+            
+            // Fix overlay interference
+            const overlay = document.querySelector('[data-radix-dialog-overlay]');
+            if (overlay) {
+              (overlay as HTMLElement).style.setProperty('pointer-events', 'none', 'important');
+              setTimeout(() => {
+                (overlay as HTMLElement).style.setProperty('pointer-events', 'auto', 'important');
+              }, 200);
+            }
+          }
+        }, delay);
+      });
     }
   }, [showReplyDialog]);
 
@@ -382,9 +434,14 @@ const Marketplace = () => {
       {/* New Post Dialog */}
       <Dialog open={showNewPostDialog} onOpenChange={setShowNewPostDialog}>
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Create a New Marketplace Post</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Create a New Marketplace Post</DialogTitle>
+            <DialogDescription>
+              Fill out the form below to create a new marketplace post. All fields marked with * are required.
+            </DialogDescription>
+          </DialogHeader>
           <form onSubmit={handleSubmitPost} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="title">Title *</Label>
                 <Input
@@ -409,7 +466,7 @@ const Marketplace = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="type">Type *</Label>
                 <Select value={newPost.type} onValueChange={(value) => setNewPost({ ...newPost, type: value as 'sell' | 'buy' | 'trade' })}>
@@ -448,7 +505,7 @@ const Marketplace = () => {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="authorName">Your Name *</Label>
                 <Input
@@ -532,7 +589,7 @@ const Marketplace = () => {
               </div>
             </div>
 
-            <div className="recaptcha-container">
+            <div className="recaptcha-container ios-recaptcha-wrapper" style={{ touchAction: 'manipulation' }}>
               <ReCAPTCHA
                 ref={recaptchaRef}
                 sitekey={RECAPTCHA_CONFIG.siteKey}
@@ -552,12 +609,14 @@ const Marketplace = () => {
                   transform: 'scale(1)',
                   transformOrigin: '0 0',
                   width: '304px',
-                  height: '78px'
+                  height: '78px',
+                  touchAction: 'manipulation',
+                  pointerEvents: 'auto'
                 }}
               />
             </div>
 
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-col sm:flex-row justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setShowNewPostDialog(false)}>
                 Cancel
               </Button>
@@ -569,8 +628,13 @@ const Marketplace = () => {
 
       {/* Reply Dialog */}
       <Dialog open={showReplyDialog} onOpenChange={setShowReplyDialog}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader><DialogTitle>Reply to Post</DialogTitle></DialogHeader>
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Reply to Post</DialogTitle>
+            <DialogDescription>
+              Write a reply to this marketplace post. All fields marked with * are required.
+            </DialogDescription>
+          </DialogHeader>
           <form onSubmit={handleSubmitReply} className="space-y-4">
             <div>
               <Label htmlFor="replyContent">Your Reply *</Label>
@@ -583,7 +647,7 @@ const Marketplace = () => {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="replyAuthorName">Your Name *</Label>
                 <Input
@@ -667,7 +731,7 @@ const Marketplace = () => {
               </div>
             </div>
 
-            <div className="recaptcha-container">
+            <div className="recaptcha-container ios-recaptcha-wrapper" style={{ touchAction: 'manipulation' }}>
               <ReCAPTCHA
                 ref={replyRecaptchaRef}
                 sitekey={RECAPTCHA_CONFIG.siteKey}
@@ -687,12 +751,14 @@ const Marketplace = () => {
                   transform: 'scale(1)',
                   transformOrigin: '0 0',
                   width: '304px',
-                  height: '78px'
+                  height: '78px',
+                  touchAction: 'manipulation',
+                  pointerEvents: 'auto'
                 }}
               />
             </div>
 
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-col sm:flex-row justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setShowReplyDialog(false)}>
                 Cancel
               </Button>

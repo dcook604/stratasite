@@ -107,10 +107,10 @@ export const Navbar = () => {
                         {item.name}
                       </a>
                     ) : (
-                      <Link to={item.path} className="flex items-center">
-                        {item.icon}
-                        {item.name}
-                      </Link>
+                    <Link to={item.path} className="flex items-center">
+                      {item.icon}
+                      {item.name}
+                    </Link>
                     )}
                   </Button>
                 ))}
@@ -210,15 +210,15 @@ export const Navbar = () => {
                 {item.name}
               </a>
             ) : (
-              <Link
-                key={item.name}
-                to={item.path}
-                className="flex items-center text-gray-700 hover:bg-gray-100 hover:text-primary px-3 py-2 rounded-md text-base font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {item.icon}
-                {item.name}
-              </Link>
+            <Link
+              key={item.name}
+              to={item.path}
+              className="flex items-center text-gray-700 hover:bg-gray-100 hover:text-primary px-3 py-2 rounded-md text-base font-medium"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              {item.icon}
+              {item.name}
+            </Link>
             )
           ))}
           

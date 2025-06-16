@@ -107,15 +107,15 @@ const Bylaws = () => {
         for (const item of items) {
             // Type guard to ensure we're dealing with a TextItem
             if ('transform' in item && 'str' in item) {
-              const y = item.transform[5];
+            const y = item.transform[5];
 
-              // Add a newline if the Y position has changed significantly
-              if (lastY !== -1 && Math.abs(y - lastY) > 5) {
-                  pageText += '\n';
-              }
-              
-              pageText += item.str + ' ';
-              lastY = y;
+            // Add a newline if the Y position has changed significantly
+            if (lastY !== -1 && Math.abs(y - lastY) > 5) {
+                pageText += '\n';
+            }
+            
+            pageText += item.str + ' ';
+            lastY = y;
             }
         }
 
@@ -155,7 +155,7 @@ const Bylaws = () => {
           setError(`Failed to load the bylaws PDF: ${err.message}`);
         }
       } else {
-        setError('Failed to load the bylaws PDF. Please try again later.');
+      setError('Failed to load the bylaws PDF. Please try again later.');
       }
       
       // Log environment information for debugging
@@ -312,9 +312,9 @@ const Bylaws = () => {
         const partMatch = bylaw.part.toLowerCase().includes(searchLower);
         
         const subsectionMatch = bylaw.subsections.some(sub => 
-          sub.title.toLowerCase().includes(searchLower) ||
-          sub.content.toLowerCase().includes(searchLower) ||
-          sub.items.some(item => item.toLowerCase().includes(searchLower))
+        sub.title.toLowerCase().includes(searchLower) ||
+        sub.content.toLowerCase().includes(searchLower) ||
+        sub.items.some(item => item.toLowerCase().includes(searchLower))
         );
         
         return titleMatch || contentMatch || partMatch || subsectionMatch;
@@ -376,16 +376,16 @@ const Bylaws = () => {
     
     // If no search term, show all bylaws for the category
     if (!searchTerm.trim()) {
-      switch (categoryId) {
-        case 'interpretation':
+    switch (categoryId) {
+      case 'interpretation':
           return bylaws.filter(b => b.partNumber === 1);
-        case 'duties':
+      case 'duties':
           return bylaws.filter(b => b.partNumber === 2);
-        case 'powers':
+      case 'powers':
           return bylaws.filter(b => b.partNumber === 3);
-        case 'council':
+      case 'council':
           return bylaws.filter(b => b.partNumber === 4);
-        default:
+      default:
           return bylaws;
       }
     }

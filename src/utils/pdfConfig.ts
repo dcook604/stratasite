@@ -17,7 +17,7 @@ export const configurePDFJS = () => {
       console.warn('Local unminified worker failed, using CDN fallback');
       
       // Fallback 2: CDN worker
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
       console.log(`PDF.js configured with CDN worker (version ${pdfjsLib.version})`);
     }
   }
