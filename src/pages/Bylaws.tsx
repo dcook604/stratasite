@@ -8,9 +8,10 @@ import PageHeader from '@/components/shared/PageHeader';
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Download, AlertCircle, Smartphone, ZoomIn, ZoomOut } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { loadPDFDocumentWithFallback, isMobile, isIOS, isAndroid, configurePDFJS } from '@/utils/pdfConfig';
+import { isMobile, isIOS, isAndroid } from '@/utils/pdfConfig';
 
-// Configure PDF.js for react-pdf
+// Configure PDF.js worker using Vite's URL constructor for correct asset pathing
+// This ensures the hashed worker file is found after the build process.
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
   import.meta.url,
@@ -23,79 +24,18 @@ const Bylaws: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [scale, setScale] = useState<number>(1.0);
 
-  useEffect(() => {
-    // Initialize PDF.js configuration for mobile devices
-    const initializePDF = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const mobile = isMobile();
-        const ios = isIOS();
-        const android = isAndroid();
-        
-        console.log('Initializing PDF viewer...', {
-          mobile,
-          ios,
-          android,
-          userAgent: navigator.userAgent,
-          screenWidth: window.innerWidth,
-          devicePixelRatio: window.devicePixelRatio
-        });
-        
-        // Configure PDF.js with our mobile-optimized settings
-        configurePDFJS();
-        
-        // Test PDF loading to ensure it works with our configuration
-        const pdfUrl = '/documents/bylaws_2025.pdf';
-        try {
-          await loadPDFDocumentWithFallback(pdfUrl);
-          console.log('PDF pre-loading successful');
-        } catch (preloadError) {
-          console.warn('PDF pre-loading failed, but continuing with react-pdf:', preloadError);
-          // Don't fail here - let react-pdf try its own loading
-        }
-        
-        setLoading(false);
-        
-      } catch (error) {
-        console.error('PDF initialization failed:', error);
-        
-        if (error instanceof Error) {
-          if (isMobile()) {
-            if (isIOS()) {
-              setError(`iOS PDF loading failed: ${error.message}`);
-            } else if (isAndroid()) {
-              setError(`Android PDF loading failed: ${error.message}`);
-            } else {
-              setError(`Mobile PDF loading failed: ${error.message}`);
-            }
-          } else {
-            setError(`PDF loading failed: ${error.message}`);
-          }
-        } else {
-          setError('An unexpected error occurred while loading the PDF.');
-        }
-        setLoading(false);
-      }
-    };
-
-    initializePDF();
-  }, []);
-
-  // Adjust scale based on device type and screen size
+  // This useEffect is now only for responsive scaling, not for initialization
   useEffect(() => {
     const updateScale = () => {
       const width = window.innerWidth;
-      const pixelRatio = window.devicePixelRatio || 1;
       
       if (isMobile()) {
         if (width < 375) {
-          setScale(0.5); // Very small mobile screens (iPhone SE)
+          setScale(0.5); // Very small mobile screens
         } else if (width < 480) {
           setScale(0.6); // Small mobile screens
         } else if (width < 768) {
-          setScale(0.7); // Larger mobile screens
+          setScale(0.7); // Larger mobile screens (portrait tablets)
         } else {
           setScale(0.8); // Tablets
         }
@@ -106,8 +46,7 @@ const Bylaws: React.FC = () => {
           setScale(1.0); // Large desktop screens
         }
       }
-      
-      console.log('Scale updated:', { width, pixelRatio, mobile: isMobile(), scale });
+      console.log('Scale updated:', { width, mobile: isMobile(), scale });
     };
 
     updateScale();
@@ -122,24 +61,28 @@ const Bylaws: React.FC = () => {
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
     setLoading(false);
+    setError(null);
     console.log(`PDF loaded successfully with ${numPages} pages`);
   };
 
   const onDocumentLoadError = (error: Error) => {
-    console.error('PDF document load error:', error);
+    console.error('react-pdf document load error:', error);
+    let errorMessage = 'Failed to load the bylaws PDF. Please try again later.';
     
-    // Mobile-specific error messages
+    // Provide more specific feedback for mobile users
     if (isMobile()) {
       if (isIOS()) {
-        setError('Failed to load PDF on iOS device. Try refreshing the page or using Safari browser.');
+        errorMessage = 'Failed to load PDF on this iOS device. Please try refreshing the page or using the Safari browser.';
       } else if (isAndroid()) {
-        setError('Failed to load PDF on Android device. Try refreshing the page or using Chrome browser.');
+        errorMessage = 'Failed to load PDF on this Android device. Please try refreshing the page or using the Chrome browser.';
       } else {
-        setError('Failed to load PDF on mobile device. Please try refreshing the page.');
+        errorMessage = 'Failed to load PDF on your mobile device. Please try refreshing the page.';
       }
-    } else {
-      setError('Failed to load the bylaws PDF. Please try again later.');
+    } else if (error.message.includes('worker')) {
+       errorMessage = 'The PDF viewer component failed to load. This might be due to a network issue or a browser extension conflict. Please refresh the page.';
     }
+
+    setError(errorMessage);
     setLoading(false);
   };
 

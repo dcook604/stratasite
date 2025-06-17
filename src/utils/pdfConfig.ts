@@ -20,107 +20,19 @@ const isIOSSafari = (): boolean => {
   return isIOS && isSafari;
 };
 
-// Configure PDF.js worker with comprehensive fallback options for mobile
-export const configurePDFJS = () => {
-  try {
-    // Check if we're in a browser environment
-    if (typeof window === 'undefined') {
-      console.warn('PDF.js being configured in non-browser environment');
-      return;
-    }
-
-    // Get the current origin for absolute URLs
-    const origin = window.location.origin;
-    const mobile = isMobile();
-    const ios = isIOS();
-    const android = isAndroid();
-    
-    console.log('Configuring PDF.js...', {
-      origin,
-      pdfjsVersion: pdfjsLib.version,
-      userAgent: navigator.userAgent,
-      mobile,
-      ios,
-      android
-    });
-
-    // Mobile browsers often have issues with ES modules and workers
-    // Use different strategies based on device type
-    if (ios) {
-      // iOS Safari has strict worker restrictions
-      console.log('iOS detected - using iOS-optimized worker configuration');
-      
-      // Try CDN first for iOS as local workers often fail
-      const iosWorkerUrl = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
-      pdfjsLib.GlobalWorkerOptions.workerSrc = iosWorkerUrl;
-      console.log('PDF.js configured with CDN worker for iOS:', iosWorkerUrl);
-      
-    } else if (android) {
-      // Android Chrome usually handles local workers better
-      console.log('Android detected - using Android-optimized worker configuration');
-      
-      const androidWorkerUrl = `${origin}/pdf.worker.min.mjs`;
-      pdfjsLib.GlobalWorkerOptions.workerSrc = androidWorkerUrl;
-      console.log('PDF.js configured with local worker for Android:', androidWorkerUrl);
-      
-    } else if (mobile) {
-      // Other mobile browsers - use CDN for safety
-      console.log('Mobile device detected - using mobile-optimized worker configuration');
-      
-      const mobileWorkerUrl = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
-      pdfjsLib.GlobalWorkerOptions.workerSrc = mobileWorkerUrl;
-      console.log('PDF.js configured with CDN worker for mobile:', mobileWorkerUrl);
-      
-    } else {
-      // Desktop browsers - use local worker
-      const desktopWorkerUrl = `${origin}/pdf.worker.min.mjs`;
-      pdfjsLib.GlobalWorkerOptions.workerSrc = desktopWorkerUrl;
-      console.log('PDF.js configured with local worker for desktop:', desktopWorkerUrl);
-    }
-    
-  } catch (error) {
-    console.error('Failed to configure PDF.js worker:', error);
-    
-    // Emergency fallback to CDN for all devices
-    try {
-      const emergencyWorkerUrl = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
-      pdfjsLib.GlobalWorkerOptions.workerSrc = emergencyWorkerUrl;
-      console.log('PDF.js configured with emergency CDN worker:', emergencyWorkerUrl);
-    } catch (emergencyError) {
-      console.error('All PDF.js worker configuration attempts failed:', emergencyError);
-      throw new Error('PDF.js worker configuration failed completely');
-    }
-  }
-  
-  // Additional PDF.js configuration for mobile compatibility
-  try {
-    // Configure for mobile environment
-    if (typeof window !== 'undefined') {
-      // Prevent PDF.js from creating multiple workers on mobile
-      pdfjsLib.GlobalWorkerOptions.workerPort = null;
-    }
-    
-    console.log('PDF.js mobile configuration applied');
-  } catch (configError) {
-    console.warn('PDF.js mobile configuration failed:', configError);
-  }
-  
-  // Validate final configuration
-  if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-    console.error('PDF.js worker source is not set after configuration');
-    throw new Error('PDF.js worker configuration validation failed');
-  }
-  
-  console.log('PDF.js worker configuration completed:', pdfjsLib.GlobalWorkerOptions.workerSrc);
-};
+// NOTE: The configurePDFJS function has been removed as it was causing conflicts
+// with Vite's asset handling for the PDF worker.
+// The worker is now configured directly in the Bylaws.tsx component.
 
 // Enhanced PDF loading function with mobile-specific error handling
 export const loadPDFDocument = async (url: string, options: any = {}) => {
   try {
     console.log('Loading PDF document:', url, 'Mobile:', isMobile());
     
-    // Ensure PDF.js is configured
-    configurePDFJS();
+    // Ensure PDF.js is configured (This should be done at the component level)
+    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+      console.warn('PDF.js workerSrc not set. Loading may fail.');
+    }
     
     // Mobile-optimized loading options
     const baseOptions = {
