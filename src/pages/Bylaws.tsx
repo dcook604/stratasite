@@ -10,12 +10,9 @@ import { ChevronLeft, ChevronRight, Download, AlertCircle, Smartphone, ZoomIn, Z
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { isMobile, isIOS, isAndroid } from '@/utils/pdfConfig';
 
-// Configure PDF.js worker using Vite's URL constructor for correct asset pathing
-// This ensures the hashed worker file is found after the build process.
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url,
-).toString();
+// Configure PDF.js worker using CDN for reliability
+// This ensures the worker loads correctly in all environments
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const Bylaws: React.FC = () => {
   const [numPages, setNumPages] = useState<number>(0);
@@ -23,6 +20,13 @@ const Bylaws: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [scale, setScale] = useState<number>(1.0);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Bylaws component mounted');
+    console.log('PDF.js version:', pdfjs.version);
+    console.log('Worker source:', pdfjs.GlobalWorkerOptions.workerSrc);
+  }, []);
 
   // This useEffect is now only for responsive scaling, not for initialization
   useEffect(() => {
@@ -59,6 +63,7 @@ const Bylaws: React.FC = () => {
   }, []);
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    console.log('onDocumentLoadSuccess called with numPages:', numPages);
     setNumPages(numPages);
     setLoading(false);
     setError(null);
@@ -66,7 +71,10 @@ const Bylaws: React.FC = () => {
   };
 
   const onDocumentLoadError = (error: Error) => {
-    console.error('react-pdf document load error:', error);
+    console.error('onDocumentLoadError called:', error);
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
     let errorMessage = 'Failed to load the bylaws PDF. Please try again later.';
     
     // Provide more specific feedback for mobile users
@@ -256,9 +264,13 @@ const Bylaws: React.FC = () => {
           <div className="flex justify-center">
             <div className="border border-gray-200 shadow-sm rounded">
               <Document
-                file="/documents/bylaws_2025.pdf"
+                file={`${window.location.origin}/documents/bylaws_2025.pdf`}
                 onLoadSuccess={onDocumentLoadSuccess}
                 onLoadError={onDocumentLoadError}
+                options={{
+                  cMapUrl: `//unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
+                  cMapPacked: true,
+                }}
                 loading={
                   <div className="flex items-center justify-center h-96 bg-gray-50 rounded">
                     <div className="text-center space-y-2">
