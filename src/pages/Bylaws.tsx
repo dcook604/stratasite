@@ -46,6 +46,12 @@ const Bylaws: React.FC = () => {
       .then(blob => {
         console.log('PDF blob size:', blob.size, 'bytes');
         setLoading(false); // PDF is accessible, stop loading
+        
+        // If using iframe mode, we need to set a default number of pages
+        // since we can't get it programmatically from iframe
+        if (useIframe && numPages === 0) {
+          setNumPages(33); // Default based on known PDF
+        }
       })
       .catch(err => {
         console.error('PDF fetch error:', err);
@@ -59,11 +65,22 @@ const Bylaws: React.FC = () => {
         console.log('PDF loading timeout - switching to iframe mode');
         setUseIframe(true);
         setLoading(false);
+        if (numPages === 0) {
+          setNumPages(33);
+        }
       }
     }, 5000);
     
     return () => clearTimeout(timeoutId);
   }, []);
+
+  // Handle page count when switching to iframe mode
+  useEffect(() => {
+    if (useIframe && numPages === 0) {
+      console.log('Setting default page count for iframe mode');
+      setNumPages(33); // Known page count for this PDF
+    }
+  }, [useIframe, numPages]);
 
   // This useEffect is now only for responsive scaling, not for initialization
   useEffect(() => {
@@ -118,6 +135,11 @@ const Bylaws: React.FC = () => {
     setUseIframe(true);
     setLoading(false);
     setError(null); // Clear error since we're switching to iframe
+    
+    // Set default page count for iframe if we don't have it
+    if (numPages === 0) {
+      setNumPages(33);
+    }
   };
 
   const goToPrevPage = () => {
@@ -305,7 +327,7 @@ const Bylaws: React.FC = () => {
               {useIframe ? (
                 <div className="w-full">
                   <iframe
-                    src={pdfUrl}
+                    src={`${pdfUrl}#page=${pageNumber}`}
                     className="w-full rounded"
                     style={{ 
                       height: isMobile() ? '500px' : '800px',
@@ -313,6 +335,7 @@ const Bylaws: React.FC = () => {
                     }}
                     title="Bylaws PDF Viewer"
                     allowFullScreen
+                    key={pageNumber} // Force re-render when page changes
                   />
                   <div className="mt-4 text-center text-sm text-gray-500">
                     Using simple PDF viewer. Use your browser's zoom controls to adjust size.
