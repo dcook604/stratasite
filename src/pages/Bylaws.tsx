@@ -1,671 +1,417 @@
 import React, { useState, useEffect } from 'react';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import PageHeader from '@/components/shared/PageHeader';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Book, Search, FileText, ChevronRight, Home, Users, Car, Shield, Trash2, Building, Gavel, Download, AlertCircle } from 'lucide-react';
-import { configurePDFJS, pdfjsLib } from '@/utils/pdfConfig';
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight, Download, AlertCircle, Smartphone, ZoomIn, ZoomOut } from 'lucide-react';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { loadPDFDocumentWithFallback, isMobile, isIOS, isAndroid, configurePDFJS } from '@/utils/pdfConfig';
 
-interface BylawSection {
-  id: string;
-  title: string;
-  content: string;
-  subsections: BylawSubsection[];
-  part: string;
-  partNumber: number;
-  icon: React.ReactNode;
-}
+// Configure PDF.js for react-pdf
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url,
+).toString();
 
-interface BylawSubsection {
-  id: string;
-  title: string;
-  content: string;
-  items: string[];
-}
-
-const Bylaws = () => {
-  const [bylaws, setBylaws] = useState<BylawSection[]>([]);
-  const [loading, setLoading] = useState(true);
+const Bylaws: React.FC = () => {
+  const [numPages, setNumPages] = useState<number>(0);
+  const [pageNumber, setPageNumber] = useState<number>(1);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSection, setSelectedSection] = useState<BylawSection | null>(null);
-  const [activeTab, setActiveTab] = useState('overview');
-  const [pdfText, setPdfText] = useState<string>('');
-  const [fallbackSearchText, setFallbackSearchText] = useState<string>('');
-
-  const getIconForSection = (title: string): React.ReactNode => {
-    const lowerTitle = title.toLowerCase();
-    if (lowerTitle.includes('interpretation') || lowerTitle.includes('effect')) {
-      return <FileText className="h-5 w-5" />;
-    } else if (lowerTitle.includes('owner') || lowerTitle.includes('tenant') || lowerTitle.includes('duties')) {
-      return <Users className="h-5 w-5" />;
-    } else if (lowerTitle.includes('powers') || lowerTitle.includes('strata corporation')) {
-      return <Building className="h-5 w-5" />;
-    } else if (lowerTitle.includes('council')) {
-      return <Gavel className="h-5 w-5" />;
-    } else {
-      return <FileText className="h-5 w-5" />;
-    }
-  };
-
-  const extractTextFromPDF = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      console.log('Starting PDF extraction...');
-
-      // Configure PDF.js
-      configurePDFJS();
-      console.log('PDF.js configured');
-
-      // Load the PDF document
-      const loadingTask = pdfjsLib.getDocument('/documents/bylaws_2025.pdf');
-      console.log('PDF loading task created');
-      
-      const pdf = await loadingTask.promise;
-      console.log(`PDF loaded successfully. Pages: ${pdf.numPages}`);
-      
-      let fullText = '';
-      
-      // Extract text from all pages, preserving line breaks
-      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        console.log(`Processing page ${pageNum}/${pdf.numPages}`);
-        
-        const page = await pdf.getPage(pageNum);
-        const textContent = await page.getTextContent();
-        
-        console.log(`Page ${pageNum} text items: ${textContent.items.length}`);
-        
-        let lastY = -1;
-        let pageText = '';
-        
-        // Sort items by vertical position to ensure correct order
-        const items = [...textContent.items].sort((a: any, b: any) => {
-          // Type guard for sorting
-          if (!('transform' in a) || !('transform' in b)) return 0;
-          
-          const aY = a.transform[5];
-          const bY = b.transform[5];
-          const aX = a.transform[4];
-          const bX = b.transform[4];
-          
-          if (aY > bY) return -1; // Higher y => higher on page
-          if (aY < bY) return 1;
-          if (aX < bX) return -1; // Lower x => earlier on line
-          if (aX > bX) return 1;
-          return 0;
-        });
-
-        for (const item of items) {
-            // Type guard to ensure we're dealing with a TextItem
-            if ('transform' in item && 'str' in item) {
-            const y = item.transform[5];
-
-            // Add a newline if the Y position has changed significantly
-            if (lastY !== -1 && Math.abs(y - lastY) > 5) {
-                pageText += '\n';
-            }
-            
-            pageText += item.str + ' ';
-            lastY = y;
-            }
-        }
-
-        fullText += pageText + '\n\n'; // Add space between pages
-        console.log(`Page ${pageNum} extracted ${pageText.length} characters`);
-      }
-      
-      console.log(`Total extracted text length: ${fullText.length} characters`);
-      console.log('First 200 characters:', fullText.substring(0, 200));
-      
-      setPdfText(fullText);
-      
-      // Parse the text into structured sections
-      const parsedSections = parseTextIntoSections(fullText);
-      console.log(`Parsed ${parsedSections.length} sections from PDF`);
-      
-      setBylaws(parsedSections);
-      
-      // Log first few sections for debugging
-      if (parsedSections.length > 0) {
-        console.log('First parsed section:', parsedSections[0]);
-      }
-      
-    } catch (err) {
-      console.error('Detailed PDF loading error:', err);
-      console.error('Error stack:', err instanceof Error ? err.stack : 'No stack trace');
-      
-      // Try to provide more specific error information
-      if (err instanceof Error) {
-        if (err.message.includes('network')) {
-          setError('Network error loading bylaws PDF. Please check your internet connection and try again.');
-        } else if (err.message.includes('worker')) {
-          setError('PDF worker failed to load. Please refresh the page and try again.');
-        } else if (err.message.includes('Invalid PDF')) {
-          setError('The bylaws PDF file appears to be corrupted. Please contact support.');
-        } else {
-          setError(`Failed to load the bylaws PDF: ${err.message}`);
-        }
-      } else {
-      setError('Failed to load the bylaws PDF. Please try again later.');
-      }
-      
-      // Log environment information for debugging
-      console.log('Environment info:', {
-        userAgent: navigator.userAgent,
-        location: window.location.href,
-        pdfjsVersion: pdfjsLib.version,
-        timestamp: new Date().toISOString()
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const parseTextIntoSections = (text: string): BylawSection[] => {
-    const sections: BylawSection[] = [];
-    const lines = text.split('\n').filter(line => line.trim().length > 0);
-    
-    let currentSection: BylawSection | null = null;
-    let currentSubsection: BylawSubsection | null = null;
-    let currentContent = '';
-    
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-      
-      // Skip empty lines
-      if (!line) continue;
-      
-      // Detect PART headers (e.g., "PART 1 - INTERPRETATION AND EFFECT")
-      const partMatch = line.match(/^PART\s+(\d+)\s*-\s*(.+)$/i);
-      if (partMatch) {
-        // Save previous section
-        if (currentSection) {
-          if (currentSubsection) {
-            currentSection.subsections.push(currentSubsection);
-          }
-          if (currentContent.trim()) {
-            currentSection.content = currentContent.trim();
-          }
-          sections.push(currentSection);
-        }
-        
-        // Create new section
-        const partNumber = parseInt(partMatch[1]);
-        const partTitle = partMatch[2].trim();
-        
-        currentSection = {
-          id: `part-${partNumber}`,
-          title: partTitle,
-          content: '',
-          subsections: [],
-          part: `Part ${partNumber}`,
-          partNumber: partNumber,
-          icon: getIconForSection(partTitle)
-        };
-        currentSubsection = null;
-        currentContent = '';
-        continue;
-      }
-      
-      // Detect Section headers (e.g., "Section 1 - Force and Effect")
-      const sectionMatch = line.match(/^Section\s+(\d+)\s*-\s*(.+)$/i);
-      if (sectionMatch && currentSection) {
-        // Save previous subsection
-        if (currentSubsection) {
-          if (currentContent.trim()) {
-            currentSubsection.content = currentContent.trim();
-          }
-          currentSection.subsections.push(currentSubsection);
-        }
-        
-        // Create new subsection
-        const sectionNumber = parseInt(sectionMatch[1]);
-        const sectionTitle = sectionMatch[2].trim();
-        
-        currentSubsection = {
-          id: `section-${sectionNumber}`,
-          title: sectionTitle,
-          content: '',
-          items: []
-        };
-        currentContent = '';
-        continue;
-      }
-      
-      // Regular content
-      if (currentSubsection || currentSection) {
-        // Check if it's a numbered item (e.g., "1.1", "2.3", etc.)
-        if (line.match(/^\d+\.\d+/) && currentSubsection) {
-          currentSubsection.items.push(line);
-        } else {
-          currentContent += (currentContent ? ' ' : '') + line;
-        }
-      }
-    }
-    
-    // Save the last section
-    if (currentSection) {
-      if (currentSubsection) {
-        if (currentContent.trim()) {
-          currentSubsection.content = currentContent.trim();
-        }
-        currentSection.subsections.push(currentSubsection);
-      } else if (currentContent.trim()) {
-        currentSection.content = currentContent.trim();
-      }
-      sections.push(currentSection);
-    }
-    
-    return sections;
-  };
+  const [scale, setScale] = useState<number>(1.0);
 
   useEffect(() => {
-    extractTextFromPDF();
-    
-    // Also load fallback search data in parallel
-    loadFallbackSearchData();
+    // Initialize PDF.js configuration for mobile devices
+    const initializePDF = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const mobile = isMobile();
+        const ios = isIOS();
+        const android = isAndroid();
+        
+        console.log('Initializing PDF viewer...', {
+          mobile,
+          ios,
+          android,
+          userAgent: navigator.userAgent,
+          screenWidth: window.innerWidth,
+          devicePixelRatio: window.devicePixelRatio
+        });
+        
+        // Configure PDF.js with our mobile-optimized settings
+        configurePDFJS();
+        
+        // Test PDF loading to ensure it works with our configuration
+        const pdfUrl = '/documents/bylaws_2025.pdf';
+        try {
+          await loadPDFDocumentWithFallback(pdfUrl);
+          console.log('PDF pre-loading successful');
+        } catch (preloadError) {
+          console.warn('PDF pre-loading failed, but continuing with react-pdf:', preloadError);
+          // Don't fail here - let react-pdf try its own loading
+        }
+        
+        setLoading(false);
+        
+      } catch (error) {
+        console.error('PDF initialization failed:', error);
+        
+        if (error instanceof Error) {
+          if (isMobile()) {
+            if (isIOS()) {
+              setError(`iOS PDF loading failed: ${error.message}`);
+            } else if (isAndroid()) {
+              setError(`Android PDF loading failed: ${error.message}`);
+            } else {
+              setError(`Mobile PDF loading failed: ${error.message}`);
+            }
+          } else {
+            setError(`PDF loading failed: ${error.message}`);
+          }
+        } else {
+          setError('An unexpected error occurred while loading the PDF.');
+        }
+        setLoading(false);
+      }
+    };
+
+    initializePDF();
   }, []);
 
-  // Fallback function to load XML bylaws data for search
-  const loadFallbackSearchData = async () => {
-    try {
-      console.log('Loading fallback XML data for search...');
-      const response = await fetch('/bylaws.xml');
-      const xmlText = await response.text();
+  // Adjust scale based on device type and screen size
+  useEffect(() => {
+    const updateScale = () => {
+      const width = window.innerWidth;
+      const pixelRatio = window.devicePixelRatio || 1;
       
-      // Extract readable text from XML (simple approach)
-      const textContent = xmlText
-        .replace(/<[^>]*>/g, ' ') // Remove XML tags
-        .replace(/\s+/g, ' ') // Normalize whitespace
-        .trim();
+      if (isMobile()) {
+        if (width < 375) {
+          setScale(0.5); // Very small mobile screens (iPhone SE)
+        } else if (width < 480) {
+          setScale(0.6); // Small mobile screens
+        } else if (width < 768) {
+          setScale(0.7); // Larger mobile screens
+        } else {
+          setScale(0.8); // Tablets
+        }
+      } else {
+        if (width < 1200) {
+          setScale(0.9); // Small desktop screens
+        } else {
+          setScale(1.0); // Large desktop screens
+        }
+      }
       
-      setFallbackSearchText(textContent);
-      console.log(`Fallback search data loaded: ${textContent.length} characters`);
-      
-      return textContent;
-    } catch (error) {
-      console.error('Failed to load fallback search data:', error);
-      return '';
-    }
+      console.log('Scale updated:', { width, pixelRatio, mobile: isMobile(), scale });
+    };
+
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    window.addEventListener('orientationchange', updateScale);
+    return () => {
+      window.removeEventListener('resize', updateScale);
+      window.removeEventListener('orientationchange', updateScale);
+    };
+  }, []);
+
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages);
+    setLoading(false);
+    console.log(`PDF loaded successfully with ${numPages} pages`);
   };
 
-  // Enhanced search that works with both PDF and fallback data
-  const performSearch = (searchTerm: string) => {
-    if (!searchTerm.trim()) return [];
+  const onDocumentLoadError = (error: Error) => {
+    console.error('PDF document load error:', error);
     
-    const searchLower = searchTerm.toLowerCase().trim();
-    
-    // If we have parsed bylaws from PDF, use the structured search
-    if (bylaws.length > 0) {
-      return bylaws.filter(bylaw => {
-        const titleMatch = bylaw.title.toLowerCase().includes(searchLower);
-        const contentMatch = bylaw.content.toLowerCase().includes(searchLower);
-        const partMatch = bylaw.part.toLowerCase().includes(searchLower);
-        
-        const subsectionMatch = bylaw.subsections.some(sub => 
-        sub.title.toLowerCase().includes(searchLower) ||
-        sub.content.toLowerCase().includes(searchLower) ||
-        sub.items.some(item => item.toLowerCase().includes(searchLower))
-        );
-        
-        return titleMatch || contentMatch || partMatch || subsectionMatch;
-      });
+    // Mobile-specific error messages
+    if (isMobile()) {
+      if (isIOS()) {
+        setError('Failed to load PDF on iOS device. Try refreshing the page or using Safari browser.');
+      } else if (isAndroid()) {
+        setError('Failed to load PDF on Android device. Try refreshing the page or using Chrome browser.');
+      } else {
+        setError('Failed to load PDF on mobile device. Please try refreshing the page.');
+      }
+    } else {
+      setError('Failed to load the bylaws PDF. Please try again later.');
     }
-    
-    // Fallback: if no structured bylaws but we have fallback text
-    if (fallbackSearchText.length > 0) {
-      const isMatch = fallbackSearchText.toLowerCase().includes(searchLower);
-      console.log(`Fallback search for "${searchTerm}": ${isMatch ? 'found' : 'not found'}`);
-      
-      // Return a simple result structure for fallback
-      return isMatch ? [{
-        id: 'fallback-search',
-        title: `Search Results for "${searchTerm}"`,
-        content: `Found matches in bylaws document. Please download the PDF for detailed viewing.`,
-        subsections: [],
-        part: 'Search Result',
-        partNumber: 0,
-        icon: <FileText className="h-5 w-5" />
-      }] : [];
-    }
-    
-    return [];
+    setLoading(false);
   };
 
-  const filteredBylaws = performSearch(searchTerm);
+  const goToPrevPage = () => {
+    setPageNumber(prev => Math.max(prev - 1, 1));
+  };
 
-  const categories = [
-    { id: 'overview', name: 'Overview', icon: <Home className="h-4 w-4" /> },
-    { id: 'interpretation', name: 'Interpretation & Effect', icon: <FileText className="h-4 w-4" /> },
-    { id: 'duties', name: 'Duties & Responsibilities', icon: <Users className="h-4 w-4" /> },
-    { id: 'powers', name: 'Powers & Corporation', icon: <Building className="h-4 w-4" /> },
-    { id: 'council', name: 'Council', icon: <Gavel className="h-4 w-4" /> }
-  ];
+  const goToNextPage = () => {
+    setPageNumber(prev => Math.min(prev + 1, numPages));
+  };
 
-  const getCategoryBylaws = (categoryId: string) => {
-    const searchResults = performSearch(searchTerm);
-    
-    if (categoryId === 'overview') {
-      return searchResults.length > 0 ? searchResults : bylaws;
-    }
-    
-    // Filter search results by category
-    const filteredResults = searchResults.filter(bylaw => {
-      switch (categoryId) {
-        case 'interpretation':
-          return bylaw.partNumber === 1;
-        case 'duties':
-          return bylaw.partNumber === 2;
-        case 'powers':
-          return bylaw.partNumber === 3;
-        case 'council':
-          return bylaw.partNumber === 4;
-        default:
-          return true;
-      }
-    });
-    
-    // If no search term, show all bylaws for the category
-    if (!searchTerm.trim()) {
-    switch (categoryId) {
-      case 'interpretation':
-          return bylaws.filter(b => b.partNumber === 1);
-      case 'duties':
-          return bylaws.filter(b => b.partNumber === 2);
-      case 'powers':
-          return bylaws.filter(b => b.partNumber === 3);
-      case 'council':
-          return bylaws.filter(b => b.partNumber === 4);
-      default:
-          return bylaws;
-      }
-    }
-    
-    return filteredResults;
+  const zoomIn = () => {
+    setScale(prev => Math.min(prev + 0.2, 2.0));
+  };
+
+  const zoomOut = () => {
+    setScale(prev => Math.max(prev - 0.2, 0.3));
+  };
+
+  const downloadPDF = () => {
+    const link = document.createElement('a');
+    link.href = '/documents/bylaws_2025.pdf';
+    link.download = 'Spectrum_4_Bylaws_2025.pdf';
+    link.click();
   };
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen">
+      <>
         <Navbar />
-        <PageHeader title="Strata Bylaws" description="Official bylaws governing Spectrum 4 Strata Corporation" />
-        <main className="flex-grow container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading bylaws...</p>
-            </div>
+        <div className="container mx-auto px-4 py-8">
+          <PageHeader 
+            title="Bylaws" 
+            description="Spectrum 4 Strata Bylaws"
+          />
+          <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p className="text-gray-600 text-center">
+              {isMobile() ? (
+                <>
+                  <Smartphone className="inline w-4 h-4 mr-2" />
+                  Loading PDF for mobile device...
+                </>
+              ) : (
+                'Loading PDF...'
+              )}
+            </p>
+            {isMobile() && (
+              <div className="text-sm text-gray-500 text-center max-w-md space-y-1">
+                <p>Mobile devices may take longer to load PDFs.</p>
+                <p>Please be patient while we optimize the viewing experience.</p>
+              </div>
+            )}
           </div>
-        </main>
+        </div>
         <Footer />
-      </div>
+      </>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col min-h-screen">
+      <>
         <Navbar />
-        <PageHeader title="Strata Bylaws" description="Official bylaws governing Spectrum 4 Strata Corporation" />
-        <main className="flex-grow container mx-auto px-4 py-8">
-          <Card className="max-w-2xl mx-auto">
-            <CardContent className="text-center py-12">
-              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Error Loading Bylaws</h3>
-              <p className="text-gray-600 mb-4">{error}</p>
-              <Button onClick={() => window.location.reload()}>
-                Try Again
-              </Button>
-            </CardContent>
-          </Card>
-        </main>
+        <div className="container mx-auto px-4 py-8">
+          <PageHeader 
+            title="Bylaws" 
+            description="Spectrum 4 Strata Bylaws"
+          />
+          <Alert className="max-w-2xl mx-auto">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="space-y-4">
+              <div>{error}</div>
+              {isMobile() && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Mobile troubleshooting tips:</p>
+                  <ul className="text-xs space-y-1 list-disc list-inside ml-4">
+                    <li>Try refreshing the page</li>
+                    <li>Ensure you have a stable internet connection</li>
+                    {isIOS() && <li>Use Safari browser for best compatibility</li>}
+                    {isAndroid() && <li>Use Chrome browser for best compatibility</li>}
+                    <li>Clear your browser cache and cookies</li>
+                    <li>Try downloading the PDF directly using the button below</li>
+                  </ul>
+                </div>
+              )}
+              <div className="pt-2">
+                <Button onClick={downloadPDF} variant="outline" size="sm">
+                  <Download className="w-4 h-4 mr-2" />
+                  Download PDF
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        </div>
         <Footer />
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <>
       <Navbar />
-      <PageHeader title="Strata Bylaws" description="Official bylaws governing Spectrum 4 Strata Corporation" />
-      
-      <main className="flex-grow container mx-auto px-4 py-8">
-        {/* Header with Search and Download */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search bylaws..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-            {/* Search status indicator */}
-            {searchTerm && (
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                {bylaws.length === 0 && fallbackSearchText.length === 0 ? (
-                  <span className="text-xs text-red-500" title="Bylaws not loaded - search unavailable">⚠️</span>
-                ) : (
-                  <span className="text-xs text-green-500" title={`Found ${performSearch(searchTerm).length} results`}>
-                    {performSearch(searchTerm).length}
-                  </span>
-                )}
+      <div className="container mx-auto px-4 py-8">
+        <PageHeader 
+          title="Bylaws" 
+          description="Spectrum 4 Strata Bylaws"
+        />
+        
+        {isMobile() && (
+          <Alert className="mb-6">
+            <Smartphone className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Mobile View:</strong> PDF is optimized for mobile viewing. 
+              Use pinch-to-zoom for better readability. You can also download the PDF for offline viewing.
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          {/* PDF Controls */}
+          <div className="flex flex-col lg:flex-row justify-between items-center mb-6 space-y-4 lg:space-y-0">
+            {/* Navigation Controls */}
+            <div className="flex items-center space-x-2">
+              <Button 
+                onClick={goToPrevPage} 
+                disabled={pageNumber <= 1}
+                variant="outline"
+                size="sm"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                {!isMobile() && "Previous"}
+              </Button>
+              <span className="text-sm font-medium px-2 whitespace-nowrap">
+                Page {pageNumber} of {numPages}
+              </span>
+              <Button 
+                onClick={goToNextPage} 
+                disabled={pageNumber >= numPages}
+                variant="outline"
+                size="sm"
+              >
+                {!isMobile() && "Next"}
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            {/* Zoom Controls (Desktop only) */}
+            {!isMobile() && (
+              <div className="flex items-center space-x-2">
+                <Button onClick={zoomOut} variant="outline" size="sm">
+                  <ZoomOut className="w-4 h-4" />
+                </Button>
+                <span className="text-sm px-2 min-w-16 text-center">
+                  {Math.round(scale * 100)}%
+                </span>
+                <Button onClick={zoomIn} variant="outline" size="sm">
+                  <ZoomIn className="w-4 h-4" />
+                </Button>
               </div>
             )}
+            
+            {/* Download Button */}
+            <Button onClick={downloadPDF} variant="outline" size="sm">
+              <Download className="w-4 h-4 mr-2" />
+              Download
+            </Button>
           </div>
-          <Button asChild variant="outline">
-            <a href="/documents/bylaws_2025.pdf" target="_blank" rel="noopener noreferrer">
-              <Download className="mr-2 h-4 w-4" />
-              Download PDF
-            </a>
-          </Button>
-        </div>
 
-        {/* Search results summary */}
-        {searchTerm && (bylaws.length > 0 || fallbackSearchText.length > 0) && (
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-            <p className="text-sm text-blue-700">
-              {performSearch(searchTerm).length === 0 
-                ? `No results found for "${searchTerm}". Try different keywords or check spelling.`
-                : performSearch(searchTerm).length === 1 && performSearch(searchTerm)[0]?.id === 'fallback-search'
-                ? `Found matches for "${searchTerm}" in bylaws (fallback search). Download PDF for detailed viewing.`
-                : `Found ${performSearch(searchTerm).length} result${performSearch(searchTerm).length === 1 ? '' : 's'} for "${searchTerm}"`
-              }
-            </p>
-          </div>
-        )}
-
-        {/* Warning if search attempted but no bylaws loaded */}
-        {searchTerm && bylaws.length === 0 && fallbackSearchText.length === 0 && (
-          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-            <p className="text-sm text-yellow-700">
-              ⚠️ Search is not available - bylaws are still loading or failed to load. Please wait or refresh the page.
-            </p>
-          </div>
-        )}
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5">
-            {categories.map((category) => (
-              <TabsTrigger key={category.id} value={category.id} className="flex items-center gap-2">
-                {category.icon}
-                <span className="hidden sm:inline">{category.name}</span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          {categories.map((category) => (
-            <TabsContent key={category.id} value={category.id} className="mt-6">
-              {category.id === 'overview' ? (
-                <div className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Book className="h-5 w-5" />
-                        About These Bylaws
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-700 mb-4">
-                        These are the official bylaws for Spectrum 4 Strata Corporation, updated for 2025. 
-                        The bylaws are organized into parts covering different aspects of strata governance and operations.
-                      </p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-4 border rounded-lg">
-                          <h3 className="font-semibold mb-2">Total Parts</h3>
-                          <p className="text-2xl font-bold text-primary">{bylaws.length}</p>
-                        </div>
-                        <div className="p-4 border rounded-lg">
-                          <h3 className="font-semibold mb-2">Total Sections</h3>
-                          <p className="text-2xl font-bold text-primary">
-                            {bylaws.reduce((sum, part) => sum + part.subsections.length, 0)}
-                          </p>
-                        </div>
+          {/* PDF Viewer */}
+          <div className="flex justify-center">
+            <div className="border border-gray-200 shadow-sm rounded">
+              <Document
+                file="/documents/bylaws_2025.pdf"
+                onLoadSuccess={onDocumentLoadSuccess}
+                onLoadError={onDocumentLoadError}
+                loading={
+                  <div className="flex items-center justify-center h-96 bg-gray-50 rounded">
+                    <div className="text-center space-y-2">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                      <p className="text-gray-600">Loading page...</p>
+                    </div>
+                  </div>
+                }
+                error={
+                  <div className="flex items-center justify-center h-96 bg-red-50 rounded">
+                    <div className="text-center text-red-600">
+                      <AlertCircle className="w-8 h-8 mx-auto mb-2" />
+                      <p>Failed to load PDF</p>
+                    </div>
+                  </div>
+                }
+              >
+                <Page 
+                  pageNumber={pageNumber} 
+                  scale={scale}
+                  renderTextLayer={!isMobile()} // Disable text layer on mobile for better performance
+                  renderAnnotationLayer={!isMobile()} // Disable annotation layer on mobile for better performance
+                  loading={
+                    <div 
+                      className="flex items-center justify-center bg-gray-50 rounded" 
+                      style={{ 
+                        width: isMobile() ? `${Math.min(window.innerWidth - 80, 600)}px` : '800px', 
+                        height: isMobile() ? `${Math.min(window.innerHeight - 300, 800)}px` : '1000px' 
+                      }}
+                    >
+                      <div className="text-center space-y-2">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
+                        <p className="text-gray-600 text-sm">Rendering page...</p>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  }
+                  error={
+                    <div 
+                      className="flex items-center justify-center bg-red-50 rounded" 
+                      style={{ 
+                        width: isMobile() ? `${Math.min(window.innerWidth - 80, 600)}px` : '800px', 
+                        height: isMobile() ? `${Math.min(window.innerHeight - 300, 800)}px` : '1000px' 
+                      }}
+                    >
+                      <div className="text-center text-red-600">
+                        <AlertCircle className="w-6 h-6 mx-auto mb-2" />
+                        <p className="text-sm">Failed to render page</p>
+                      </div>
+                    </div>
+                  }
+                />
+              </Document>
+            </div>
+          </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {bylaws.map((bylaw) => (
-                      <Card key={bylaw.id} className="hover:shadow-md transition-shadow cursor-pointer">
-                        <CardHeader>
-                          <CardTitle className="flex items-center gap-3">
-                            {bylaw.icon}
-                            <div>
-                              <div className="text-sm text-gray-500">{bylaw.part}</div>
-                              <div className="text-lg">{bylaw.title}</div>
-                            </div>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-gray-600 text-sm mb-3">
-                            {bylaw.content.substring(0, 150)}...
-                          </p>
-                          <div className="flex items-center justify-between">
-                            <Badge variant="secondary">
-                              {bylaw.subsections.length} sections
-                            </Badge>
-                            <Button variant="ghost" size="sm" onClick={() => setSelectedSection(bylaw)}>
-                              View Details <ChevronRight className="ml-1 h-4 w-4" />
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {getCategoryBylaws(category.id).length === 0 ? (
-                    <Card>
-                      <CardContent className="text-center py-12">
-                        <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-500">No bylaws found for this category.</p>
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    getCategoryBylaws(category.id).map((bylaw) => (
-                      <Card key={bylaw.id}>
-                        <CardHeader>
-                          <CardTitle className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              {bylaw.icon}
-                              <div>
-                                <div className="text-sm text-gray-500">{bylaw.part}</div>
-                                <div>{bylaw.title}</div>
-                              </div>
-                            </div>
-                            <Button variant="ghost" size="sm" onClick={() => setSelectedSection(bylaw)}>
-                              View Full <ChevronRight className="ml-1 h-4 w-4" />
-                            </Button>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          {bylaw.content && (
-                            <p className="text-gray-700 mb-4">{bylaw.content}</p>
-                          )}
-                          {bylaw.subsections.length > 0 && (
-                            <Accordion type="single" collapsible className="w-full">
-                              {bylaw.subsections.map((subsection) => (
-                                <AccordionItem key={subsection.id} value={subsection.id}>
-                                  <AccordionTrigger className="text-left">
-                                    {subsection.title}
-                                  </AccordionTrigger>
-                                  <AccordionContent>
-                                    {subsection.content && (
-                                      <p className="text-gray-700 mb-3">{subsection.content}</p>
-                                    )}
-                                    {subsection.items.length > 0 && (
-                                      <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
-                                        {subsection.items.map((item, index) => (
-                                          <li key={index}>{item}</li>
-                                        ))}
-                                      </ul>
-                                    )}
-                                  </AccordionContent>
-                                </AccordionItem>
-                              ))}
-                            </Accordion>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))
-                  )}
-                </div>
-              )}
-            </TabsContent>
-          ))}
-        </Tabs>
-
-        {/* Section Detail Dialog */}
-        <Dialog open={!!selectedSection} onOpenChange={() => setSelectedSection(null)}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-3">
-                {selectedSection?.icon}
-                <div>
-                  <div className="text-sm text-gray-500">{selectedSection?.part}</div>
-                  <div>{selectedSection?.title}</div>
-                </div>
-              </DialogTitle>
-            </DialogHeader>
-            <ScrollArea className="max-h-[60vh]">
-              <div className="space-y-4">
-                {selectedSection?.content && (
-                  <p className="text-gray-700">{selectedSection.content}</p>
-                )}
-                {selectedSection?.subsections.map((subsection) => (
-                  <div key={subsection.id} className="border-l-4 border-primary pl-4">
-                    <h3 className="font-semibold mb-2">{subsection.title}</h3>
-                    {subsection.content && (
-                      <p className="text-gray-700 mb-2">{subsection.content}</p>
-                    )}
-                    {subsection.items.length > 0 && (
-                      <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
-                        {subsection.items.map((item, index) => (
-                          <li key={index}>{item}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                ))}
+          {/* Mobile Bottom Navigation */}
+          {isMobile() && (
+            <div className="flex justify-center mt-6">
+              <div className="flex items-center space-x-2">
+                <Button 
+                  onClick={goToPrevPage} 
+                  disabled={pageNumber <= 1}
+                  variant="outline"
+                  size="sm"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Previous
+                </Button>
+                <span className="text-sm font-medium px-3">
+                  {pageNumber} / {numPages}
+                </span>
+                <Button 
+                  onClick={goToNextPage} 
+                  disabled={pageNumber >= numPages}
+                  variant="outline"
+                  size="sm"
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
               </div>
-            </ScrollArea>
-          </DialogContent>
-        </Dialog>
-      </main>
-      
+            </div>
+          )}
+          
+          {/* Mobile Zoom Instructions */}
+          {isMobile() && (
+            <div className="mt-4 text-center">
+              <p className="text-sm text-gray-500">
+                📱 Use pinch-to-zoom gesture to zoom in/out on mobile devices
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
       <Footer />
-    </div>
+    </>
   );
 };
 
