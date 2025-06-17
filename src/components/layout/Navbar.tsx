@@ -42,7 +42,7 @@ export const Navbar = () => {
   const mainNavItems = [
     { name: 'Marketplace', path: '/marketplace', icon: <ShoppingCart className="h-4 w-4 mr-2" /> },
     { name: 'Bylaws', path: '/bylaws', icon: <Book className="h-4 w-4 mr-2" /> },
-    { name: 'Calendar', path: 'https://www.spectrum4.ca/calendar', icon: <Calendar className="h-4 w-4 mr-2" />, external: true },
+    { name: 'Calendar', path: '/calendar', icon: <Calendar className="h-4 w-4 mr-2" /> },
     { name: 'Contact', path: '/contact', icon: <Mail className="h-4 w-4 mr-2" /> },
   ];
 
