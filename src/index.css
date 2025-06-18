@@ -303,6 +303,14 @@ div[style*="z-index: 2000000000"] {
   }
 }
 
+/* 
+  When a dialog with reCAPTCHA is open on iOS, we disable pointer events
+  on the overlay to prevent it from capturing touches meant for the reCAPTCHA iframe.
+*/
+body.recaptcha-dialog-open [data-radix-dialog-overlay] {
+  pointer-events: none !important;
+}
+
 /* Additional fixes for modal/dialog interference */
 .dialog-content .recaptcha-container {
   /* Ensure reCAPTCHA works within modals on iOS */

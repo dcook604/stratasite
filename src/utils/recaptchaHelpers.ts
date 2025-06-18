@@ -275,4 +275,24 @@ export default {
   fixModalInteractionOnIOS,
   initIOSRecaptchaFixes,
   preventIOSZoomOnRecaptcha
+};
+
+/**
+ * Applies specific fixes for reCAPTCHA when used inside a Radix UI Dialog on iOS.
+ * This should be called from within the Dialog's onOpenChange handler.
+ * It adds a class to the body when the dialog is open to apply targeted CSS fixes,
+ * preventing the need for unreliable setTimeout calls.
+ * @param {boolean} open - The current open state of the dialog.
+ */
+export const handleRadixDialogOnIOS = (open: boolean): void => {
+  if (!isIOS()) return;
+
+  if (open) {
+    document.body.classList.add('recaptcha-dialog-open');
+    // Re-apply fixes in case the iframe was slow to load
+    setTimeout(applyIOSRecaptchaFixes, 100);
+    setTimeout(applyIOSRecaptchaFixes, 300);
+  } else {
+    document.body.classList.remove('recaptcha-dialog-open');
+  }
 }; 

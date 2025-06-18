@@ -19,7 +19,7 @@ import { RECAPTCHA_CONFIG } from '@/config/recaptcha';
 import { uploadImage, validateImage, ImageUploadResult } from '@/utils/imageUpload';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 import { getAuthorId } from '@/utils/authorId';
-import { initIOSRecaptchaFixes, applyIOSRecaptchaFixes, isIOS } from '@/utils/recaptchaHelpers';
+import { initIOSRecaptchaFixes, handleRadixDialogOnIOS } from '@/utils/recaptchaHelpers';
 
 interface MarketplacePost {
   id: string;
@@ -99,71 +99,21 @@ const Marketplace = () => {
   // Apply iOS fixes when new post dialog opens
   useEffect(() => {
     if (showNewPostDialog) {
-      // Apply immediate fixes
-      applyIOSRecaptchaFixes();
-      
-      // Multiple attempts to ensure fixes are applied
-      const timeouts = [100, 300, 500, 1000, 2000];
-      timeouts.forEach(delay => {
-        setTimeout(() => {
-          applyIOSRecaptchaFixes();
-          
-          // Additional iOS-specific modal fixes
-          if (isIOS()) {
-            // Ensure modal doesn't interfere with reCAPTCHA
-            const modal = document.querySelector('[data-radix-dialog-content]');
-            if (modal) {
-              (modal as HTMLElement).style.setProperty('-webkit-overflow-scrolling', 'touch', 'important');
-              (modal as HTMLElement).style.setProperty('touch-action', 'manipulation', 'important');
-            }
-            
-            // Fix overlay interference
-            const overlay = document.querySelector('[data-radix-dialog-overlay]');
-            if (overlay) {
-              (overlay as HTMLElement).style.setProperty('pointer-events', 'none', 'important');
-              setTimeout(() => {
-                (overlay as HTMLElement).style.setProperty('pointer-events', 'auto', 'important');
-              }, 200);
-            }
-          }
-        }, delay);
-      });
+      handleRadixDialogOnIOS(true);
     }
+    return () => {
+      handleRadixDialogOnIOS(false);
+    };
   }, [showNewPostDialog]);
 
   // Apply iOS fixes when reply dialog opens
   useEffect(() => {
     if (showReplyDialog) {
-      // Apply immediate fixes
-      applyIOSRecaptchaFixes();
-      
-      // Multiple attempts to ensure fixes are applied
-      const timeouts = [100, 300, 500, 1000, 2000];
-      timeouts.forEach(delay => {
-        setTimeout(() => {
-          applyIOSRecaptchaFixes();
-          
-          // Additional iOS-specific modal fixes
-          if (isIOS()) {
-            // Ensure modal doesn't interfere with reCAPTCHA
-            const modal = document.querySelector('[data-radix-dialog-content]');
-            if (modal) {
-              (modal as HTMLElement).style.setProperty('-webkit-overflow-scrolling', 'touch', 'important');
-              (modal as HTMLElement).style.setProperty('touch-action', 'manipulation', 'important');
-            }
-            
-            // Fix overlay interference
-            const overlay = document.querySelector('[data-radix-dialog-overlay]');
-            if (overlay) {
-              (overlay as HTMLElement).style.setProperty('pointer-events', 'none', 'important');
-              setTimeout(() => {
-                (overlay as HTMLElement).style.setProperty('pointer-events', 'auto', 'important');
-              }, 200);
-            }
-          }
-        }, delay);
-      });
+      handleRadixDialogOnIOS(true);
     }
+    return () => {
+      handleRadixDialogOnIOS(false);
+    };
   }, [showReplyDialog]);
 
   const fetchPosts = async () => {
