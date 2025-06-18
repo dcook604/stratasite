@@ -748,7 +748,14 @@ const verifyRecaptcha = async (token) => {
     });
 
     const data = await response.json();
-    logger.info('reCAPTCHA verification response', { success: data.success });
+    if (!data.success) {
+      logger.warn('reCAPTCHA verification failed', {
+        success: false,
+        'error-codes': data["error-codes"] || []
+      });
+    } else {
+      logger.info('reCAPTCHA verification succeeded');
+    }
     return data.success;
   } catch (error) {
     logger.error('Error verifying reCAPTCHA', error);
