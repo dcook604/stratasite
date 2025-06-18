@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import PageHeader from '@/components/shared/PageHeader';
@@ -20,9 +20,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { Calendar as CalendarIcon, Clock, PlusCircle } from 'lucide-react';
 import { Calendar as ShadCalendar } from '@/components/ui/calendar';
-import ReCAPTCHA from 'react-google-recaptcha';
-import { RECAPTCHA_CONFIG } from '@/config/recaptcha';
-import { initIOSRecaptchaFixes, applyIOSRecaptchaFixes } from '@/utils/recaptchaHelpers';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 interface Event {
   id: string;
@@ -40,9 +38,6 @@ const CalendarPage = () => {
 
   useEffect(() => {
     fetchEvents();
-    
-    // Initialize iOS reCAPTCHA fixes
-    initIOSRecaptchaFixes();
   }, []);
 
   const fetchEvents = async () => {
@@ -150,24 +145,13 @@ const EventRequestDialog = ({ selectedDate, onSubmitted }) => {
     eventDescription: '',
     time: '09:00',
   });
-  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
-  const recaptchaRef = useRef<ReCAPTCHA>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Update requestedDate when selectedDate changes (e.g., when dialog opens)
   useEffect(() => {
     setRequestedDate(selectedDate);
   }, [selectedDate]);
-
-  // Apply iOS fixes when dialog opens
-  useEffect(() => {
-    if (isOpen) {
-      // Apply iOS fixes with a delay to ensure reCAPTCHA has loaded
-      setTimeout(() => {
-        applyIOSRecaptchaFixes();
-      }, 500);
-    }
-  }, [isOpen]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -180,8 +164,8 @@ const EventRequestDialog = ({ selectedDate, onSubmitted }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!recaptchaToken) {
-      toast({ title: 'Error', description: 'Please complete the reCAPTCHA.', variant: 'destructive' });
+    if (!turnstileToken) {
+      toast({ title: 'Error', description: 'Please complete the CAPTCHA.', variant: 'destructive' });
       return;
     }
     setSubmitting(true);
@@ -194,14 +178,13 @@ const EventRequestDialog = ({ selectedDate, onSubmitted }) => {
       const response = await fetch('/api/event-requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, requestedDateTime: requestedDateTime.toISOString(), recaptchaToken }),
+        body: JSON.stringify({ ...formData, requestedDateTime: requestedDateTime.toISOString(), turnstileToken }),
       });
 
       if (response.ok) {
         toast({ title: 'Success', description: 'Your event request has been submitted for approval.' });
         setIsOpen(false);
         onSubmitted();
-        recaptchaRef.current?.reset();
       } else {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to submit request.');
@@ -216,7 +199,7 @@ const EventRequestDialog = ({ selectedDate, onSubmitted }) => {
   const handleDialogClose = (open: boolean) => {
     setIsOpen(open);
     if (!open) {
-      // Reset form and reCAPTCHA when dialog closes
+      // Reset form and CAPTCHA when dialog closes
       setFormData({
         firstName: '',
         lastName: '',
@@ -228,8 +211,7 @@ const EventRequestDialog = ({ selectedDate, onSubmitted }) => {
         eventDescription: '',
         time: '09:00',
       });
-      setRecaptchaToken(null);
-      recaptchaRef.current?.reset();
+      setTurnstileToken(null);
     }
   };
 
@@ -241,107 +223,77 @@ const EventRequestDialog = ({ selectedDate, onSubmitted }) => {
           Request New Event
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto" style={{ zIndex: 100 }}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Request a New Event</DialogTitle>
           <DialogDescription>
             Fill out the form below to request a booking for a move-in, move-out, or other event. Your request will be reviewed by an administrator.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="firstName">First Name</Label>
-              <Input id="firstName" name="firstName" value={formData.firstName} onChange={handleInputChange} required />
-            </div>
-            <div>
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input id="lastName" name="lastName" value={formData.lastName} onChange={handleInputChange} required />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="unitNumber">Unit Number</Label>
-              <Input id="unitNumber" name="unitNumber" value={formData.unitNumber} onChange={handleInputChange} required />
-            </div>
-             <div>
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleInputChange} required />
-            </div>
-          </div>
-          <div>
-            <Label htmlFor="email">Email Address</Label>
-            <Input id="email" name="email" type="email" value={formData.email} onChange={handleInputChange} required />
-          </div>
-          <div>
-            <Label>Are you an owner or tenant?</Label>
-            <RadioGroup name="isOwner" value={formData.isOwner} onValueChange={handleRadioChange} className="flex gap-4">
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="true" id="owner" />
-                <Label htmlFor="owner">Owner</Label>
+        <div className="py-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input id="firstName" name="firstName" value={formData.firstName} onChange={handleInputChange} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input id="lastName" name="lastName" value={formData.lastName} onChange={handleInputChange} required />
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="false" id="tenant" />
-                <Label htmlFor="tenant">Tenant</Label>
+              <div className="space-y-2">
+                <Label htmlFor="unitNumber">Unit Number</Label>
+                <Input id="unitNumber" name="unitNumber" value={formData.unitNumber} onChange={handleInputChange} required />
               </div>
-            </RadioGroup>
-          </div>
-          <hr />
-          <div>
-            <Label htmlFor="requestedDate">Requested Date</Label>
-            <Input 
-              id="requestedDate"
-              type="date" 
-              value={requestedDate.toISOString().split('T')[0]} 
-              onChange={(e) => {
-                const newDate = new Date(e.target.value);
-                setRequestedDate(newDate);
-              }}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="time">Requested Time</Label>
-            <Input id="time" name="time" type="time" value={formData.time} onChange={handleInputChange} required />
-          </div>
-           <div>
-            <Label htmlFor="eventTitle">Event Title</Label>
-            <Input id="eventTitle" name="eventTitle" value={formData.eventTitle} onChange={handleInputChange} required />
-          </div>
-          <div>
-            <Label htmlFor="eventDescription">Event Description (optional)</Label>
-            <Textarea id="eventDescription" name="eventDescription" value={formData.eventDescription} onChange={handleInputChange} placeholder="e.g., Details about your move, elevator booking requirements." />
-          </div>
-          <div className="recaptcha-container">
-            <ReCAPTCHA 
-              ref={recaptchaRef} 
-              sitekey={RECAPTCHA_CONFIG.siteKey} 
-              onChange={setRecaptchaToken}
-              onExpired={() => setRecaptchaToken(null)}
-              onErrored={() => {
-                console.error('reCAPTCHA error occurred');
-                toast({ title: 'Error', description: 'reCAPTCHA failed to load. Please refresh the page.', variant: 'destructive' });
-              }}
-              theme="light"
-              size="normal"
-              badge="bottomright"
-              hl="en"
-              tabindex={0}
-              isolated={false}
-              style={{
-                transform: 'scale(1)',
-                transformOrigin: '0 0',
-                width: '304px',
-                height: '78px'
-              }}
-            />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" name="email" type="email" value={formData.email} onChange={handleInputChange} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleInputChange} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Are you the owner of the unit?</Label>
+                <RadioGroup name="isOwner" value={formData.isOwner} onValueChange={handleRadioChange} className="flex space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="true" id="isOwnerYes" />
+                    <Label htmlFor="isOwnerYes">Yes</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="false" id="isOwnerNo" />
+                    <Label htmlFor="isOwnerNo">No</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="eventTitle">Event Title</Label>
+                <Input id="eventTitle" name="eventTitle" value={formData.eventTitle} onChange={handleInputChange} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="eventDescription">Event Description</Label>
+                <Textarea id="eventDescription" name="eventDescription" value={formData.eventDescription} onChange={handleInputChange} placeholder="e.g., Details about your move, elevator booking requirements." />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="time">Preferred Time</Label>
+                    <Input id="time" name="time" type="time" value={formData.time} onChange={handleInputChange} />
+                </div>
+              </div>
+              <div className="mt-4">
+                <Turnstile onSuccess={setTurnstileToken} siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} />
+              </div>
+            </form>
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button variant="ghost" onClick={() => handleDialogClose(false)}>Cancel</Button>
+            <Button type="submit" onClick={handleSubmit} disabled={isSubmitting}>
               {isSubmitting ? 'Submitting...' : 'Submit Request'}
             </Button>
           </DialogFooter>
-        </form>
       </DialogContent>
     </Dialog>
   );

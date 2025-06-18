@@ -33,7 +33,7 @@ A comprehensive strata council website providing:
 - **Database**: PostgreSQL with Prisma ORM 6.9.0
 - **Authentication**: bcryptjs for password hashing
 - **File Upload**: Multer with Sharp for image processing
-- **CAPTCHA**: Google reCAPTCHA v2
+- **CAPTCHA**: Cloudflare Turnstile
 - **CORS**: Enabled for cross-origin requests
 
 ### Key Dependencies
@@ -43,7 +43,6 @@ A comprehensive strata council website providing:
   "react": "^18.3.1",
   "react-router-dom": "^6.26.2",
   "react-quill": "^2.0.0",
-  "react-google-recaptcha": "^3.1.0",
   "express": "^4.18.2",
   "multer": "^2.0.1",
   "sharp": "^0.34.2",
@@ -272,7 +271,7 @@ npm run start              # Start production server
 ### Input Validation
 - Server-side validation with Zod schemas
 - Client-side form validation with React Hook Form
-- reCAPTCHA integration for spam prevention
+- CAPTCHA integration for spam prevention
 
 ### File Upload Security
 - Image validation (JPEG, PNG, WebP only)
@@ -374,7 +373,8 @@ const fetchData = async () => {
 DATABASE_URL=postgresql://...
 PORT=3000
 NODE_ENV=production
-RECAPTCHA_SECRET_KEY=...
+VITE_TURNSTILE_SITE_KEY=...
+TURNSTILE_SECRET_KEY=...
 ```
 
 ### Coolify Deployment
@@ -395,7 +395,7 @@ RECAPTCHA_SECRET_KEY=...
 - [ ] Page creation and editing
 - [ ] Marketplace post creation
 - [ ] Image uploads work correctly
-- [ ] reCAPTCHA verification
+- [ ] Turnstile verification
 - [ ] Responsive design on mobile
 - [ ] Database cleanup functionality
 
