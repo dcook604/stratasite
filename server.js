@@ -722,43 +722,26 @@ app.put('/api/admin/users/:id/password', async (req, res) => {
   }
 });
 
-// reCAPTCHA verification function
-const verifyRecaptcha = async (token) => {
-  const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-
-  if (!secretKey) {
-    logger.error('reCAPTCHA secret key is not set in environment variables.');
-    // In a real-world scenario, you might want to fail open or closed depending on security needs.
-    // For this app, we will fail open in dev but closed in prod.
-    return process.env.NODE_ENV !== 'production';
-  }
-
+// Middleware to verify Cloudflare Turnstile token
+const verifyTurnstile = async (token) => {
   if (!token) {
-    logger.warn('reCAPTCHA token not provided by client.');
     return false;
   }
-
   try {
-    const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+    const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
-      body: `secret=${secretKey}&response=${token}`,
+      body: JSON.stringify({
+        secret: process.env.TURNSTILE_SECRET_KEY,
+        response: token,
+      }),
     });
-
     const data = await response.json();
-    if (!data.success) {
-      logger.warn('reCAPTCHA verification failed', {
-        success: false,
-        'error-codes': data["error-codes"] || []
-      });
-    } else {
-      logger.info('reCAPTCHA verification succeeded');
-    }
     return data.success;
   } catch (error) {
-    logger.error('Error verifying reCAPTCHA', error);
+    logger.error('Turnstile verification failed', error);
     return false;
   }
 };
@@ -803,7 +786,14 @@ app.get('/api/marketplace', async (req, res) => {
 
 app.post('/api/marketplace', async (req, res) => {
   try {
-    const { title, description, category, type, price, authorName, authorEmail, authorPhone, images, recaptchaToken } = req.body;
+    const { title, description, category, type, price, authorName, authorEmail, authorPhone, images, turnstileToken } = req.body;
+    
+    const isTurnstileValid = await verifyTurnstile(turnstileToken);
+    if (!isTurnstileValid) {
+      return res.status(400).json({ error: 'Invalid CAPTCHA. Please try again.' });
+    }
+
+    // Generate a unique ID for non-admin users
     const authorId = req.cookies.authorId;
 
     if (!authorId) {
@@ -829,12 +819,6 @@ app.post('/api/marketplace', async (req, res) => {
       }
     }
     
-    // reCAPTCHA verification
-    const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
-    if (!isRecaptchaValid) {
-      return res.status(400).json({ error: 'Invalid reCAPTCHA. Please try again.' });
-    }
-    
     const post = await prisma.marketplacePost.create({
       data: {
         title,
@@ -847,7 +831,6 @@ app.post('/api/marketplace', async (req, res) => {
         authorEmail,
         authorPhone,
         images: images && images.length > 0 ? JSON.stringify(images) : null,
-        recaptchaToken
       }
     });
     
@@ -928,7 +911,7 @@ app.delete('/api/marketplace/:id', async (req, res) => {
 
 app.post('/api/marketplace/:postId/replies', async (req, res) => {
   const { postId } = req.params;
-  const { content, authorName, authorEmail, authorPhone, images, recaptchaToken } = req.body;
+  const { content, authorName, authorEmail, authorPhone, images, turnstileToken } = req.body;
   const { authorId } = req.cookies;
 
   if (!authorId) {
@@ -953,10 +936,10 @@ app.post('/api/marketplace/:postId/replies', async (req, res) => {
     }
   }
   
-  // reCAPTCHA verification
-  const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
-  if (!isRecaptchaValid) {
-    return res.status(400).json({ error: 'Invalid reCAPTCHA. Please try again.' });
+  // Turnstile verification
+  const isTurnstileValid = await verifyTurnstile(turnstileToken);
+  if (!isTurnstileValid) {
+    return res.status(400).json({ error: 'Invalid CAPTCHA. Please try again.' });
   }
   
   const reply = await prisma.marketplaceReply.create({
@@ -967,7 +950,6 @@ app.post('/api/marketplace/:postId/replies', async (req, res) => {
       authorEmail,
       authorPhone,
       images: images && images.length > 0 ? JSON.stringify(images) : null,
-      recaptchaToken,
       postId
     }
   });
@@ -1235,18 +1217,17 @@ app.post('/api/event-requests', async (req, res) => {
   try {
     const {
       firstName, lastName, unitNumber, email, phone, isOwner,
-      eventTitle, eventDescription, requestedDateTime, recaptchaToken
+      eventTitle, eventDescription, requestedDateTime, turnstileToken
     } = req.body;
+
+    const isTurnstileValid = await verifyTurnstile(turnstileToken);
+    if (!isTurnstileValid) {
+      return res.status(400).json({ error: 'Invalid CAPTCHA. Please try again.' });
+    }
 
     // Basic validation
     if (!firstName || !lastName || !unitNumber || !email || !phone || !eventTitle || !requestedDateTime) {
       return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    // reCAPTCHA verification
-    const isRecaptchaValid = await verifyRecaptcha(recaptchaToken);
-    if (!isRecaptchaValid) {
-      return res.status(400).json({ error: 'Invalid reCAPTCHA. Please try again.' });
     }
 
     const eventRequest = await prisma.eventRequest.create({

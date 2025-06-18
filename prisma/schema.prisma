@@ -70,7 +70,7 @@ model MarketplacePost {
   isSold          Boolean  @default(false) @map("is_sold")
   isActive        Boolean  @default(true) @map("is_active")
   images          String?  // JSON array of image URLs
-  recaptchaToken  String?  @map("recaptcha_token")
+  turnstileToken  String?  @map("turnstile_token")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
   
@@ -88,7 +88,7 @@ model MarketplaceReply {
   authorPhone    String?  @map("author_phone")
   postId         String   @map("post_id")
   images         String?  // JSON array of image URLs
-  recaptchaToken String?  @map("recaptcha_token")
+  turnstileToken String?  @map("turnstile_token")
   createdAt      DateTime @default(now()) @map("created_at")
   
   post           MarketplacePost @relation(fields: [postId], references: [id], onDelete: Cascade)

@@ -21,7 +21,7 @@ A comprehensive web application for the Spectrum 4 strata council, providing res
 ### Public Features
 - **Homepage**: Dynamic content management with admin editing
 - **Information Hub**: Recycling, organics, fees, and renovation guidelines
-- **Marketplace**: Buy/sell platform with image uploads and reCAPTCHA protection
+- **Marketplace**: Buy/sell platform with image uploads and CAPTCHA protection
 - **Events & Announcements**: Community calendar and news
 - **Bylaws**: Document management and display
 - **Contact**: Council information and building details
@@ -134,14 +134,14 @@ See `prisma/schema.prisma` for complete schema definitions.
 DATABASE_URL=postgresql://user:password@host:port/database
 PORT=3000
 NODE_ENV=production
-RECAPTCHA_SECRET_KEY=your_recaptcha_secret
+VITE_TURNSTILE_SITE_KEY=your_turnstile_site_key
+TURNSTILE_SECRET_KEY=your_turnstile_secret_key
 ```
 
-### reCAPTCHA Setup
+### CAPTCHA Setup
 
-1. Get keys from [Google reCAPTCHA](https://www.google.com/recaptcha/)
-2. Add site key to frontend components
-3. Add secret key to environment variables
+1. Get keys from [Cloudflare Turnstile](https://dash.cloudflare.com/?to=/:account/turnstile)
+2. Add `VITE_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` to your `.env` file.
 
 ## 🚀 Deployment
 

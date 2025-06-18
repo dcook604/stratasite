@@ -21,7 +21,7 @@
 - [x] Password hashing with bcryptjs
 - [x] Protected route components (RequireAdminAuth)
 - [x] Session management
-- [x] reCAPTCHA integration for forms
+- [x] CAPTCHA integration for forms
 - [x] Input validation (client + server side)
 
 #### Content Management
@@ -37,7 +37,7 @@
 - [x] Image upload with compression (Sharp)
 - [x] Multi-image support (3 per post, 2 per reply)
 - [x] Sold status tracking
-- [x] reCAPTCHA spam protection
+- [x] CAPTCHA spam protection
 - [x] Optional phone number fields
 - [x] Admin moderation tools
 
@@ -97,7 +97,7 @@ Currently stable - no active development tasks.
 - **Status**: ✅ Deployed and working
 
 ### Major Feature Release (December 2024)
-- **Features**: Complete marketplace overhaul with image uploads, reCAPTCHA, admin cleanup
+- **Features**: Complete marketplace overhaul with image uploads, Cloudflare Turnstile, admin cleanup
 - **Performance**: Domain redirect optimization
 - **UI**: Navigation restructure and homepage improvements
 - **Status**: ✅ Deployed and working
