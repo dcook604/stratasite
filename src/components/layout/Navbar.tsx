@@ -32,6 +32,7 @@ export const Navbar = () => {
   ];
 
   const informationItems = [
+    { name: 'Welcome Package', path: '/welcome-package' },
     { name: 'Recycling', path: '/recycling' },
     { name: 'Organics', path: '/organics' },
     { name: 'Fees', path: '/fees' },

@@ -13,6 +13,7 @@ import DynamicPage from "./pages/DynamicPage";
 import Bylaws from "./pages/Bylaws";
 import Marketplace from "./pages/information/Marketplace";
 import Documents from "./pages/information/Documents";
+import WelcomePackage from "./pages/information/WelcomePackage";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,8 @@ const App = () => (
             <Route path="/renovations" element={<DynamicPage />} />
             {/* Documents page */}
             <Route path="/documents" element={<Documents />} />
+            {/* Welcome Package page */}
+            <Route path="/welcome-package" element={<WelcomePackage />} />
             {/* Interactive Marketplace */}
             <Route path="/marketplace" element={<Marketplace />} />
             {/* Legacy information routes - redirect to new slugs */}
