@@ -43,4 +43,4 @@ ENV DATABASE_URL="file:/app/data/database.db"
 EXPOSE 3331
 
 # Start command - push schema changes then start the server
-CMD ["sh", "-c", "npx prisma db push && npm start"]
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss && npm start"]
