@@ -32,12 +32,12 @@ export const Navbar = () => {
   ];
 
   const informationItems = [
-    { name: 'Welcome Package', path: '/welcome-package' },
-    { name: 'Recycling', path: '/recycling' },
-    { name: 'Organics', path: '/organics' },
-    { name: 'Fees', path: '/fees' },
-    { name: 'Renovations', path: '/renovations' },
     { name: 'Documents', path: '/documents' },
+    { name: 'Fees', path: '/fees' },
+    { name: 'Organics', path: '/organics' },
+    { name: 'Recycling', path: '/recycling' },
+    { name: 'Renovations', path: '/renovations' },
+    { name: 'Welcome Package', path: '/welcome-package' },
   ];
 
   const mainNavItems = [
