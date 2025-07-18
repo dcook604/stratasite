@@ -135,3 +135,42 @@ model Document {
   
   @@map("documents")
 }
+
+enum ScooterRegistrationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  KEY_ISSUED
+  DEPOSIT_PAID
+}
+
+model ScooterRegistration {
+  id                  String                     @id @default(cuid())
+  registrationId      String                     @unique @map("registration_id") // SR-timestamp format
+  
+  // Form data
+  registrationDate    String                     @map("registration_date") // Date from form
+  unitNumber          String                     @map("unit_number")
+  numberOfScooters    Int                        @map("number_of_scooters")
+  description         String                     // Make, Model, Features
+  ownerNames          String                     @map("owner_names")
+  email               String
+  phone               String?
+  
+  // Admin fields
+  status              ScooterRegistrationStatus  @default(PENDING)
+  keyNumber           String?                    @map("key_number")
+  depositPaid         Boolean                    @default(false) @map("deposit_paid")
+  depositAmount       Float                      @default(50.0) @map("deposit_amount")
+  notes               String?                    // Admin notes
+  
+  // Email tracking
+  emailSent           Boolean                    @default(false) @map("email_sent")
+  
+  // Metadata
+  isActive            Boolean                    @default(true) @map("is_active")
+  createdAt           DateTime                   @default(now()) @map("created_at")
+  updatedAt           DateTime                   @updatedAt @map("updated_at")
+  
+  @@map("scooter_registrations")
+}

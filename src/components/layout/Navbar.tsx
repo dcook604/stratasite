@@ -37,6 +37,7 @@ export const Navbar = () => {
     { name: 'Organics', path: '/organics' },
     { name: 'Recycling', path: '/recycling' },
     { name: 'Renovations', path: '/renovations' },
+    { name: 'Scooter Registration', path: '/scooter-registration' },
     { name: 'Welcome Package', path: '/welcome-package' },
   ];
 

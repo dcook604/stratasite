@@ -8,6 +8,7 @@ import multer from 'multer';
 import sharp from 'sharp';
 import fs from 'fs';
 import cookieParser from 'cookie-parser';
+import nodemailer from 'nodemailer';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,6 +16,20 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3331;
+
+// Configure SMTP transporter for email sending
+const transporter = nodemailer.createTransporter({
+  host: process.env.SMTP_HOST || 'localhost',
+  port: parseInt(process.env.SMTP_PORT) || 587,
+  secure: false, // true for 465, false for other ports
+  auth: {
+    user: process.env.SMTP_USER || 'superbase',
+    pass: process.env.SMTP_PASS || 'n2hn13i'
+  },
+  tls: {
+    rejectUnauthorized: false // Allow self-signed certificates
+  }
+});
 
 // Ensure the upload directory exists in the persistent data volume
 const uploadDir = path.join(__dirname, 'data', 'uploads', 'marketplace');
@@ -746,6 +761,56 @@ const verifyTurnstile = async (token) => {
   }
 };
 
+// Function to send scooter registration email
+const sendScooterRegistrationEmail = async (registrationData) => {
+  const {
+    date, unitNumber, numberOfScooters, description, ownerNames,
+    email, phone, registrationId
+  } = registrationData;
+
+  const emailSubject = `New E-Scooter Registration - Unit ${unitNumber}`;
+  const emailBody = `
+    <h2>New E-Scooter Registration Submitted</h2>
+    
+    <h3>Registration Details:</h3>
+    <ul>
+      <li><strong>Registration ID:</strong> ${registrationId}</li>
+      <li><strong>Date:</strong> ${date}</li>
+      <li><strong>Unit Number:</strong> ${unitNumber}</li>
+      <li><strong>Number of E-Scooters:</strong> ${numberOfScooters}</li>
+      <li><strong>Owner Name(s):</strong> ${ownerNames}</li>
+      <li><strong>Contact Email:</strong> ${email}</li>
+      <li><strong>Contact Phone:</strong> ${phone || 'Not provided'}</li>
+    </ul>
+    
+    <h3>E-Scooter Description:</h3>
+    <p>${description}</p>
+    
+    <hr>
+    <p><strong>Key Deposit Required:</strong> $50 (Refundable)</p>
+    <p><strong>Storage Location:</strong> Gated, secured parkade storage area</p>
+    <p><strong>Terms Accepted:</strong> Yes - Storage in designated parkade area only</p>
+    
+    <p><em>Submitted on ${new Date().toLocaleString()}</em></p>
+  `;
+
+  const mailOptions = {
+    from: `"Spectrum 4 E-Scooter Registration" <${process.env.SMTP_USER}@spectrum4.ca>`,
+    to: 'dcook@spectrum4.ca, jen.danczak@gmail.com',
+    subject: emailSubject,
+    html: emailBody
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    logger.info('Scooter registration email sent successfully', { registrationId, recipients: mailOptions.to });
+    return true;
+  } catch (error) {
+    logger.error('Failed to send scooter registration email', error);
+    throw error;
+  }
+};
+
 // Marketplace CRUD
 app.get('/api/marketplace', async (req, res) => {
   try {
@@ -1255,6 +1320,174 @@ app.get('/api/event-requests', async (req, res) => {
     res.json(requests);
   } catch (error) {
     logger.error('Error fetching event requests', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// --- Scooter Registration API Routes ---
+// Submit a new scooter registration
+app.post('/api/scooter-registration', async (req, res) => {
+  try {
+    const {
+      date, unitNumber, numberOfScooters, description, ownerNames,
+      email, phone, acceptTerms, turnstileToken
+    } = req.body;
+
+    // Verify Turnstile CAPTCHA
+    const isTurnstileValid = await verifyTurnstile(turnstileToken);
+    if (!isTurnstileValid) {
+      return res.status(400).json({ error: 'Invalid CAPTCHA. Please try again.' });
+    }
+
+    // Basic validation
+    if (!date || !unitNumber || !numberOfScooters || !description || !ownerNames || !email || !acceptTerms) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email address' });
+    }
+
+    // Phone validation (optional)
+    if (phone) {
+      const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+      if (!phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ''))) {
+        return res.status(400).json({ error: 'Invalid phone number' });
+      }
+    }
+
+    // Number validation
+    const numScooters = parseInt(numberOfScooters);
+    if (isNaN(numScooters) || numScooters < 1 || numScooters > 10) {
+      return res.status(400).json({ error: 'Number of scooters must be between 1 and 10' });
+    }
+
+    // Terms acceptance validation
+    if (!acceptTerms || acceptTerms !== true) {
+      return res.status(400).json({ error: 'You must accept the terms and conditions' });
+    }
+
+    // Generate registration ID
+    const registrationId = `SR-${Date.now()}`;
+
+    // Save to database
+    const scooterRegistration = await prisma.scooterRegistration.create({
+      data: {
+        registrationId,
+        registrationDate: date,
+        unitNumber,
+        numberOfScooters: numScooters,
+        description,
+        ownerNames,
+        email,
+        phone,
+        status: 'PENDING',
+        emailSent: false
+      }
+    });
+
+    // Prepare registration data for email
+    const registrationData = {
+      date,
+      unitNumber,
+      numberOfScooters: numScooters,
+      description,
+      ownerNames,
+      email,
+      phone,
+      registrationId
+    };
+
+    // Send email notification
+    let emailSent = false;
+    try {
+      await sendScooterRegistrationEmail(registrationData);
+      emailSent = true;
+      logger.info('Scooter registration email sent successfully', {
+        registrationId,
+        unitNumber,
+        ownerNames,
+        timestamp: new Date().toISOString()
+      });
+    } catch (emailError) {
+      logger.error('Failed to send scooter registration email', emailError);
+      // Continue with success response even if email fails
+    }
+
+    // Update email sent status
+    await prisma.scooterRegistration.update({
+      where: { id: scooterRegistration.id },
+      data: { emailSent }
+    });
+
+    // Send success response
+    res.status(201).json({
+      success: true,
+      message: 'E-scooter registration submitted successfully',
+      registrationId
+    });
+
+  } catch (error) {
+    logger.error('Error processing scooter registration', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get all scooter registrations (for admin)
+app.get('/api/scooter-registrations', async (req, res) => {
+  try {
+    const registrations = await prisma.scooterRegistration.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(registrations);
+  } catch (error) {
+    logger.error('Error fetching scooter registrations', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update scooter registration status (for admin)
+app.put('/api/scooter-registrations/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, keyNumber, depositPaid, depositAmount, notes } = req.body;
+
+    const updatedRegistration = await prisma.scooterRegistration.update({
+      where: { id },
+      data: {
+        status,
+        keyNumber,
+        depositPaid,
+        depositAmount: depositAmount ? parseFloat(depositAmount) : undefined,
+        notes
+      }
+    });
+
+    logger.info('Scooter registration updated', { id, status });
+    res.json(updatedRegistration);
+  } catch (error) {
+    logger.error('Error updating scooter registration', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Delete scooter registration (for admin)
+app.delete('/api/scooter-registrations/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    await prisma.scooterRegistration.update({
+      where: { id },
+      data: { isActive: false }
+    });
+
+    logger.info('Scooter registration deleted', { id });
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Error deleting scooter registration', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { RequireAdminAuth } from '@/components/hoc/RequireAdminAuth';
-import { Plus, Trash2, Edit2, Users, Calendar, FileText, Megaphone, ShoppingCart, Save, X, Database, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Plus, Trash2, Edit2, Users, Calendar, FileText, Megaphone, ShoppingCart, Save, X, Database, AlertTriangle, CheckCircle, Zap } from 'lucide-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { cleanupMarketplaceData, getCleanupPreview, formatCleanupStats, CleanupOptions } from '@/utils/databaseCleanup';
@@ -33,6 +33,7 @@ const AdminDashboard = () => {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [eventRequests, setEventRequests] = useState([]);
+  const [scooterRegistrations, setScooterRegistrations] = useState([]);
 
   // Form states
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' });
@@ -74,7 +75,8 @@ const AdminDashboard = () => {
         marketplaceRes, 
         adminUsersRes,
         eventRequestsRes,
-        documentsRes
+        documentsRes,
+        scooterRegistrationsRes
       ] = await Promise.all([
         fetch('/api/announcements').catch(err => err),
         fetch('/api/events').catch(err => err),
@@ -82,7 +84,8 @@ const AdminDashboard = () => {
         fetch('/api/marketplace').catch(err => err),
         fetch('/api/admin/users').catch(err => err),
         fetch('/api/event-requests').catch(err => err),
-        fetch('/api/documents').catch(err => err)
+        fetch('/api/documents').catch(err => err),
+        fetch('/api/scooter-registrations').catch(err => err)
       ]);
 
       console.log('AdminDashboard: API responses received');
@@ -155,6 +158,16 @@ const AdminDashboard = () => {
       } else {
         console.error('AdminDashboard: Failed to load documents:', documentsRes);
         setDocuments([]);
+      }
+      
+      // Handle scooter registrations
+      if (scooterRegistrationsRes instanceof Response && scooterRegistrationsRes.ok) {
+        const scooterRegistrationsData = await scooterRegistrationsRes.json();
+        console.log('AdminDashboard: Scooter registrations loaded:', scooterRegistrationsData.length);
+        setScooterRegistrations(scooterRegistrationsData);
+      } else {
+        console.error('AdminDashboard: Failed to load scooter registrations:', scooterRegistrationsRes);
+        setScooterRegistrations([]);
       }
     } catch (error) {
       console.error('AdminDashboard: Error fetching data:', error);
@@ -418,6 +431,44 @@ const AdminDashboard = () => {
     }
   };
 
+  const updateScooterRegistration = async (id, updates) => {
+    try {
+      const response = await fetch(`/api/scooter-registrations/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+      if (response.ok) {
+        toast({ title: "Success", description: "Scooter registration updated successfully." });
+        fetchData(); // Refresh all data
+      } else {
+        throw new Error('Failed to update scooter registration');
+      }
+    } catch (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const deleteScooterRegistration = async (id) => {
+    if (!confirm('Are you sure you want to delete this scooter registration?')) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/scooter-registrations/${id}`, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        toast({ title: "Success", description: "Scooter registration deleted successfully." });
+        fetchData(); // Refresh all data
+      } else {
+        throw new Error('Failed to delete scooter registration');
+      }
+    } catch (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  };
+
   return (
     <RequireAdminAuth>
       <div className="page-container">
@@ -464,6 +515,10 @@ const AdminDashboard = () => {
                 <TabsTrigger value="event-requests" className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
                   Event Requests
+                </TabsTrigger>
+                <TabsTrigger value="scooter-registrations" className="flex items-center gap-2">
+                  <Zap className="w-4 h-4" />
+                  Scooter Registrations
                 </TabsTrigger>
                 <TabsTrigger value="cleanup" className="flex items-center gap-2">
                   <Database className="w-4 h-4" />
@@ -949,6 +1004,154 @@ const AdminDashboard = () => {
                               <Button size="sm" variant="destructive" onClick={() => handleRequestStatusChange(req.id, 'REJECTED')}>
                                 <X className="w-4 h-4 mr-2" />
                                 Reject
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="scooter-registrations" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>E-Scooter Registration Management</CardTitle>
+                    <CardDescription>
+                      Manage e-scooter registrations, track key deposits, and update statuses.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {scooterRegistrations.length === 0 ? (
+                      <p className="text-gray-500">No scooter registrations yet.</p>
+                    ) : (
+                      <div className="space-y-6">
+                        {scooterRegistrations.map((registration) => (
+                          <div key={registration.id} className="p-6 border rounded-lg bg-gray-50">
+                            <div className="flex justify-between items-start mb-4">
+                              <div>
+                                <h3 className="font-semibold text-lg">Registration #{registration.registrationId}</h3>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className={`px-2 py-1 text-xs rounded font-medium ${
+                                    registration.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                    registration.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
+                                    registration.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                                    registration.status === 'KEY_ISSUED' ? 'bg-blue-100 text-blue-800' :
+                                    registration.status === 'DEPOSIT_PAID' ? 'bg-purple-100 text-purple-800' :
+                                    'bg-gray-100 text-gray-800'
+                                  }`}>
+                                    {registration.status.replace('_', ' ')}
+                                  </span>
+                                  {registration.emailSent ? (
+                                    <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                                      Email Sent
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">
+                                      Email Failed
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                Submitted: {new Date(registration.createdAt).toLocaleDateString()}
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                              <div>
+                                <Label className="font-medium text-sm">Unit & Owner</Label>
+                                <p className="text-sm">Unit {registration.unitNumber}</p>
+                                <p className="text-sm">{registration.ownerNames}</p>
+                              </div>
+                              <div>
+                                <Label className="font-medium text-sm">Contact Info</Label>
+                                <p className="text-sm">{registration.email}</p>
+                                <p className="text-sm">{registration.phone || 'No phone provided'}</p>
+                              </div>
+                              <div>
+                                <Label className="font-medium text-sm">E-Scooter Details</Label>
+                                <p className="text-sm">{registration.numberOfScooters} scooter(s)</p>
+                                <p className="text-sm">Date: {registration.registrationDate}</p>
+                              </div>
+                            </div>
+                            
+                            <div className="mb-4">
+                              <Label className="font-medium text-sm">Description</Label>
+                              <p className="text-sm text-gray-700 mt-1">{registration.description}</p>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                              <div>
+                                <Label htmlFor={`status-${registration.id}`} className="text-sm font-medium">Status</Label>
+                                <select
+                                  id={`status-${registration.id}`}
+                                  className="w-full mt-1 p-2 border rounded text-sm"
+                                  value={registration.status}
+                                  onChange={(e) => updateScooterRegistration(registration.id, { status: e.target.value })}
+                                >
+                                  <option value="PENDING">Pending</option>
+                                  <option value="APPROVED">Approved</option>
+                                  <option value="REJECTED">Rejected</option>
+                                  <option value="KEY_ISSUED">Key Issued</option>
+                                  <option value="DEPOSIT_PAID">Deposit Paid</option>
+                                </select>
+                              </div>
+                              <div>
+                                <Label htmlFor={`key-${registration.id}`} className="text-sm font-medium">Key Number</Label>
+                                <Input
+                                  id={`key-${registration.id}`}
+                                  className="mt-1 text-sm"
+                                  value={registration.keyNumber || ''}
+                                  onChange={(e) => updateScooterRegistration(registration.id, { keyNumber: e.target.value })}
+                                  placeholder="e.g. K-001"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor={`deposit-${registration.id}`} className="text-sm font-medium">Deposit Amount</Label>
+                                <Input
+                                  id={`deposit-${registration.id}`}
+                                  type="number"
+                                  step="0.01"
+                                  className="mt-1 text-sm"
+                                  value={registration.depositAmount || 50}
+                                  onChange={(e) => updateScooterRegistration(registration.id, { depositAmount: e.target.value })}
+                                />
+                              </div>
+                              <div className="flex items-center space-x-2 mt-6">
+                                <Checkbox
+                                  id={`deposit-paid-${registration.id}`}
+                                  checked={registration.depositPaid}
+                                  onCheckedChange={(checked) => updateScooterRegistration(registration.id, { depositPaid: checked })}
+                                />
+                                <Label htmlFor={`deposit-paid-${registration.id}`} className="text-sm">Deposit Paid</Label>
+                              </div>
+                            </div>
+                            
+                            <div className="mb-4">
+                              <Label htmlFor={`notes-${registration.id}`} className="text-sm font-medium">Admin Notes</Label>
+                              <Textarea
+                                id={`notes-${registration.id}`}
+                                className="mt-1 text-sm"
+                                rows={2}
+                                value={registration.notes || ''}
+                                onChange={(e) => updateScooterRegistration(registration.id, { notes: e.target.value })}
+                                placeholder="Add any admin notes here..."
+                              />
+                            </div>
+                            
+                            <div className="flex justify-between items-center pt-4 border-t">
+                              <div className="text-sm text-gray-500">
+                                Last updated: {new Date(registration.updatedAt).toLocaleString()}
+                              </div>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => deleteScooterRegistration(registration.id)}
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete
                               </Button>
                             </div>
                           </div>
