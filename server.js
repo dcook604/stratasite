@@ -40,7 +40,7 @@ const getDockerHost = () => {
 };
 
 const smtpHost = getDockerHost();
-logger.info('SMTP Configuration', { host: smtpHost, port: process.env.SMTP_PORT || 587 });
+console.log(`[SMTP] Host: ${smtpHost}, Port: ${process.env.SMTP_PORT || 587}`);
 
 const transporter = nodemailer.createTransport({
   host: smtpHost,
