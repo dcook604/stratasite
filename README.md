@@ -21,6 +21,7 @@ A comprehensive web application for the Spectrum 4 strata council, providing res
 ### Public Features
 - **Homepage**: Dynamic content management with admin editing
 - **Information Hub**: Recycling, organics, fees, and renovation guidelines
+- **E-Scooter Registration**: Secure parkade storage registration with email notifications
 - **Marketplace**: Buy/sell platform with image uploads and CAPTCHA protection
 - **Events & Announcements**: Community calendar and news
 - **Bylaws**: Document management and display
@@ -31,6 +32,7 @@ A comprehensive web application for the Spectrum 4 strata council, providing res
 - **Dashboard**: Comprehensive content management system
 - **WYSIWYG Editing**: Inline page editing with ReactQuill
 - **User Management**: Admin account creation and management
+- **E-Scooter Management**: Registration tracking, status updates, key assignment, and deposit management
 - **Marketplace Moderation**: Content oversight and cleanup tools
 - **Database Cleanup**: Automated maintenance with dry-run preview
 - **Real-time Statistics**: Activity monitoring and reporting

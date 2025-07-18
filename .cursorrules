@@ -149,6 +149,27 @@ model Event {
   location    String?
   createdAt   DateTime  @default(now())
 }
+
+model ScooterRegistration {
+  id                  String                     @id @default(cuid())
+  registrationId      String                     @unique
+  registrationDate    String
+  unitNumber          String
+  numberOfScooters    Int
+  description         String
+  ownerNames          String
+  email               String
+  phone               String?
+  status              ScooterRegistrationStatus  @default(PENDING)
+  keyNumber           String?
+  depositPaid         Boolean                    @default(false)
+  depositAmount       Float                      @default(50.0)
+  notes               String?
+  emailSent           Boolean                    @default(false)
+  isActive            Boolean                    @default(true)
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
+}
 ```
 
 ## 🎨 UI/UX Patterns
@@ -164,10 +185,13 @@ model Event {
 ```
 Home
 Information ↓
-  ├── Recycling
-  ├── Organics  
+  ├── Documents
   ├── Fees
-  └── Renovations
+  ├── Organics
+  ├── Recycling
+  ├── Renovations
+  ├── Scooter Registration
+  └── Welcome Package
 Marketplace
 Bylaws
 Contact
@@ -284,6 +308,7 @@ npm run start              # Start production server
 ### Admin Dashboard
 - Content management (pages, announcements, events)
 - User management (admin users)
+- E-scooter registration management with status tracking
 - Marketplace moderation
 - Database cleanup tools with dry-run mode
 - Real-time statistics and monitoring
@@ -300,6 +325,14 @@ npm run start              # Start production server
 - Sold status tracking
 - Search and filter capabilities
 - Admin moderation tools
+
+### E-Scooter Registration
+- Secure registration form with comprehensive validation
+- Automatic email notifications to management
+- Status tracking (Pending, Approved, Rejected, Key Issued, Deposit Paid)
+- Key assignment and deposit management
+- Admin notes and audit trail
+- CAPTCHA protection and database persistence
 
 ### Image Management
 - Multi-image uploads (3 per post, 2 per reply)
