@@ -48,7 +48,7 @@ const transporter = nodemailer.createTransport({
   secure: false, // true for 465, false for other ports
   auth: {
     user: process.env.SMTP_USER || 'superbase',
-    pass: process.env.SMTP_PASS || 'n2hn13i'
+    pass: process.env.SMTP_PASS || 'n2hm13i'
   },
   tls: {
     rejectUnauthorized: false // Allow self-signed certificates
