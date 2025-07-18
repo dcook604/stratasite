@@ -18,8 +18,32 @@ const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3331;
 
 // Configure SMTP transporter for email sending
+// Auto-detect Docker host for SMTP connection
+const getDockerHost = () => {
+  // If explicitly set, use it
+  if (process.env.SMTP_HOST && process.env.SMTP_HOST !== 'localhost') {
+    return process.env.SMTP_HOST;
+  }
+  
+  // Try common Docker host addresses
+  const dockerHosts = [
+    'host.docker.internal',  // Docker Desktop
+    '10.0.0.1',             // Your Docker bridge gateway
+    '172.17.0.1',           // Common Docker bridge
+    '172.18.0.1',           // Alternative Docker bridge
+    '38.102.125.145',       // Your VPS IP
+    'localhost'             // Fallback
+  ];
+  
+  // Return the first available or default to the bridge gateway
+  return process.env.NODE_ENV === 'production' ? '10.0.0.1' : 'localhost';
+};
+
+const smtpHost = getDockerHost();
+logger.info('SMTP Configuration', { host: smtpHost, port: process.env.SMTP_PORT || 587 });
+
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'localhost',
+  host: smtpHost,
   port: parseInt(process.env.SMTP_PORT) || 587,
   secure: false, // true for 465, false for other ports
   auth: {
