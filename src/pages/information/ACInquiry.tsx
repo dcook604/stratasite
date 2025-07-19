@@ -24,6 +24,8 @@ import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { Snowflake, User, Phone, Mail, Settings, Clock, MessageSquare, CheckCircle } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
   ownerName: z.string().min(2, { message: 'Owner name must be at least 2 characters' }),
@@ -200,10 +202,7 @@ const ACInquiry = () => {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 {/* Owner Information */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    Owner Information
-                  </h3>
+                  <h3 className="text-lg font-semibold border-b pb-2">Owner Information</h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
@@ -241,13 +240,9 @@ const ACInquiry = () => {
                       name="ownerPhone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Owner Phone Number</FormLabel>
+                          <FormLabel>Phone Number</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="tel" 
-                              placeholder="(604) 123-4567" 
-                              {...field} 
-                            />
+                            <Input type="tel" placeholder="(604) 123-4567" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -259,13 +254,9 @@ const ACInquiry = () => {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email Address</FormLabel>
+                          <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="email" 
-                              placeholder="your.email@example.com" 
-                              {...field} 
-                            />
+                            <Input type="email" placeholder="your.email@example.com" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -274,13 +265,10 @@ const ACInquiry = () => {
                   </div>
                 </div>
 
-                {/* Installation Details */}
+                {/* Installation Preferences */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <Settings className="h-5 w-5" />
-                    Installation Details
-                  </h3>
-
+                  <h3 className="text-lg font-semibold border-b pb-2">Installation Preferences</h3>
+                  
                   <FormField
                     control={form.control}
                     name="isMultiZone"
@@ -290,17 +278,15 @@ const ACInquiry = () => {
                           <Checkbox
                             checked={field.value}
                             onCheckedChange={field.onChange}
-                            className="mt-1"
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
                           <FormLabel className="text-sm font-normal">
-                            Multi-Zone Installation (Check if you need multiple zones/rooms cooled)
+                            I'm interested in multi-zone AC installation
                           </FormLabel>
-                          <FormDescription>
-                            Single-zone installations cool one main area, while multi-zone systems can cool multiple rooms independently
+                          <FormDescription className="text-xs text-gray-500">
+                            Multi-zone systems allow independent temperature control for different areas
                           </FormDescription>
-                          <FormMessage />
                         </div>
                       </FormItem>
                     )}
@@ -310,29 +296,24 @@ const ACInquiry = () => {
                     control={form.control}
                     name="bestContactMethod"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Best Contact Method</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select your preferred contact method" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="EMAIL">
-                              <div className="flex items-center gap-2">
-                                <Mail className="h-4 w-4" />
-                                Email
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="TELEPHONE">
-                              <div className="flex items-center gap-2">
-                                <Phone className="h-4 w-4" />
-                                Telephone
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <FormItem className="space-y-3">
+                        <FormLabel>Preferred Contact Method</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="flex flex-row space-x-6"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="EMAIL" id="email-contact" />
+                              <label htmlFor="email-contact" className="cursor-pointer">Email</label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="TELEPHONE" id="phone-contact" />
+                              <label htmlFor="phone-contact" className="cursor-pointer">Telephone</label>
+                            </div>
+                          </RadioGroup>
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -343,19 +324,37 @@ const ACInquiry = () => {
                     name="installationTiming"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="flex items-center gap-2">
-                          <Clock className="h-4 w-4" />
-                          Installation Timing
-                        </FormLabel>
+                        <FormLabel>Installation Timing</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="e.g. Summer 2025, As soon as possible, Fall 2025, etc." 
+                          <Textarea 
+                            placeholder="When would you like to have the installation completed? Any specific timing preferences?"
+                            className="min-h-[100px]"
                             {...field} 
                           />
                         </FormControl>
-                        <FormDescription>
-                          When would you like the installation to take place?
-                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Additional Information */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">Additional Information</h3>
+                  
+                  <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Additional Notes (Optional)</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Any additional information about your AC needs, unit layout, or specific requirements..."
+                            className="min-h-[100px]"
+                            {...field} 
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -363,72 +362,58 @@ const ACInquiry = () => {
 
                   <FormField
                     control={form.control}
-                    name="notes"
+                    name="consentGiven"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2">
-                          <MessageSquare className="h-4 w-4" />
-                          Additional Notes (Optional)
-                        </FormLabel>
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                         <FormControl>
-                          <Textarea 
-                            placeholder="Any specific requirements, questions, or additional information about your AC installation needs..."
-                            className="min-h-[100px]"
-                            {...field} 
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
                           />
                         </FormControl>
-                        <FormDescription>
-                          Please include any specific requirements or questions about your installation
-                        </FormDescription>
-                        <FormMessage />
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="text-sm font-normal">
+                            I consent to receiving information from Airlux regarding AC installation services
+                          </FormLabel>
+                          <FormDescription className="text-xs text-gray-500">
+                            By checking this box, you agree to be contacted by Airlux for consultation and installation services
+                          </FormDescription>
+                        </div>
                       </FormItem>
                     )}
                   />
                 </div>
 
-                {/* Consent */}
-                <FormField
-                  control={form.control}
-                  name="consentGiven"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          className="mt-1"
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel className="text-sm font-normal">
-                          <CheckCircle className="h-4 w-4 inline mr-1" />
-                          I consent to receiving information from Airlux related to installation details (Required)
-                        </FormLabel>
-                        <FormDescription>
-                          By checking this box, you agree to receive installation information, quotes, and follow-up communications from Airlux regarding your AC inquiry
-                        </FormDescription>
-                        <FormMessage />
-                      </div>
-                    </FormItem>
-                  )}
-                />
-
-                {/* CAPTCHA */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Security Verification</label>
-                  <Turnstile 
-                    onSuccess={setTurnstileToken} 
-                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} 
+                {/* Turnstile CAPTCHA */}
+                <div className="flex justify-center">
+                  <Turnstile
+                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                    onSuccess={setTurnstileToken}
+                    onError={() => setTurnstileToken(null)}
+                    onExpire={() => setTurnstileToken(null)}
                   />
                 </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full sm:w-auto" 
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Submitting...' : 'Submit AC Inquiry'}
-                </Button>
+                {/* Submit Button */}
+                <div className="flex justify-center">
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    className="w-full md:w-auto"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <Snowflake className="mr-2 h-4 w-4" />
+                        Submit AC Inquiry
+                      </>
+                    )}
+                  </Button>
+                </div>
               </form>
             </Form>
           </CardContent>

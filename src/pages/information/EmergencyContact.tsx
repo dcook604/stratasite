@@ -23,7 +23,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { Turnstile } from '@marsidev/react-turnstile';
-import { Phone, Shield, AlertTriangle } from 'lucide-react';
+import { Phone, Shield, AlertTriangle, Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
   unitNumber: z.string().min(1, { message: 'Unit number is required' }),
@@ -174,93 +174,18 @@ const EmergencyContact = () => {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 {/* Unit and Strata Lot */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="unitNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Unit #</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g. 101" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="strataLotNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Strata Lot #</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g. 1" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Registered Owner Names */}
-                <FormField
-                  control={form.control}
-                  name="registeredOwnerNames"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Registered Owner(s) full name(s)</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Enter the full names of all registered owners"
-                          className="min-h-[80px]"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Owner Email Address */}
-                <FormField
-                  control={form.control}
-                  name="ownerEmail"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Owner Email Address</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="email" 
-                          placeholder="owner@example.com" 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Email address for primary contact with owner(s)
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Phone Numbers */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Telephone Numbers</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">Unit Information</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
-                      name="phoneHome"
+                      name="unitNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Home (h)</FormLabel>
+                          <FormLabel>Unit #</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="tel" 
-                              placeholder="(604) 123-4567" 
-                              {...field} 
-                            />
+                            <Input placeholder="e.g. 101" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -269,16 +194,77 @@ const EmergencyContact = () => {
                     
                     <FormField
                       control={form.control}
+                      name="strataLotNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Strata Lot #</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. 1" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* Owner Information */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">Owner Information</h3>
+                  
+                  <FormField
+                    control={form.control}
+                    name="registeredOwnerNames"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Registered Owner Name(s)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Full name(s) of registered owner(s)" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="ownerEmail"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Owner Email (Optional)</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="owner@example.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="phoneHome"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Home Phone (Optional)</FormLabel>
+                          <FormControl>
+                            <Input type="tel" placeholder="(604) 123-4567" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
                       name="phoneBusiness"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Business (b)</FormLabel>
+                          <FormLabel>Business Phone (Optional)</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="tel" 
-                              placeholder="(604) 123-4567" 
-                              {...field} 
-                            />
+                            <Input type="tel" placeholder="(604) 123-4567" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -290,31 +276,24 @@ const EmergencyContact = () => {
                       name="phoneOther"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Other</FormLabel>
+                          <FormLabel>Other Phone (Optional)</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="tel" 
-                              placeholder="(604) 123-4567" 
-                              {...field} 
-                            />
+                            <Input type="tel" placeholder="(604) 123-4567" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
-                  
+
                   <FormField
                     control={form.control}
                     name="phoneOtherSpecify"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Other (please specify)</FormLabel>
+                        <FormLabel>Specify Other Phone Type (Optional)</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="e.g. Mobile, Work, etc." 
-                            {...field} 
-                          />
+                          <Input placeholder="e.g. Mobile, Fax, etc." {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -322,193 +301,223 @@ const EmergencyContact = () => {
                   />
                 </div>
 
-                {/* Non-resident Owner Information */}
+                {/* Non-Resident Information */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Non-resident Owner Information</h3>
-                  <p className="text-sm text-gray-600">Complete this section if unit is rented or you are an absentee Landlord</p>
+                  <h3 className="text-lg font-semibold border-b pb-2">Non-Resident Information (If Applicable)</h3>
                   
-                  <FormField
-                    control={form.control}
-                    name="nonResidentAddress"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Non-resident owner address and phone number</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Full address and phone number"
-                            className="min-h-[100px]"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="nonResidentAddress"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Non-Resident Address (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Full address" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="nonResidentPhone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Non-Resident Phone (Optional)</FormLabel>
+                          <FormControl>
+                            <Input type="tel" placeholder="(604) 123-4567" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
 
                 {/* Emergency Contact */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Emergency Contact</h3>
+                  <h3 className="text-lg font-semibold border-b pb-2">Emergency Contact</h3>
                   
                   <FormField
                     control={form.control}
                     name="emergencyContactName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Name, Address and Telephone number of a local contact in the event of an emergency in your suite</FormLabel>
+                        <FormLabel>Emergency Contact Name (Optional)</FormLabel>
                         <FormControl>
-                          <Textarea 
-                            placeholder="Full name, complete address, and phone number"
-                            className="min-h-[100px]"
-                            {...field} 
-                          />
+                          <Input placeholder="Full name of emergency contact" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="emergencyContactAddress"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Emergency Contact Address (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Full address" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="emergencyContactPhone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Emergency Contact Phone (Optional)</FormLabel>
+                          <FormControl>
+                            <Input type="tel" placeholder="(604) 123-4567" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
                   <FormField
                     control={form.control}
                     name="emergencyContactEmail"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Emergency Contact Email Address</FormLabel>
+                        <FormLabel>Emergency Contact Email (Optional)</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="email" 
-                            placeholder="emergency.contact@example.com" 
-                            {...field} 
-                          />
+                          <Input type="email" placeholder="emergency@example.com" {...field} />
                         </FormControl>
-                        <FormDescription>
-                          Email address for emergency contact person
-                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
 
-                {/* Emergency Contact Key Access */}
-                <FormField
-                  control={form.control}
-                  name="allowManagementAccess"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel className="text-base font-semibold">
-                        Does your emergency contact have your units spare key, or code for access:
-                      </FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          value={field.value}
-                          className="flex flex-row space-x-8"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="YES" id="emergency_yes" />
-                            <Label htmlFor="emergency_yes" className="text-lg font-medium">YES</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="NO" id="emergency_no" />
-                            <Label htmlFor="emergency_no" className="text-lg font-medium">NO</Label>
-                          </div>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Access Information */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">Access Information</h3>
+                  
+                  <FormField
+                    control={form.control}
+                    name="allowManagementAccess"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>Does emergency contact have spare key or access code?</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="flex flex-row space-x-6"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="YES" id="access-yes" />
+                              <label htmlFor="access-yes" className="cursor-pointer">Yes</label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="NO" id="access-no" />
+                              <label htmlFor="access-no" className="cursor-pointer">No</label>
+                            </div>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                {/* Concierge Key Access */}
-                <FormField
-                  control={form.control}
-                  name="conciergeKeyProvided"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel className="text-base font-semibold">
-                        Have you provided a spare key/access code for your unit to concierge for emergency access:
-                      </FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          value={field.value}
-                          className="flex flex-row space-x-8"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="YES" id="concierge_yes" />
-                            <Label htmlFor="concierge_yes" className="text-lg font-medium">YES</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="NO" id="concierge_no" />
-                            <Label htmlFor="concierge_no" className="text-lg font-medium">NO</Label>
-                          </div>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="conciergeKeyProvided"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>Have you provided spare key/access code to concierge?</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="flex flex-row space-x-6"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="YES" id="concierge-yes" />
+                              <label htmlFor="concierge-yes" className="cursor-pointer">Yes</label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="NO" id="concierge-no" />
+                              <label htmlFor="concierge-no" className="cursor-pointer">No</label>
+                            </div>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                {/* Date Provided to Concierge */}
-                <FormField
-                  control={form.control}
-                  name="dateProvidedToConcierge"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Date Provided to Concierge</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="date"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Enter the date when you provided the spare key/access code to the concierge (if applicable)
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="dateProvidedToConcierge"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Date Provided to Concierge (Optional)</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="securityCode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Security Code (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Access code if applicable" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
 
-                {/* Security Code */}
-                <FormField
-                  control={form.control}
-                  name="securityCode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Access code for security system (optional)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="password"
-                          placeholder="Enter security code if applicable" 
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        This information will be kept strictly confidential and used only in emergency situations
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* CAPTCHA */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Security Verification</label>
-                  <Turnstile 
-                    onSuccess={setTurnstileToken} 
-                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} 
+                {/* Turnstile CAPTCHA */}
+                <div className="flex justify-center">
+                  <Turnstile
+                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                    onSuccess={setTurnstileToken}
+                    onError={() => setTurnstileToken(null)}
+                    onExpire={() => setTurnstileToken(null)}
                   />
                 </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full sm:w-auto" 
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Submitting...' : 'Submit Emergency Contact Information'}
-                </Button>
+                {/* Submit Button */}
+                <div className="flex justify-center">
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    className="w-full md:w-auto"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <Phone className="mr-2 h-4 w-4" />
+                        Submit Emergency Contact Information
+                      </>
+                    )}
+                  </Button>
+                </div>
               </form>
             </Form>
           </CardContent>

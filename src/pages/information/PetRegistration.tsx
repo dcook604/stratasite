@@ -194,361 +194,355 @@ const PetRegistration: React.FC = () => {
   };
 
   return (
-    <div className="page-container">
+    <div className="flex flex-col min-h-screen">
       <Navbar />
       <PageHeader
         title="Pet Registration"
         description="Register your pet with Spectrum 4 Strata."
       />
-      
-      <div className="page-content">
-        <div className="strata-section">
-          {/* Information Notice */}
-          <Alert className="mb-8 border-amber-200 bg-amber-50">
-            <PawPrint className="h-4 w-4 text-amber-600" />
-            <AlertDescription className="text-amber-800">
-              <div className="space-y-2">
-                <p className="font-semibold">Important Information:</p>
-                <p>Please fill out one form per pet. Maximum of 2 pets (1 cat, and 1 dog) allowed per unit as per strata bylaws.</p>
-                <p>All pet registrations must be approved by strata management before pets can reside in the building.</p>
-              </div>
-            </AlertDescription>
-          </Alert>
+      <main className="flex-grow container mx-auto px-4 py-8 max-w-4xl">
+        {/* Information Notice */}
+        <Alert className="mb-8 border-amber-200 bg-amber-50">
+          <PawPrint className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-800">
+            <div className="space-y-2">
+              <p className="font-semibold">Important Information:</p>
+              <p>Please fill out one form per pet. Maximum of 2 pets (1 cat, and 1 dog) allowed per unit as per strata bylaws.</p>
+              <p>All pet registrations must be approved by strata management before pets can reside in the building.</p>
+            </div>
+          </AlertDescription>
+        </Alert>
 
-          {/* Pet Registration Form */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <PawPrint className="h-5 w-5" />
-                Pet Registration Form
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        {/* Pet Registration Form */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <PawPrint className="h-5 w-5" />
+              Pet Registration Form
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                
+                {/* Owner/Tenant Information Section */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">Owner / Tenant Information</h3>
                   
-                  {/* Owner/Tenant Information Section */}
-                  <div className="space-y-6">
-                    <h3 className="text-xl font-semibold border-b pb-2">Owner / Tenant Information</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <FormField
-                        control={form.control}
-                        name="ownerName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Owner Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Full name" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="suiteNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Suite #</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g. 101" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <FormField
-                        control={form.control}
-                        name="phoneNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone Number</FormLabel>
-                            <FormControl>
-                              <Input type="tel" placeholder="(604) 123-4567" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input type="email" placeholder="your.email@example.com" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
-                      name="occupancyType"
-                      render={({ field }) => (
-                        <FormItem className="space-y-3">
-                          <FormLabel>Occupancy Type</FormLabel>
-                          <FormControl>
-                            <RadioGroup
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                              className="flex flex-row space-x-6"
-                            >
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="TENANT" id="tenant" />
-                                <label htmlFor="tenant" className="cursor-pointer">Tenant</label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="OWNER_OCCUPIED" id="owner" />
-                                <label htmlFor="owner" className="cursor-pointer">Owner Occupied</label>
-                              </div>
-                            </RadioGroup>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Pet Registration Details Section */}
-                  <div className="space-y-6">
-                    <h3 className="text-xl font-semibold border-b pb-2">Pet Registration Details (Fill out one form per pet)</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <FormField
-                        control={form.control}
-                        name="petName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Pet Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Pet's name" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="petAge"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Age</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g. 3 years" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="petHeight"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Height</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g. 24 inches" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <FormField
-                        control={form.control}
-                        name="petColor"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Color</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g. Brown and white" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="petType"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Type</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g. Dog, Cat, Bird" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="petBreed"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Breed</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g. Golden Retriever" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <FormField
-                        control={form.control}
-                        name="petWeight"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Weight</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g. 25 lbs" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="licenseNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>License # (Optional)</FormLabel>
-                            <FormControl>
-                              <Input placeholder="License number if applicable" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="distinguishingMarks"
+                      name="ownerName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Distinguishing Marks (Optional)</FormLabel>
+                          <FormLabel>Owner Name</FormLabel>
                           <FormControl>
-                            <Textarea 
-                              placeholder="Describe any distinguishing marks, scars, or unique features"
-                              className="min-h-[80px]"
-                              {...field} 
-                            />
+                            <Input placeholder="Full name" {...field} />
                           </FormControl>
-                          <FormDescription>
-                            Any special markings, scars, or unique features that help identify your pet
-                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="suiteNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Suite #</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. 101" {...field} />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
 
-                  {/* Photo Upload Section */}
-                  <div className="space-y-6">
-                    <h3 className="text-xl font-semibold border-b pb-2">Pet Photos</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="phoneNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone Number</FormLabel>
+                          <FormControl>
+                            <Input type="tel" placeholder="(604) 123-4567" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-center w-full">
-                        <label htmlFor="photo-upload" className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                            <Upload className="w-8 h-8 mb-4 text-gray-500" />
-                            <p className="mb-2 text-sm text-gray-500">
-                              <span className="font-semibold">Click to upload pet photos</span>
-                            </p>
-                            <p className="text-xs text-gray-500">JPEG, PNG, or WebP (MAX 5MB each, 3 photos max)</p>
-                          </div>
-                          <input
-                            id="photo-upload"
-                            type="file"
-                            className="hidden"
-                            accept="image/jpeg,image/jpg,image/png,image/webp"
-                            multiple
-                            onChange={handlePhotoUpload}
-                          />
-                        </label>
-                      </div>
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="your.email@example.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-                      {/* Photo Previews */}
-                      {photoPreviews.length > 0 && (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          {photoPreviews.map((preview, index) => (
-                            <div key={index} className="relative">
-                              <img
-                                src={preview}
-                                alt={`Pet photo ${index + 1}`}
-                                className="w-full h-48 object-cover rounded-lg border"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => removePhoto(index)}
-                                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                              >
-                                <X className="h-4 w-4" />
-                              </button>
+                  <FormField
+                    control={form.control}
+                    name="occupancyType"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>Occupancy Type</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="flex flex-row space-x-6"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="TENANT" id="tenant" />
+                              <label htmlFor="tenant" className="cursor-pointer">Tenant</label>
                             </div>
-                          ))}
-                        </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="OWNER_OCCUPIED" id="owner" />
+                              <label htmlFor="owner" className="cursor-pointer">Owner Occupied</label>
+                            </div>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Pet Registration Details Section */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">Pet Registration Details (Fill out one form per pet)</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="petName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Pet Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Pet's name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
                       )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="petAge"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Age</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. 3 years" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="petHeight"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Height</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. 24 inches" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="petColor"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Color</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. Brown and white" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="petType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Type</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. Dog, Cat, Bird" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="petBreed"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Breed</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. Golden Retriever" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="petWeight"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Weight</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. 45 lbs" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="licenseNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>License Number (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. 12345" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="distinguishingMarks"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Distinguishing Marks (Optional)</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Describe any distinguishing marks, scars, or unique features..."
+                            className="min-h-[100px]"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Photo Upload Section */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">Pet Photos</h3>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                        id="photo-upload"
+                        multiple
+                      />
+                      <label htmlFor="photo-upload">
+                        <Button type="button" variant="outline" asChild>
+                          <span className="flex items-center gap-2">
+                            <Camera className="h-4 w-4" />
+                            Upload Photos (Max 3)
+                          </span>
+                        </Button>
+                      </label>
                     </div>
-                  </div>
 
-                                     {/* Turnstile CAPTCHA */}
-                   <div className="flex justify-center">
-                     <Turnstile
-                       key={turnstileKey}
-                       siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
-                       onSuccess={(token) => form.setValue('turnstileToken', token)}
-                       onError={() => form.setValue('turnstileToken', '')}
-                       onExpire={() => form.setValue('turnstileToken', '')}
-                     />
-                   </div>
-
-                  {/* Submit Button */}
-                  <div className="flex justify-center pt-6">
-                    <Button 
-                      type="submit" 
-                      disabled={isSubmitting}
-                      className="px-8 py-3 text-lg"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                          Submitting Registration...
-                        </>
-                      ) : (
-                        <>
-                          <Camera className="mr-2 h-5 w-5" />
-                          Submit Pet Registration
-                        </>
-                      )}
-                    </Button>
+                    {photoPreviews.length > 0 && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {photoPreviews.map((preview, index) => (
+                          <div key={index} className="relative">
+                            <img
+                              src={preview}
+                              alt={`Pet photo ${index + 1}`}
+                              className="w-full h-32 object-cover rounded-lg"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-2 right-2 h-6 w-6"
+                              onClick={() => removePhoto(index)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+                </div>
+
+                {/* Turnstile CAPTCHA */}
+                <div className="flex justify-center">
+                  <Turnstile
+                    key={turnstileKey}
+                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                    onSuccess={(token) => form.setValue('turnstileToken', token)}
+                    onError={() => form.setValue('turnstileToken', '')}
+                    onExpire={() => form.setValue('turnstileToken', '')}
+                  />
+                </div>
+
+                {/* Submit Button */}
+                <div className="flex justify-center">
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    className="w-full md:w-auto"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <PawPrint className="mr-2 h-4 w-4" />
+                        Submit Pet Registration
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </main>
       <Footer />
     </div>
   );

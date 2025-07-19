@@ -23,7 +23,8 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { Turnstile } from '@marsidev/react-turnstile';
-import { Package, User, Phone, Mail, MessageSquare, CheckCircle, DollarSign, Lock, Calendar } from 'lucide-react';
+import { Package, User, Phone, Mail, MessageSquare, CheckCircle, DollarSign, Lock, Calendar, Loader2 } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const formSchema = z.object({
   firstName: z.string().min(2, { message: 'First name must be at least 2 characters' }),
@@ -204,10 +205,7 @@ const StorageRental = () => {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 {/* Personal Information */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    Personal Information
-                  </h3>
+                  <h3 className="text-lg font-semibold border-b pb-2">Personal Information</h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
@@ -245,13 +243,9 @@ const StorageRental = () => {
                       name="phoneNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Telephone Number</FormLabel>
+                          <FormLabel>Phone Number</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="tel" 
-                              placeholder="(604) 123-4567" 
-                              {...field} 
-                            />
+                            <Input type="tel" placeholder="(604) 123-4567" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -263,13 +257,9 @@ const StorageRental = () => {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email Address</FormLabel>
+                          <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="email" 
-                              placeholder="your.email@example.com" 
-                              {...field} 
-                            />
+                            <Input type="email" placeholder="your.email@example.com" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -277,62 +267,80 @@ const StorageRental = () => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="unitNumber"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Unit Number</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g. 101" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="bestContactMethod"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Best Contact Method</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select your preferred contact method" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="EMAIL">
-                                <div className="flex items-center gap-2">
-                                  <Mail className="h-4 w-4" />
-                                  Email
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="TELEPHONE">
-                                <div className="flex items-center gap-2">
-                                  <Phone className="h-4 w-4" />
-                                  Telephone
-                                </div>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                  <FormField
+                    control={form.control}
+                    name="unitNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Unit Number</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. 101" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
 
-                {/* Interest and Consent */}
+                {/* Contact Preferences */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5" />
-                    Interest & Consent
-                  </h3>
+                  <h3 className="text-lg font-semibold border-b pb-2">Contact Preferences</h3>
+                  
+                  <FormField
+                    control={form.control}
+                    name="bestContactMethod"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>Preferred Contact Method</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="flex flex-row space-x-6"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="EMAIL" id="email-contact" />
+                              <label htmlFor="email-contact" className="cursor-pointer">Email</label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="TELEPHONE" id="phone-contact" />
+                              <label htmlFor="phone-contact" className="cursor-pointer">Telephone</label>
+                            </div>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
+                {/* Additional Information */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">Additional Information</h3>
+                  
+                  <FormField
+                    control={form.control}
+                    name="notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Additional Notes (Optional)</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Any specific requirements or questions about storage locker rental..."
+                            className="min-h-[100px]"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Consent and Interest */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">Consent and Interest</h3>
+                  
                   <FormField
                     control={form.control}
                     name="interestedInInfo"
@@ -342,18 +350,15 @@ const StorageRental = () => {
                           <Checkbox
                             checked={field.value}
                             onCheckedChange={field.onChange}
-                            className="mt-1"
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
                           <FormLabel className="text-sm font-normal">
-                            <Package className="h-4 w-4 inline mr-1" />
-                            I am interested in obtaining more information about the storage lockers that will become available for rent
+                            I am interested in obtaining more information about storage locker rental
                           </FormLabel>
-                          <FormDescription>
-                            Check this box to express your interest in renting a storage locker at Spectrum 4
+                          <FormDescription className="text-xs text-gray-500">
+                            By checking this box, you indicate your interest in storage locker rental services
                           </FormDescription>
-                          <FormMessage />
                         </div>
                       </FormItem>
                     )}
@@ -368,65 +373,51 @@ const StorageRental = () => {
                           <Checkbox
                             checked={field.value}
                             onCheckedChange={field.onChange}
-                            className="mt-1"
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
                           <FormLabel className="text-sm font-normal">
-                            <CheckCircle className="h-4 w-4 inline mr-1" />
-                            I consent to receive information from Spectrum 4 BCS2611 related to the Storage Locker rental program (Required)
+                            I consent to receiving information from Spectrum 4 BCS2611 regarding storage locker rental
                           </FormLabel>
-                          <FormDescription>
-                            By checking this box, you agree to receive information about storage locker availability, pricing, and rental procedures
+                          <FormDescription className="text-xs text-gray-500">
+                            By checking this box, you agree to be contacted regarding storage locker availability and rental details
                           </FormDescription>
-                          <FormMessage />
                         </div>
                       </FormItem>
                     )}
                   />
                 </div>
 
-                {/* Notes */}
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <MessageSquare className="h-4 w-4" />
-                        Notes or Comments (Optional)
-                      </FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Any specific requirements, questions, or additional information about your storage needs..."
-                          className="min-h-[100px]"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Please include any specific requirements or questions about storage locker rental
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* CAPTCHA */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Security Verification</label>
-                  <Turnstile 
-                    onSuccess={setTurnstileToken} 
-                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} 
+                {/* Turnstile CAPTCHA */}
+                <div className="flex justify-center">
+                  <Turnstile
+                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                    onSuccess={setTurnstileToken}
+                    onError={() => setTurnstileToken(null)}
+                    onExpire={() => setTurnstileToken(null)}
                   />
                 </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full sm:w-auto" 
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Submitting...' : 'Submit Interest'}
-                </Button>
+                {/* Submit Button */}
+                <div className="flex justify-center">
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    className="w-full md:w-auto"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <Package className="mr-2 h-4 w-4" />
+                        Submit Interest
+                      </>
+                    )}
+                  </Button>
+                </div>
               </form>
             </Form>
           </CardContent>
