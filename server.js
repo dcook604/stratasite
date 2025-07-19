@@ -893,6 +893,74 @@ const sendACInquiryEmail = async (inquiryData) => {
   }
 };
 
+// Function to send storage rental interest email
+const sendStorageRentalEmail = async (rentalData) => {
+  const {
+    firstName, lastName, phoneNumber, email, unitNumber, bestContactMethod,
+    interestedInInfo, notes, rentalId
+  } = rentalData;
+
+  const contactMethodDisplay = bestContactMethod === 'EMAIL' ? 'Email' : 'Telephone';
+  const fullName = `${firstName} ${lastName}`;
+
+  const emailSubject = `New Storage Locker Interest - Unit ${unitNumber}`;
+  const emailBody = `
+    <h2>New Storage Locker Rental Interest Submitted</h2>
+    
+    <h3>Interest Details:</h3>
+    <ul>
+      <li><strong>Interest ID:</strong> ${rentalId}</li>
+      <li><strong>Resident Name:</strong> ${fullName}</li>
+      <li><strong>Unit Number:</strong> ${unitNumber}</li>
+      <li><strong>Phone Number:</strong> ${phoneNumber}</li>
+      <li><strong>Email Address:</strong> ${email}</li>
+    </ul>
+    
+    <h3>Contact Preferences:</h3>
+    <ul>
+      <li><strong>Preferred Contact Method:</strong> ${contactMethodDisplay}</li>
+      <li><strong>Interested in Information:</strong> ${interestedInInfo ? 'Yes' : 'No'}</li>
+    </ul>
+    
+    ${notes ? `
+    <h3>Additional Notes/Comments:</h3>
+    <p>${notes}</p>
+    ` : ''}
+    
+    <hr>
+    <h3>Storage Locker Details Reminder:</h3>
+    <ul>
+      <li><strong>Available Lockers:</strong> 10 secure storage lockers</li>
+      <li><strong>Dimensions:</strong> 69" (5.75') x 90" (7.5')</li>
+      <li><strong>Height:</strong> 6' to 8' (varies by location)</li>
+      <li><strong>Monthly Rental:</strong> $200/month</li>
+      <li><strong>Admin Fee:</strong> $50 (one-time, non-refundable)</li>
+      <li><strong>Payment:</strong> Monthly electronic debit</li>
+      <li><strong>Target Completion:</strong> 2025</li>
+    </ul>
+    
+    <p><strong>Consent Given:</strong> Yes - Resident has consented to receiving information from Spectrum 4 BCS2611</p>
+    
+    <p><em>Submitted on ${new Date().toLocaleString()}</em></p>
+  `;
+
+  const mailOptions = {
+    from: `"Spectrum 4 Storage Rental" <${process.env.SMTP_USER}@spectrum4.ca>`,
+    to: 'dcook@spectrum4.ca, jennifer.danczak@spectrum4.ca',
+    subject: emailSubject,
+    html: emailBody
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    logger.info('Storage rental interest email sent successfully', { rentalId, recipients: mailOptions.to });
+    return true;
+  } catch (error) {
+    logger.error('Failed to send storage rental interest email', error);
+    throw error;
+  }
+};
+
 // Function to send emergency contact email
 const sendEmergencyContactEmail = async (emergencyData) => {
   const {
@@ -1761,6 +1829,135 @@ app.get('/api/ac-inquiries', async (req, res) => {
     res.json(inquiries);
   } catch (error) {
     logger.error('Error fetching AC inquiries', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// --- Storage Rental API Routes ---
+// Submit a new storage rental interest
+app.post('/api/storage-rental', async (req, res) => {
+  try {
+    const {
+      firstName, lastName, phoneNumber, email, unitNumber, bestContactMethod,
+      interestedInInfo, consentGiven, notes, turnstileToken
+    } = req.body;
+
+    // Verify Turnstile CAPTCHA
+    const isTurnstileValid = await verifyTurnstile(turnstileToken);
+    if (!isTurnstileValid) {
+      return res.status(400).json({ error: 'Invalid CAPTCHA. Please try again.' });
+    }
+
+    // Basic validation
+    if (!firstName || !lastName || !phoneNumber || !email || !unitNumber || !bestContactMethod || !interestedInInfo || !consentGiven) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email address' });
+    }
+
+    // Phone validation
+    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+    if (!phoneRegex.test(phoneNumber.replace(/[\s\-\(\)]/g, ''))) {
+      return res.status(400).json({ error: 'Invalid phone number' });
+    }
+
+    // Contact method validation
+    if (!['EMAIL', 'TELEPHONE'].includes(bestContactMethod)) {
+      return res.status(400).json({ error: 'Invalid contact method' });
+    }
+
+    // Interest validation
+    if (!interestedInInfo || interestedInInfo !== true) {
+      return res.status(400).json({ error: 'You must indicate interest to obtain more information' });
+    }
+
+    // Consent validation
+    if (!consentGiven || consentGiven !== true) {
+      return res.status(400).json({ error: 'You must consent to receiving information from Spectrum 4 BCS2611' });
+    }
+
+    // Generate rental ID
+    const rentalId = `SR-${Date.now()}`;
+
+    // Save to database
+    const storageRental = await prisma.storageRental.create({
+      data: {
+        rentalId,
+        firstName,
+        lastName,
+        phoneNumber,
+        email,
+        unitNumber,
+        bestContactMethod,
+        interestedInInfo,
+        consentGiven,
+        notes: notes || null,
+        emailSent: false
+      }
+    });
+
+    // Prepare rental data for email
+    const rentalData = {
+      firstName,
+      lastName,
+      phoneNumber,
+      email,
+      unitNumber,
+      bestContactMethod,
+      interestedInInfo,
+      notes,
+      rentalId
+    };
+
+    // Send email notification
+    let emailSent = false;
+    try {
+      await sendStorageRentalEmail(rentalData);
+      emailSent = true;
+      logger.info('Storage rental interest email sent successfully', {
+        rentalId,
+        unitNumber,
+        fullName: `${firstName} ${lastName}`,
+        timestamp: new Date().toISOString()
+      });
+    } catch (emailError) {
+      logger.error('Failed to send storage rental interest email', emailError);
+      // Continue with success response even if email fails
+    }
+
+    // Update email sent status
+    await prisma.storageRental.update({
+      where: { id: storageRental.id },
+      data: { emailSent }
+    });
+
+    // Send success response
+    res.status(201).json({
+      success: true,
+      message: 'Storage rental interest submitted successfully',
+      rentalId
+    });
+
+  } catch (error) {
+    logger.error('Error processing storage rental interest', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get all storage rental interests (for admin)
+app.get('/api/storage-rentals', async (req, res) => {
+  try {
+    const rentals = await prisma.storageRental.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(rentals);
+  } catch (error) {
+    logger.error('Error fetching storage rental interests', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

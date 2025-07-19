@@ -17,6 +17,7 @@ import WelcomePackage from "./pages/information/WelcomePackage";
 import ScooterRegistration from "./pages/information/ScooterRegistration";
 import EmergencyContact from "./pages/information/EmergencyContact";
 import ACInquiry from "./pages/information/ACInquiry";
+import StorageRental from "./pages/information/StorageRental";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,8 @@ const App = () => (
             <Route path="/emergency-contact" element={<EmergencyContact />} />
             {/* AC Inquiry page */}
             <Route path="/ac-inquiry" element={<ACInquiry />} />
+            {/* Storage Rental page */}
+            <Route path="/storage-rental" element={<StorageRental />} />
             {/* Interactive Marketplace */}
             <Route path="/marketplace" element={<Marketplace />} />
             {/* Legacy information routes - redirect to new slugs */}
