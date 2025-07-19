@@ -43,6 +43,7 @@ export const Navbar = () => {
   const formsItems = [
     { name: 'Scooter Registration', path: '/scooter-registration' },
     { name: 'Emergency Contact', path: '/emergency-contact' },
+    { name: 'AC Inquiry', path: '/ac-inquiry' },
   ];
 
   const mainNavItems = [
