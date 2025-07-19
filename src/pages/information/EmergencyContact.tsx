@@ -29,6 +29,7 @@ const formSchema = z.object({
   unitNumber: z.string().min(1, { message: 'Unit number is required' }),
   strataLotNumber: z.string().min(1, { message: 'Strata lot number is required' }),
   registeredOwnerNames: z.string().min(2, { message: 'Registered owner name(s) must be at least 2 characters' }),
+  ownerEmail: z.string().email({ message: 'Please enter a valid email address' }).optional().or(z.literal('')),
   phoneHome: z.string().optional(),
   phoneBusiness: z.string().optional(),
   phoneOther: z.string().optional(),
@@ -38,9 +39,14 @@ const formSchema = z.object({
   emergencyContactName: z.string().optional(),
   emergencyContactAddress: z.string().optional(),
   emergencyContactPhone: z.string().optional(),
+  emergencyContactEmail: z.string().email({ message: 'Please enter a valid email address' }).optional().or(z.literal('')),
   allowManagementAccess: z.enum(['YES', 'NO'], {
-    required_error: 'Please select whether to allow management access'
+    required_error: 'Please select whether emergency contact has spare key or code'
   }),
+  conciergeKeyProvided: z.enum(['YES', 'NO'], {
+    required_error: 'Please select whether you have provided spare key/access code to concierge'
+  }),
+  dateProvidedToConcierge: z.string().optional(),
   securityCode: z.string().optional()
 });
 
@@ -57,6 +63,7 @@ const EmergencyContact = () => {
       unitNumber: '',
       strataLotNumber: '',
       registeredOwnerNames: '',
+      ownerEmail: '',
       phoneHome: '',
       phoneBusiness: '',
       phoneOther: '',
@@ -66,7 +73,10 @@ const EmergencyContact = () => {
       emergencyContactName: '',
       emergencyContactAddress: '',
       emergencyContactPhone: '',
+      emergencyContactEmail: '',
       allowManagementAccess: undefined,
+      conciergeKeyProvided: undefined,
+      dateProvidedToConcierge: '',
       securityCode: ''
     }
   });
@@ -213,6 +223,28 @@ const EmergencyContact = () => {
                   )}
                 />
 
+                {/* Owner Email Address */}
+                <FormField
+                  control={form.control}
+                  name="ownerEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Owner Email Address</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="email" 
+                          placeholder="owner@example.com" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Email address for primary contact with owner(s)
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 {/* Phone Numbers */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">Telephone Numbers</h3>
@@ -335,16 +367,37 @@ const EmergencyContact = () => {
                       </FormItem>
                     )}
                   />
+                  
+                  <FormField
+                    control={form.control}
+                    name="emergencyContactEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Emergency Contact Email Address</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="email" 
+                            placeholder="emergency.contact@example.com" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Email address for emergency contact person
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
 
-                {/* Management Access */}
+                {/* Emergency Contact Key Access */}
                 <FormField
                   control={form.control}
                   name="allowManagementAccess"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
                       <FormLabel className="text-base font-semibold">
-                        If your contact or relative is not available, will you allow access to your suite via the Management Company? Please circle appropriate:
+                        Does your emergency contact have your units spare key, or code for access:
                       </FormLabel>
                       <FormControl>
                         <RadioGroup
@@ -353,15 +406,66 @@ const EmergencyContact = () => {
                           className="flex flex-row space-x-8"
                         >
                           <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="YES" id="yes" />
-                            <Label htmlFor="yes" className="text-lg font-medium">YES</Label>
+                            <RadioGroupItem value="YES" id="emergency_yes" />
+                            <Label htmlFor="emergency_yes" className="text-lg font-medium">YES</Label>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="NO" id="no" />
-                            <Label htmlFor="no" className="text-lg font-medium">NO</Label>
+                            <RadioGroupItem value="NO" id="emergency_no" />
+                            <Label htmlFor="emergency_no" className="text-lg font-medium">NO</Label>
                           </div>
                         </RadioGroup>
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Concierge Key Access */}
+                <FormField
+                  control={form.control}
+                  name="conciergeKeyProvided"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel className="text-base font-semibold">
+                        Have you provided a spare key/access code for your unit to concierge for emergency access:
+                      </FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          className="flex flex-row space-x-8"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="YES" id="concierge_yes" />
+                            <Label htmlFor="concierge_yes" className="text-lg font-medium">YES</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="NO" id="concierge_no" />
+                            <Label htmlFor="concierge_no" className="text-lg font-medium">NO</Label>
+                          </div>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Date Provided to Concierge */}
+                <FormField
+                  control={form.control}
+                  name="dateProvidedToConcierge"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Date Provided to Concierge</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="date"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Enter the date when you provided the spare key/access code to the concierge (if applicable)
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

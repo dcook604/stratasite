@@ -45,6 +45,7 @@ export const Navbar = () => {
     { name: 'Emergency Contact', path: '/emergency-contact' },
     { name: 'AC Inquiry', path: '/ac-inquiry' },
     { name: 'Storage Rental', path: '/storage-rental' },
+    { name: 'Pet Registration', path: '/pet-registration' },
   ];
 
   const mainNavItems = [

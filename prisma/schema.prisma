@@ -231,3 +231,52 @@ model StorageRental {
   
   @@map("storage_rentals")
 }
+
+enum PetOwnerOccupancyType {
+  TENANT
+  OWNER_OCCUPIED
+}
+
+enum PetRegistrationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model PetRegistration {
+  id                  String                   @id @default(cuid())
+  registrationId      String                   @unique @map("registration_id") // PR-timestamp format
+  
+  // Owner/Tenant Information
+  ownerName           String                   @map("owner_name")
+  suiteNumber         String                   @map("suite_number")
+  phoneNumber         String                   @map("phone_number")
+  email               String
+  occupancyType       PetOwnerOccupancyType    @map("occupancy_type")
+  
+  // Pet Registration Details
+  petName             String                   @map("pet_name")
+  petAge              String                   @map("pet_age")
+  petHeight           String                   @map("pet_height")
+  petColor            String                   @map("pet_color")
+  petType             String                   @map("pet_type")
+  petBreed            String                   @map("pet_breed")
+  petWeight           String                   @map("pet_weight")
+  distinguishingMarks String?                  @map("distinguishing_marks")
+  licenseNumber       String?                  @map("license_number")
+  photos              String?                  // JSON array of photo file paths
+  
+  // Admin fields
+  status              PetRegistrationStatus    @default(PENDING)
+  notes               String?                  // Admin notes
+  
+  // Email tracking
+  emailSent           Boolean                  @default(false) @map("email_sent")
+  
+  // Metadata
+  isActive            Boolean                  @default(true) @map("is_active")
+  createdAt           DateTime                 @default(now()) @map("created_at")
+  updatedAt           DateTime                 @updatedAt @map("updated_at")
+  
+  @@map("pet_registrations")
+}
