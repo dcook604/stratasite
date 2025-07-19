@@ -184,18 +184,20 @@ model ScooterRegistration {
 ### Navigation Structure
 ```
 Home
+Calendar
+Contact
+Bylaws
+Forms ↓
+  ├── Scooter Registration
+  └── Emergency Contact
 Information ↓
   ├── Documents
   ├── Fees
   ├── Organics
   ├── Recycling
   ├── Renovations
-  ├── Scooter Registration
   └── Welcome Package
 Marketplace
-Bylaws
-Contact
-Gallery
 Admin ↓
   ├── Login
   └── Dashboard

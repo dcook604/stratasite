@@ -37,15 +37,19 @@ export const Navbar = () => {
     { name: 'Organics', path: '/organics' },
     { name: 'Recycling', path: '/recycling' },
     { name: 'Renovations', path: '/renovations' },
-    { name: 'Scooter Registration', path: '/scooter-registration' },
     { name: 'Welcome Package', path: '/welcome-package' },
   ];
 
+  const formsItems = [
+    { name: 'Scooter Registration', path: '/scooter-registration' },
+    { name: 'Emergency Contact', path: '/emergency-contact' },
+  ];
+
   const mainNavItems = [
-    { name: 'Marketplace', path: '/marketplace', icon: <ShoppingCart className="h-4 w-4 mr-2" /> },
-    { name: 'Bylaws', path: '/bylaws', icon: <Book className="h-4 w-4 mr-2" /> },
     { name: 'Calendar', path: '/calendar', icon: <Calendar className="h-4 w-4 mr-2" /> },
     { name: 'Contact', path: '/contact', icon: <Mail className="h-4 w-4 mr-2" /> },
+    { name: 'Bylaws', path: '/bylaws', icon: <Book className="h-4 w-4 mr-2" /> },
+    { name: 'Marketplace', path: '/marketplace', icon: <ShoppingCart className="h-4 w-4 mr-2" /> },
   ];
 
   return (
@@ -76,6 +80,60 @@ export const Navbar = () => {
                   </Button>
                 ))}
 
+                {/* Calendar and Contact */}
+                <Button
+                  variant="ghost"
+                  className="text-gray-700 hover:text-primary"
+                  asChild
+                >
+                  <Link to="/calendar" className="flex items-center">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Calendar
+                  </Link>
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  className="text-gray-700 hover:text-primary"
+                  asChild
+                >
+                  <Link to="/contact" className="flex items-center">
+                    <Mail className="h-4 w-4 mr-2" />
+                    Contact
+                  </Link>
+                </Button>
+
+                {/* Bylaws */}
+                <Button
+                  variant="ghost"
+                  className="text-gray-700 hover:text-primary"
+                  asChild
+                >
+                  <Link to="/bylaws" className="flex items-center">
+                    <Book className="h-4 w-4 mr-2" />
+                    Bylaws
+                  </Link>
+                </Button>
+
+                {/* Forms Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="text-gray-700 hover:text-primary flex items-center">
+                      Forms
+                      <ChevronDown className="h-4 w-4 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="bg-white">
+                    {formsItems.map((item) => (
+                      <DropdownMenuItem key={item.name} asChild>
+                        <Link to={item.path} className="w-full">
+                          {item.name}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
                 {/* Information Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -95,27 +153,17 @@ export const Navbar = () => {
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                {/* Main navigation items */}
-                {mainNavItems.map((item) => (
-                  <Button
-                    key={item.name}
-                    variant="ghost"
-                    className="text-gray-700 hover:text-primary"
-                    asChild
-                  >
-                    {(item as any).external ? (
-                      <a href={item.path} target="_blank" rel="noopener noreferrer" className="flex items-center">
-                        {item.icon}
-                        {item.name}
-                      </a>
-                    ) : (
-                    <Link to={item.path} className="flex items-center">
-                      {item.icon}
-                      {item.name}
-                    </Link>
-                    )}
-                  </Button>
-                ))}
+                {/* Marketplace */}
+                <Button
+                  variant="ghost"
+                  className="text-gray-700 hover:text-primary"
+                  asChild
+                >
+                  <Link to="/marketplace" className="flex items-center">
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Marketplace
+                  </Link>
+                </Button>
 
                 {adminUser ? (
                   <Button
@@ -180,6 +228,53 @@ export const Navbar = () => {
             </Link>
           ))}
           
+          {/* Calendar */}
+          <Link
+            to="/calendar"
+            className="flex items-center text-gray-700 hover:bg-gray-100 hover:text-primary px-3 py-2 rounded-md text-base font-medium"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            <Calendar className="h-4 w-4 mr-2" />
+            Calendar
+          </Link>
+
+          {/* Contact */}
+          <Link
+            to="/contact"
+            className="flex items-center text-gray-700 hover:bg-gray-100 hover:text-primary px-3 py-2 rounded-md text-base font-medium"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            <Mail className="h-4 w-4 mr-2" />
+            Contact
+          </Link>
+
+          {/* Bylaws */}
+          <Link
+            to="/bylaws"
+            className="flex items-center text-gray-700 hover:bg-gray-100 hover:text-primary px-3 py-2 rounded-md text-base font-medium"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            <Book className="h-4 w-4 mr-2" />
+            Bylaws
+          </Link>
+          
+          {/* Forms section in mobile menu */}
+          <div className="block">
+            <div className="px-3 py-2 font-medium text-gray-700">Forms</div>
+            <div className="pl-5 space-y-1">
+              {formsItems.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.path}
+                  className="flex items-center text-gray-600 hover:bg-gray-100 hover:text-primary px-3 py-2 rounded-md text-sm"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+          
           {/* Information section in mobile menu */}
           <div className="block">
             <div className="px-3 py-2 font-medium text-gray-700">Information</div>
@@ -197,33 +292,16 @@ export const Navbar = () => {
             </div>
           </div>
 
-          {/* Main navigation items in mobile */}
-          {mainNavItems.map((item) => (
-            (item as any).external ? (
-              <a
-                key={item.name}
-                href={item.path}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center text-gray-700 hover:bg-gray-100 hover:text-primary px-3 py-2 rounded-md text-base font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {item.icon}
-                {item.name}
-              </a>
-            ) : (
-            <Link
-              key={item.name}
-              to={item.path}
-              className="flex items-center text-gray-700 hover:bg-gray-100 hover:text-primary px-3 py-2 rounded-md text-base font-medium"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              {item.icon}
-              {item.name}
-            </Link>
-            )
-          ))}
-          
+          {/* Marketplace */}
+          <Link
+            to="/marketplace"
+            className="flex items-center text-gray-700 hover:bg-gray-100 hover:text-primary px-3 py-2 rounded-md text-base font-medium"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            <ShoppingCart className="h-4 w-4 mr-2" />
+            Marketplace
+          </Link>
+
           {adminUser ? (
             <Link
               to="/admin/dashboard"

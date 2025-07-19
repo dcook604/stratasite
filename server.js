@@ -835,6 +835,73 @@ const sendScooterRegistrationEmail = async (registrationData) => {
   }
 };
 
+// Function to send emergency contact email
+const sendEmergencyContactEmail = async (emergencyData) => {
+  const {
+    unitNumber, strataLotNumber, registeredOwnerNames, phoneHome, phoneBusiness, 
+    phoneOther, phoneOtherSpecify, nonResidentAddress, emergencyContactName,
+    allowManagementAccess, securityCode
+  } = emergencyData;
+
+  const emailSubject = `Emergency Contact Information Updated - Unit ${unitNumber}`;
+  const emailBody = `
+    <h2>Emergency Contact Information Form Submitted</h2>
+    
+    <h3>Unit Information:</h3>
+    <ul>
+      <li><strong>Unit #:</strong> ${unitNumber}</li>
+      <li><strong>Strata Lot #:</strong> ${strataLotNumber}</li>
+      <li><strong>Registered Owner(s):</strong> ${registeredOwnerNames}</li>
+    </ul>
+    
+    <h3>Contact Phone Numbers:</h3>
+    <ul>
+      ${phoneHome ? `<li><strong>Home:</strong> ${phoneHome}</li>` : ''}
+      ${phoneBusiness ? `<li><strong>Business:</strong> ${phoneBusiness}</li>` : ''}
+      ${phoneOther ? `<li><strong>Other:</strong> ${phoneOther}</li>` : ''}
+      ${phoneOtherSpecify ? `<li><strong>Other (Specify):</strong> ${phoneOtherSpecify}</li>` : ''}
+    </ul>
+    
+    ${nonResidentAddress ? `
+    <h3>Non-resident Owner Information:</h3>
+    <p>${nonResidentAddress}</p>
+    ` : ''}
+    
+    ${emergencyContactName ? `
+    <h3>Emergency Contact:</h3>
+    <p>${emergencyContactName}</p>
+    ` : ''}
+    
+    <h3>Management Access:</h3>
+    <p><strong>Allow Management Access:</strong> ${allowManagementAccess}</p>
+    
+    ${securityCode ? `
+    <h3>Security Information:</h3>
+    <p><strong>Access Code Provided:</strong> Yes (see confidential records)</p>
+    ` : '<p><strong>Access Code:</strong> Not provided</p>'}
+    
+    <hr>
+    <p><em>This information is confidential and for emergency contact purposes only.</em></p>
+    <p><em>Submitted on ${new Date().toLocaleString()}</em></p>
+  `;
+
+  const mailOptions = {
+    from: `"Spectrum 4 Emergency Contact" <${process.env.SMTP_USER}@spectrum4.ca>`,
+    to: 'abrajlovic@ascentpm.com, jennifer.danczak@spectrum4.ca, Hercules@spectrum4.ca, dcook@spectrum4.ca, spectrumconcierge@ranchogroup.com, sdelair@ascentpm.com',
+    subject: emailSubject,
+    html: emailBody
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    logger.info('Emergency contact email sent successfully', { unitNumber, recipients: mailOptions.to });
+    return true;
+  } catch (error) {
+    logger.error('Failed to send emergency contact email', error);
+    throw error;
+  }
+};
+
 // Marketplace CRUD
 app.get('/api/marketplace', async (req, res) => {
   try {
@@ -1549,6 +1616,71 @@ app.put('/api/event-requests/:id', async (req, res) => {
     res.json(updatedRequest);
   } catch (error) {
     logger.error('Error updating event request', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Submit emergency contact information
+app.post('/api/emergency-contact', async (req, res) => {
+  try {
+    const {
+      unitNumber, strataLotNumber, registeredOwnerNames, phoneHome, phoneBusiness,
+      phoneOther, phoneOtherSpecify, nonResidentAddress, emergencyContactName,
+      allowManagementAccess, securityCode, turnstileToken
+    } = req.body;
+
+    // Verify Turnstile CAPTCHA
+    const isTurnstileValid = await verifyTurnstile(turnstileToken);
+    if (!isTurnstileValid) {
+      return res.status(400).json({ error: 'Invalid CAPTCHA. Please try again.' });
+    }
+
+    // Basic validation
+    if (!unitNumber || !strataLotNumber || !registeredOwnerNames || !allowManagementAccess) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Validate management access choice
+    if (!['YES', 'NO'].includes(allowManagementAccess)) {
+      return res.status(400).json({ error: 'Invalid management access selection' });
+    }
+
+    // Prepare emergency contact data for email
+    const emergencyData = {
+      unitNumber,
+      strataLotNumber,
+      registeredOwnerNames,
+      phoneHome,
+      phoneBusiness,
+      phoneOther,
+      phoneOtherSpecify,
+      nonResidentAddress,
+      emergencyContactName,
+      allowManagementAccess,
+      securityCode: securityCode ? '[PROVIDED]' : null  // Don't include actual code in email for security
+    };
+
+    // Send email notification
+    try {
+      await sendEmergencyContactEmail(emergencyData);
+      logger.info('Emergency contact email sent successfully', {
+        unitNumber,
+        strataLotNumber,
+        timestamp: new Date().toISOString()
+      });
+    } catch (emailError) {
+      logger.error('Failed to send emergency contact email', emailError);
+      // Continue with success response even if email fails
+    }
+
+    // Send success response
+    res.status(201).json({
+      success: true,
+      message: 'Emergency contact information submitted successfully'
+    });
+
+  } catch (error) {
+    logger.error('Error processing emergency contact submission', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
