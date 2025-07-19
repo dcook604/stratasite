@@ -149,11 +149,11 @@ const StorageRental = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
-                  <h4 className="font-semibold text-blue-800 mb-2">🔒 Locker Specifications</h4>
+                  <h4 className="font-semibold text-blue-800 mb-2">🔒 Locker Specifications (Approximately)</h4>
                   <ul className="space-y-1 text-sm text-blue-700">
-                    <li><strong>Dimensions:</strong> 69" (5.75') x 90" (7.5')</li>
+                    <li><strong>Dimensions:</strong> 35" (3') x 50" (4.2')</li>
                     <li><strong>Height:</strong> 6' to 8' (varies by location)</li>
-                    <li><strong>Total Available:</strong> 10 secure lockers</li>
+                    <li><strong>Total Available:</strong> 16-18 secure lockers</li>
                   </ul>
                 </div>
                 
@@ -163,7 +163,7 @@ const StorageRental = () => {
                     Rental Fees
                   </h4>
                   <ul className="space-y-1 text-sm text-blue-700">
-                    <li><strong>Monthly Rental:</strong> $200/month</li>
+                    <li><strong>Monthly Rental:</strong> $120/month</li>
                     <li><strong>Admin Fee:</strong> $50 (one-time, non-refundable)</li>
                     <li><strong>Payment Method:</strong> Monthly electronic debit</li>
                     <li><strong>Damage Deposit:</strong> Refundable (amount TBD)</li>
@@ -441,7 +441,7 @@ const StorageRental = () => {
               <Package className="h-6 w-6 text-purple-600" />
             </div>
             <p className="text-lg font-semibold text-purple-800 mb-2">
-              Only 10 Storage Lockers Available
+              16-18 Storage Lockers Available
             </p>
             <p className="text-purple-700 mb-3">
               Submit your interest early to secure your spot on the waiting list for these premium storage lockers.

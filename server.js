@@ -930,10 +930,10 @@ const sendStorageRentalEmail = async (rentalData) => {
     <hr>
     <h3>Storage Locker Details Reminder:</h3>
     <ul>
-      <li><strong>Available Lockers:</strong> 10 secure storage lockers</li>
-      <li><strong>Dimensions:</strong> 69" (5.75') x 90" (7.5')</li>
+      <li><strong>Available Lockers:</strong> 16-18 secure storage lockers</li>
+      <li><strong>Dimensions (Approximately):</strong> 35" (3') x 50" (4.2')</li>
       <li><strong>Height:</strong> 6' to 8' (varies by location)</li>
-      <li><strong>Monthly Rental:</strong> $200/month</li>
+      <li><strong>Monthly Rental:</strong> $120/month</li>
       <li><strong>Admin Fee:</strong> $50 (one-time, non-refundable)</li>
       <li><strong>Payment:</strong> Monthly electronic debit</li>
       <li><strong>Target Completion:</strong> 2025</li>
@@ -964,9 +964,9 @@ const sendStorageRentalEmail = async (rentalData) => {
 // Function to send emergency contact email
 const sendEmergencyContactEmail = async (emergencyData) => {
   const {
-    unitNumber, strataLotNumber, registeredOwnerNames, phoneHome, phoneBusiness, 
-    phoneOther, phoneOtherSpecify, nonResidentAddress, emergencyContactName,
-    allowManagementAccess, securityCode
+    unitNumber, strataLotNumber, registeredOwnerNames, ownerEmail, phoneHome, phoneBusiness, 
+    phoneOther, phoneOtherSpecify, nonResidentAddress, emergencyContactName, emergencyContactEmail,
+    allowManagementAccess, conciergeKeyProvided, dateProvidedToConcierge, securityCode
   } = emergencyData;
 
   const emailSubject = `Emergency Contact Information Updated - Unit ${unitNumber}`;
@@ -978,6 +978,7 @@ const sendEmergencyContactEmail = async (emergencyData) => {
       <li><strong>Unit #:</strong> ${unitNumber}</li>
       <li><strong>Strata Lot #:</strong> ${strataLotNumber}</li>
       <li><strong>Registered Owner(s):</strong> ${registeredOwnerNames}</li>
+      ${ownerEmail ? `<li><strong>Owner Email:</strong> ${ownerEmail}</li>` : ''}
     </ul>
     
     <h3>Contact Phone Numbers:</h3>
@@ -996,10 +997,13 @@ const sendEmergencyContactEmail = async (emergencyData) => {
     ${emergencyContactName ? `
     <h3>Emergency Contact:</h3>
     <p>${emergencyContactName}</p>
+    ${emergencyContactEmail ? `<p><strong>Emergency Contact Email:</strong> ${emergencyContactEmail}</p>` : ''}
     ` : ''}
     
-    <h3>Management Access:</h3>
-    <p><strong>Allow Management Access:</strong> ${allowManagementAccess}</p>
+    <h3>Key and Access Information:</h3>
+    <p><strong>Emergency contact has spare key/code for access:</strong> ${allowManagementAccess}</p>
+    <p><strong>Spare key/access code provided to concierge:</strong> ${conciergeKeyProvided}</p>
+    ${dateProvidedToConcierge ? `<p><strong>Date provided to concierge:</strong> ${dateProvidedToConcierge}</p>` : ''}
     
     ${securityCode ? `
     <h3>Security Information:</h3>
@@ -1024,6 +1028,69 @@ const sendEmergencyContactEmail = async (emergencyData) => {
     return true;
   } catch (error) {
     logger.error('Failed to send emergency contact email', error);
+    throw error;
+  }
+};
+
+// Function to send pet registration email
+const sendPetRegistrationEmail = async (petData) => {
+  const {
+    registrationId, ownerName, suiteNumber, phoneNumber, email, occupancyType,
+    petName, petAge, petHeight, petColor, petType, petBreed, petWeight,
+    distinguishingMarks, licenseNumber, photos
+  } = petData;
+
+  const emailSubject = `Pet Registration Submission - ${petName} (Unit ${suiteNumber})`;
+  const emailBody = `
+    <h2>Pet Registration Form Submitted</h2>
+    
+    <p><strong>Registration ID:</strong> ${registrationId}</p>
+    
+    <h3>Owner/Tenant Information:</h3>
+    <ul>
+      <li><strong>Owner Name:</strong> ${ownerName}</li>
+      <li><strong>Suite #:</strong> ${suiteNumber}</li>
+      <li><strong>Phone Number:</strong> ${phoneNumber}</li>
+      <li><strong>Email:</strong> ${email}</li>
+      <li><strong>Occupancy Type:</strong> ${occupancyType === 'TENANT' ? 'Tenant' : 'Owner Occupied'}</li>
+    </ul>
+    
+    <h3>Pet Registration Details:</h3>
+    <ul>
+      <li><strong>Pet Name:</strong> ${petName}</li>
+      <li><strong>Age:</strong> ${petAge}</li>
+      <li><strong>Height:</strong> ${petHeight}</li>
+      <li><strong>Color:</strong> ${petColor}</li>
+      <li><strong>Type:</strong> ${petType}</li>
+      <li><strong>Breed:</strong> ${petBreed}</li>
+      <li><strong>Weight:</strong> ${petWeight}</li>
+      ${distinguishingMarks ? `<li><strong>Distinguishing Marks:</strong> ${distinguishingMarks}</li>` : ''}
+      ${licenseNumber ? `<li><strong>License #:</strong> ${licenseNumber}</li>` : ''}
+    </ul>
+    
+    ${photos && photos.length > 0 ? `
+    <h3>Pet Photos:</h3>
+    <p>${photos.length} photo(s) uploaded. Photos are stored on the server and available in the admin dashboard.</p>
+    ` : '<p><strong>Photos:</strong> No photos uploaded</p>'}
+    
+    <hr>
+    <p><em>This pet registration requires approval from strata management.</em></p>
+    <p><em>Submitted on ${new Date().toLocaleString()}</em></p>
+  `;
+
+  const mailOptions = {
+    from: `"Spectrum 4 Pet Registration" <${process.env.SMTP_USER}@spectrum4.ca>`,
+    to: 'dcook@spectrum4.ca, sdelair@ascentpm.com, Hercules@spectrum4.ca, jennifer.danczak@spectrum4.ca, abrajlovic@ascentpm.com',
+    subject: emailSubject,
+    html: emailBody
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    logger.info('Pet registration email sent successfully', { registrationId, petName, suiteNumber, recipients: mailOptions.to });
+    return true;
+  } catch (error) {
+    logger.error('Failed to send pet registration email', error);
     throw error;
   }
 };
@@ -2003,9 +2070,9 @@ app.put('/api/event-requests/:id', async (req, res) => {
 app.post('/api/emergency-contact', async (req, res) => {
   try {
     const {
-      unitNumber, strataLotNumber, registeredOwnerNames, phoneHome, phoneBusiness,
-      phoneOther, phoneOtherSpecify, nonResidentAddress, emergencyContactName,
-      allowManagementAccess, securityCode, turnstileToken
+      unitNumber, strataLotNumber, registeredOwnerNames, ownerEmail, phoneHome, phoneBusiness,
+      phoneOther, phoneOtherSpecify, nonResidentAddress, emergencyContactName, emergencyContactEmail,
+      allowManagementAccess, conciergeKeyProvided, dateProvidedToConcierge, securityCode, turnstileToken
     } = req.body;
 
     // Verify Turnstile CAPTCHA
@@ -2015,13 +2082,18 @@ app.post('/api/emergency-contact', async (req, res) => {
     }
 
     // Basic validation
-    if (!unitNumber || !strataLotNumber || !registeredOwnerNames || !allowManagementAccess) {
+    if (!unitNumber || !strataLotNumber || !registeredOwnerNames || !allowManagementAccess || !conciergeKeyProvided) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
     // Validate management access choice
     if (!['YES', 'NO'].includes(allowManagementAccess)) {
-      return res.status(400).json({ error: 'Invalid management access selection' });
+      return res.status(400).json({ error: 'Invalid emergency contact key access selection' });
+    }
+
+    // Validate concierge key provided choice
+    if (!['YES', 'NO'].includes(conciergeKeyProvided)) {
+      return res.status(400).json({ error: 'Invalid concierge key provided selection' });
     }
 
     // Prepare emergency contact data for email
@@ -2029,13 +2101,17 @@ app.post('/api/emergency-contact', async (req, res) => {
       unitNumber,
       strataLotNumber,
       registeredOwnerNames,
+      ownerEmail,
       phoneHome,
       phoneBusiness,
       phoneOther,
       phoneOtherSpecify,
       nonResidentAddress,
       emergencyContactName,
+      emergencyContactEmail,
       allowManagementAccess,
+      conciergeKeyProvided,
+      dateProvidedToConcierge,
       securityCode: securityCode ? '[PROVIDED]' : null  // Don't include actual code in email for security
     };
 
@@ -2060,6 +2136,247 @@ app.post('/api/emergency-contact', async (req, res) => {
 
   } catch (error) {
     logger.error('Error processing emergency contact submission', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Submit pet registration
+app.post('/api/pet-registration', upload.array('photos', 3), async (req, res) => {
+  try {
+    const {
+      ownerName, suiteNumber, phoneNumber, email, occupancyType,
+      petName, petAge, petHeight, petColor, petType, petBreed, petWeight,
+      distinguishingMarks, licenseNumber, turnstileToken
+    } = req.body;
+
+    // Verify Turnstile CAPTCHA
+    const isTurnstileValid = await verifyTurnstile(turnstileToken);
+    if (!isTurnstileValid) {
+      return res.status(400).json({ error: 'Invalid CAPTCHA. Please try again.' });
+    }
+
+    // Basic validation
+    if (!ownerName || !suiteNumber || !phoneNumber || !email || !occupancyType ||
+        !petName || !petAge || !petHeight || !petColor || !petType || !petBreed || !petWeight) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Validate occupancy type
+    if (!['TENANT', 'OWNER_OCCUPIED'].includes(occupancyType)) {
+      return res.status(400).json({ error: 'Invalid occupancy type' });
+    }
+
+    // Generate unique registration ID
+    const timestamp = Date.now();
+    const registrationId = `PR-${timestamp}`;
+
+    // Process uploaded photos
+    let photoFilenames = [];
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        try {
+          // Generate unique filename
+          const fileExtension = path.extname(file.originalname).toLowerCase();
+          const filename = `pet-${registrationId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}${fileExtension}`;
+          const outputPath = path.join(__dirname, 'public', 'uploads', filename);
+
+          // Process and compress the image
+          await sharp(file.buffer)
+            .resize(800, 800, { 
+              fit: 'inside', 
+              withoutEnlargement: true 
+            })
+            .jpeg({ 
+              quality: 85,
+              progressive: true 
+            })
+            .toFile(outputPath);
+
+          photoFilenames.push(filename);
+          logger.info('Pet photo processed successfully', { filename, originalName: file.originalname });
+        } catch (photoError) {
+          logger.error('Failed to process pet photo', photoError);
+          // Continue with other photos if one fails
+        }
+      }
+    }
+
+    // Save to database
+    const petRegistration = await prisma.petRegistration.create({
+      data: {
+        registrationId,
+        ownerName,
+        suiteNumber,
+        phoneNumber,
+        email,
+        occupancyType,
+        petName,
+        petAge,
+        petHeight,
+        petColor,
+        petType,
+        petBreed,
+        petWeight,
+        distinguishingMarks: distinguishingMarks || null,
+        licenseNumber: licenseNumber || null,
+        photos: photoFilenames.length > 0 ? JSON.stringify(photoFilenames) : null,
+        emailSent: false
+      }
+    });
+
+    // Prepare pet data for email
+    const petData = {
+      registrationId,
+      ownerName,
+      suiteNumber,
+      phoneNumber,
+      email,
+      occupancyType,
+      petName,
+      petAge,
+      petHeight,
+      petColor,
+      petType,
+      petBreed,
+      petWeight,
+      distinguishingMarks,
+      licenseNumber,
+      photos: photoFilenames
+    };
+
+    // Send email notification
+    try {
+      await sendPetRegistrationEmail(petData);
+      
+      // Update database to mark email as sent
+      await prisma.petRegistration.update({
+        where: { id: petRegistration.id },
+        data: { emailSent: true }
+      });
+
+      logger.info('Pet registration email sent successfully', {
+        registrationId,
+        petName,
+        suiteNumber,
+        photoCount: photoFilenames.length,
+        timestamp: new Date().toISOString()
+      });
+    } catch (emailError) {
+      logger.error('Failed to send pet registration email', emailError);
+      // Continue with success response even if email fails
+    }
+
+    // Send success response
+    res.status(201).json({
+      success: true,
+      message: 'Pet registration submitted successfully',
+      registrationId
+    });
+
+  } catch (error) {
+    logger.error('Error processing pet registration submission', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get all pet registrations (admin only)
+app.get('/api/pet-registrations', async (req, res) => {
+  try {
+    const petRegistrations = await prisma.petRegistration.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Parse photos JSON for each registration
+    const petRegistrationsWithPhotos = petRegistrations.map(registration => ({
+      ...registration,
+      photos: registration.photos ? JSON.parse(registration.photos) : []
+    }));
+
+    res.json(petRegistrationsWithPhotos);
+  } catch (error) {
+    logger.error('Error fetching pet registrations', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update pet registration status (admin only)
+app.patch('/api/pet-registrations/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, notes } = req.body;
+
+    if (!['PENDING', 'APPROVED', 'REJECTED'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    const petRegistration = await prisma.petRegistration.update({
+      where: { id },
+      data: {
+        status,
+        notes: notes || null,
+        updatedAt: new Date()
+      }
+    });
+
+    logger.info('Pet registration status updated', { 
+      id, 
+      status, 
+      registrationId: petRegistration.registrationId 
+    });
+
+    res.json(petRegistration);
+  } catch (error) {
+    logger.error('Error updating pet registration status', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Delete pet registration (admin only)
+app.delete('/api/pet-registrations/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Get the registration to access photos before deletion
+    const petRegistration = await prisma.petRegistration.findUnique({
+      where: { id }
+    });
+
+    if (!petRegistration) {
+      return res.status(404).json({ error: 'Pet registration not found' });
+    }
+
+    // Delete associated photos
+    if (petRegistration.photos) {
+      try {
+        const photos = JSON.parse(petRegistration.photos);
+        for (const photo of photos) {
+          const photoPath = path.join(__dirname, 'public', 'uploads', photo);
+          if (fs.existsSync(photoPath)) {
+            fs.unlinkSync(photoPath);
+            logger.info('Pet photo deleted', { filename: photo });
+          }
+        }
+      } catch (photoError) {
+        logger.error('Error deleting pet photos', photoError);
+        // Continue with registration deletion even if photo deletion fails
+      }
+    }
+
+    // Mark as inactive instead of hard delete
+    await prisma.petRegistration.update({
+      where: { id },
+      data: { isActive: false }
+    });
+
+    logger.info('Pet registration deleted', { 
+      id, 
+      registrationId: petRegistration.registrationId 
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Error deleting pet registration', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

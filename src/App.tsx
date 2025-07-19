@@ -18,6 +18,7 @@ import ScooterRegistration from "./pages/information/ScooterRegistration";
 import EmergencyContact from "./pages/information/EmergencyContact";
 import ACInquiry from "./pages/information/ACInquiry";
 import StorageRental from "./pages/information/StorageRental";
+import PetRegistration from "./pages/information/PetRegistration";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,8 @@ const App = () => (
             <Route path="/ac-inquiry" element={<ACInquiry />} />
             {/* Storage Rental page */}
             <Route path="/storage-rental" element={<StorageRental />} />
+            {/* Pet Registration page */}
+            <Route path="/pet-registration" element={<PetRegistration />} />
             {/* Interactive Marketplace */}
             <Route path="/marketplace" element={<Marketplace />} />
             {/* Legacy information routes - redirect to new slugs */}

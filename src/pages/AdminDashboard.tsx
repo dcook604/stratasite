@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { RequireAdminAuth } from '@/components/hoc/RequireAdminAuth';
-import { Plus, Trash2, Edit2, Users, Calendar, FileText, Megaphone, ShoppingCart, Save, X, Database, AlertTriangle, CheckCircle, Zap } from 'lucide-react';
+import { Plus, Trash2, Edit2, Users, Calendar, FileText, Megaphone, ShoppingCart, Save, X, Database, AlertTriangle, CheckCircle, Zap, PawPrint } from 'lucide-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { cleanupMarketplaceData, getCleanupPreview, formatCleanupStats, CleanupOptions } from '@/utils/databaseCleanup';
@@ -34,6 +34,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [eventRequests, setEventRequests] = useState([]);
   const [scooterRegistrations, setScooterRegistrations] = useState([]);
+  const [petRegistrations, setPetRegistrations] = useState([]);
 
   // Form states
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' });
@@ -76,7 +77,8 @@ const AdminDashboard = () => {
         adminUsersRes,
         eventRequestsRes,
         documentsRes,
-        scooterRegistrationsRes
+        scooterRegistrationsRes,
+        petRegistrationsRes
       ] = await Promise.all([
         fetch('/api/announcements').catch(err => err),
         fetch('/api/events').catch(err => err),
@@ -85,7 +87,8 @@ const AdminDashboard = () => {
         fetch('/api/admin/users').catch(err => err),
         fetch('/api/event-requests').catch(err => err),
         fetch('/api/documents').catch(err => err),
-        fetch('/api/scooter-registrations').catch(err => err)
+        fetch('/api/scooter-registrations').catch(err => err),
+        fetch('/api/pet-registrations').catch(err => err)
       ]);
 
       console.log('AdminDashboard: API responses received');
@@ -168,6 +171,16 @@ const AdminDashboard = () => {
       } else {
         console.error('AdminDashboard: Failed to load scooter registrations:', scooterRegistrationsRes);
         setScooterRegistrations([]);
+      }
+      
+      // Handle pet registrations
+      if (petRegistrationsRes instanceof Response && petRegistrationsRes.ok) {
+        const petRegistrationsData = await petRegistrationsRes.json();
+        console.log('AdminDashboard: Pet registrations loaded:', petRegistrationsData.length);
+        setPetRegistrations(petRegistrationsData);
+      } else {
+        console.error('AdminDashboard: Failed to load pet registrations:', petRegistrationsRes);
+        setPetRegistrations([]);
       }
     } catch (error) {
       console.error('AdminDashboard: Error fetching data:', error);
@@ -491,7 +504,7 @@ const AdminDashboard = () => {
                 This TabsList is styled to be a flex container that wraps on small screens,
                 and transitions to a 6-column grid on medium screens and larger.
               */}
-              <TabsList className="h-auto flex-wrap justify-start md:grid md:grid-cols-6 md:h-10">
+              <TabsList className="h-auto flex-wrap justify-start md:grid md:grid-cols-5 lg:grid-cols-10 md:h-10">
                 <TabsTrigger value="announcements" className="flex items-center gap-2">
                   <Megaphone className="w-4 h-4" />
                   Announcements
@@ -519,6 +532,10 @@ const AdminDashboard = () => {
                 <TabsTrigger value="scooter-registrations" className="flex items-center gap-2">
                   <Zap className="w-4 h-4" />
                   Scooter Registrations
+                </TabsTrigger>
+                <TabsTrigger value="pet-registrations" className="flex items-center gap-2">
+                  <PawPrint className="w-4 h-4" />
+                  Pet Registrations
                 </TabsTrigger>
                 <TabsTrigger value="cleanup" className="flex items-center gap-2">
                   <Database className="w-4 h-4" />
@@ -1151,6 +1168,223 @@ const AdminDashboard = () => {
                                 onClick={() => deleteScooterRegistration(registration.id)}
                               >
                                 <Trash2 className="w-4 h-4 mr-2" />
+                                Delete
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="pet-registrations" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Pet Registration Management</CardTitle>
+                    <CardDescription>
+                      Manage pet registrations and update approval statuses. Maximum 2 pets allowed per unit.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {petRegistrations.length === 0 ? (
+                      <p className="text-gray-500">No pet registrations yet.</p>
+                    ) : (
+                      <div className="space-y-6">
+                        {petRegistrations.map((registration) => (
+                          <div key={registration.id} className="p-6 border rounded-lg bg-gray-50">
+                            <div className="flex justify-between items-start mb-4">
+                              <div>
+                                <h3 className="font-semibold text-lg">Registration #{registration.registrationId}</h3>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className={`px-2 py-1 text-xs rounded font-medium ${
+                                    registration.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                    registration.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
+                                    registration.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                                    'bg-gray-100 text-gray-800'
+                                  }`}>
+                                    {registration.status}
+                                  </span>
+                                  {registration.emailSent ? (
+                                    <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                                      Email Sent
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">
+                                      Email Failed
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                Submitted: {new Date(registration.createdAt).toLocaleDateString()}
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                              <div>
+                                <h4 className="font-medium text-sm">Owner Information</h4>
+                                <p className="text-sm"><strong>Name:</strong> {registration.ownerName}</p>
+                                <p className="text-sm"><strong>Suite:</strong> {registration.suiteNumber}</p>
+                                <p className="text-sm"><strong>Email:</strong> {registration.email}</p>
+                                <p className="text-sm"><strong>Phone:</strong> {registration.phoneNumber}</p>
+                                <p className="text-sm"><strong>Type:</strong> {registration.occupancyType === 'TENANT' ? 'Tenant' : 'Owner Occupied'}</p>
+                              </div>
+                              
+                              <div>
+                                <h4 className="font-medium text-sm">Pet Details</h4>
+                                <p className="text-sm"><strong>Name:</strong> {registration.petName}</p>
+                                <p className="text-sm"><strong>Type:</strong> {registration.petType}</p>
+                                <p className="text-sm"><strong>Breed:</strong> {registration.petBreed}</p>
+                                <p className="text-sm"><strong>Age:</strong> {registration.petAge}</p>
+                                <p className="text-sm"><strong>Weight:</strong> {registration.petWeight}</p>
+                              </div>
+                              
+                              <div>
+                                <h4 className="font-medium text-sm">Physical Description</h4>
+                                <p className="text-sm"><strong>Color:</strong> {registration.petColor}</p>
+                                <p className="text-sm"><strong>Height:</strong> {registration.petHeight}</p>
+                                {registration.distinguishingMarks && (
+                                  <p className="text-sm"><strong>Marks:</strong> {registration.distinguishingMarks}</p>
+                                )}
+                                {registration.licenseNumber && (
+                                  <p className="text-sm"><strong>License #:</strong> {registration.licenseNumber}</p>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Pet Photos */}
+                            {registration.photos && registration.photos.length > 0 && (
+                              <div className="mb-4">
+                                <h4 className="font-medium text-sm mb-2">Pet Photos ({registration.photos.length})</h4>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  {registration.photos.map((photo, index) => (
+                                    <div key={index} className="relative">
+                                      <img
+                                        src={`/uploads/${photo}`}
+                                        alt={`${registration.petName} photo ${index + 1}`}
+                                        className="w-full h-32 object-cover rounded border"
+                                        onError={(e) => {
+                                          e.currentTarget.src = '/placeholder-pet.jpg';
+                                        }}
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Admin Notes */}
+                            {registration.notes && (
+                              <div className="mb-4 p-3 bg-blue-50 rounded border border-blue-200">
+                                <h4 className="font-medium text-sm text-blue-800 mb-1">Admin Notes:</h4>
+                                <p className="text-sm text-blue-700">{registration.notes}</p>
+                              </div>
+                            )}
+
+                            {/* Status Update Controls */}
+                            <div className="flex flex-wrap gap-3 pt-4 border-t">
+                              <select
+                                value={registration.status}
+                                onChange={async (e) => {
+                                  try {
+                                    const response = await fetch(`/api/pet-registrations/${registration.id}`, {
+                                      method: 'PATCH',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ status: e.target.value })
+                                    });
+                                    
+                                    if (!response.ok) throw new Error('Failed to update status');
+                                    
+                                    toast({
+                                      title: "Status Updated",
+                                      description: `Pet registration status changed to ${e.target.value}`,
+                                    });
+                                    
+                                    fetchData(); // Refresh data
+                                  } catch (error) {
+                                    toast({
+                                      title: "Error",
+                                      description: "Failed to update status",
+                                      variant: "destructive",
+                                    });
+                                  }
+                                }}
+                                className="px-3 py-1 text-sm border rounded"
+                              >
+                                <option value="PENDING">Pending</option>
+                                <option value="APPROVED">Approved</option>
+                                <option value="REJECTED">Rejected</option>
+                              </select>
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={async () => {
+                                  const notes = prompt('Add admin notes (optional):', registration.notes || '');
+                                  if (notes !== null) {
+                                    try {
+                                      const response = await fetch(`/api/pet-registrations/${registration.id}`, {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ 
+                                          status: registration.status,
+                                          notes: notes || null 
+                                        })
+                                      });
+                                      
+                                      if (!response.ok) throw new Error('Failed to update notes');
+                                      
+                                      toast({
+                                        title: "Notes Updated",
+                                        description: "Admin notes have been updated",
+                                      });
+                                      
+                                      fetchData();
+                                    } catch (error) {
+                                      toast({
+                                        title: "Error",
+                                        description: "Failed to update notes",
+                                        variant: "destructive",
+                                      });
+                                    }
+                                  }
+                                }}
+                              >
+                                <Edit2 className="h-4 w-4 mr-1" />
+                                Add Notes
+                              </Button>
+
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={async () => {
+                                  if (window.confirm(`Are you sure you want to delete the pet registration for ${registration.petName}? This action cannot be undone.`)) {
+                                    try {
+                                      const response = await fetch(`/api/pet-registrations/${registration.id}`, {
+                                        method: 'DELETE'
+                                      });
+                                      
+                                      if (!response.ok) throw new Error('Failed to delete registration');
+                                      
+                                      toast({
+                                        title: "Registration Deleted",
+                                        description: `Pet registration for ${registration.petName} has been deleted`,
+                                      });
+                                      
+                                      fetchData();
+                                    } catch (error) {
+                                      toast({
+                                        title: "Error",
+                                        description: "Failed to delete registration",
+                                        variant: "destructive",
+                                      });
+                                    }
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 mr-1" />
                                 Delete
                               </Button>
                             </div>
