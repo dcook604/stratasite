@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import PetRegistrationDialog from '@/components/shared/PetRegistrationDialog';
 
 export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
@@ -45,7 +46,7 @@ export const Navbar = () => {
     { name: 'Emergency Contact', path: '/emergency-contact' },
     { name: 'AC Inquiry', path: '/ac-inquiry' },
     { name: 'Storage Rental', path: '/storage-rental' },
-    { name: 'Pet Registration', path: '/pet-registration' },
+    { name: 'Pet Registration', path: '/pet-registration', isDialog: true },
   ];
 
   const mainNavItems = [
@@ -128,11 +129,19 @@ export const Navbar = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="bg-white">
                     {formsItems.map((item) => (
-                      <DropdownMenuItem key={item.name} asChild>
-                        <Link to={item.path} className="w-full">
-                          {item.name}
-                        </Link>
-                      </DropdownMenuItem>
+                      item.isDialog ? (
+                        <PetRegistrationDialog key={item.name}>
+                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                            <span className="w-full cursor-pointer">{item.name}</span>
+                          </DropdownMenuItem>
+                        </PetRegistrationDialog>
+                      ) : (
+                        <DropdownMenuItem key={item.name} asChild>
+                          <Link to={item.path} className="w-full">
+                            {item.name}
+                          </Link>
+                        </DropdownMenuItem>
+                      )
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -266,14 +275,25 @@ export const Navbar = () => {
             <div className="px-3 py-2 font-medium text-gray-700">Forms</div>
             <div className="pl-5 space-y-1">
               {formsItems.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.path}
-                  className="flex items-center text-gray-600 hover:bg-gray-100 hover:text-primary px-3 py-2 rounded-md text-sm"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {item.name}
-                </Link>
+                item.isDialog ? (
+                  <PetRegistrationDialog key={item.name}>
+                    <button
+                      className="flex items-center text-gray-600 hover:bg-gray-100 hover:text-primary px-3 py-2 rounded-md text-sm w-full text-left"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      {item.name}
+                    </button>
+                  </PetRegistrationDialog>
+                ) : (
+                  <Link
+                    key={item.name}
+                    to={item.path}
+                    className="flex items-center text-gray-600 hover:bg-gray-100 hover:text-primary px-3 py-2 rounded-md text-sm"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item.name}
+                  </Link>
+                )
               ))}
             </div>
           </div>
