@@ -198,7 +198,7 @@ const PetRegistration: React.FC = () => {
       <Navbar />
       <PageHeader
         title="Pet Registration"
-        description="Register your pet with Spectrum 4 Strata. Maximum 2 pets allowed per unit."
+        description="Register your pet with Spectrum 4 Strata. Maximum 2 pets (1 dog, and 1 cat) allowed per unit as per strata bylaws."
       />
       
       <div className="page-content">
