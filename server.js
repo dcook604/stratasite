@@ -835,6 +835,64 @@ const sendScooterRegistrationEmail = async (registrationData) => {
   }
 };
 
+// Function to send AC inquiry email
+const sendACInquiryEmail = async (inquiryData) => {
+  const {
+    ownerName, ownerUnit, ownerPhone, email, isMultiZone, bestContactMethod,
+    installationTiming, notes, inquiryId
+  } = inquiryData;
+
+  const installationType = isMultiZone ? 'Multi-Zone' : 'Single-Zone';
+  const contactMethodDisplay = bestContactMethod === 'EMAIL' ? 'Email' : 'Telephone';
+
+  const emailSubject = `New AC Installation Inquiry - Unit ${ownerUnit}`;
+  const emailBody = `
+    <h2>New AC Installation Inquiry Submitted</h2>
+    
+    <h3>Inquiry Details:</h3>
+    <ul>
+      <li><strong>Inquiry ID:</strong> ${inquiryId}</li>
+      <li><strong>Owner Name:</strong> ${ownerName}</li>
+      <li><strong>Unit Number:</strong> ${ownerUnit}</li>
+      <li><strong>Phone Number:</strong> ${ownerPhone}</li>
+      <li><strong>Email Address:</strong> ${email}</li>
+    </ul>
+    
+    <h3>Installation Preferences:</h3>
+    <ul>
+      <li><strong>Installation Type:</strong> ${installationType}</li>
+      <li><strong>Preferred Contact Method:</strong> ${contactMethodDisplay}</li>
+      <li><strong>Installation Timing:</strong> ${installationTiming}</li>
+    </ul>
+    
+    ${notes ? `
+    <h3>Additional Notes:</h3>
+    <p>${notes}</p>
+    ` : ''}
+    
+    <hr>
+    <p><strong>Consent Given:</strong> Yes - Customer has consented to receiving installation information from Airlux</p>
+    
+    <p><em>Submitted on ${new Date().toLocaleString()}</em></p>
+  `;
+
+  const mailOptions = {
+    from: `"Spectrum 4 AC Inquiry" <${process.env.SMTP_USER}@spectrum4.ca>`,
+    to: 'dcook@spectrum4.ca, info@airlux.ca',
+    subject: emailSubject,
+    html: emailBody
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    logger.info('AC inquiry email sent successfully', { inquiryId, recipients: mailOptions.to });
+    return true;
+  } catch (error) {
+    logger.error('Failed to send AC inquiry email', error);
+    throw error;
+  }
+};
+
 // Function to send emergency contact email
 const sendEmergencyContactEmail = async (emergencyData) => {
   const {
@@ -1579,6 +1637,130 @@ app.delete('/api/scooter-registrations/:id', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     logger.error('Error deleting scooter registration', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// --- AC Inquiry API Routes ---
+// Submit a new AC inquiry
+app.post('/api/ac-inquiry', async (req, res) => {
+  try {
+    const {
+      ownerName, ownerUnit, ownerPhone, email, isMultiZone, bestContactMethod,
+      installationTiming, notes, consentGiven, turnstileToken
+    } = req.body;
+
+    // Verify Turnstile CAPTCHA
+    const isTurnstileValid = await verifyTurnstile(turnstileToken);
+    if (!isTurnstileValid) {
+      return res.status(400).json({ error: 'Invalid CAPTCHA. Please try again.' });
+    }
+
+    // Basic validation
+    if (!ownerName || !ownerUnit || !ownerPhone || !email || !bestContactMethod || !installationTiming || !consentGiven) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email address' });
+    }
+
+    // Phone validation
+    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+    if (!phoneRegex.test(ownerPhone.replace(/[\s\-\(\)]/g, ''))) {
+      return res.status(400).json({ error: 'Invalid phone number' });
+    }
+
+    // Contact method validation
+    if (!['EMAIL', 'TELEPHONE'].includes(bestContactMethod)) {
+      return res.status(400).json({ error: 'Invalid contact method' });
+    }
+
+    // Consent validation
+    if (!consentGiven || consentGiven !== true) {
+      return res.status(400).json({ error: 'You must consent to receiving information from Airlux' });
+    }
+
+    // Generate inquiry ID
+    const inquiryId = `AC-${Date.now()}`;
+
+    // Save to database
+    const acInquiry = await prisma.aCInquiry.create({
+      data: {
+        inquiryId,
+        ownerName,
+        ownerUnit,
+        ownerPhone,
+        email,
+        isMultiZone: isMultiZone || false,
+        bestContactMethod,
+        installationTiming,
+        notes: notes || null,
+        consentGiven,
+        emailSent: false
+      }
+    });
+
+    // Prepare inquiry data for email
+    const inquiryData = {
+      ownerName,
+      ownerUnit,
+      ownerPhone,
+      email,
+      isMultiZone: isMultiZone || false,
+      bestContactMethod,
+      installationTiming,
+      notes,
+      inquiryId
+    };
+
+    // Send email notification
+    let emailSent = false;
+    try {
+      await sendACInquiryEmail(inquiryData);
+      emailSent = true;
+      logger.info('AC inquiry email sent successfully', {
+        inquiryId,
+        ownerUnit,
+        ownerName,
+        timestamp: new Date().toISOString()
+      });
+    } catch (emailError) {
+      logger.error('Failed to send AC inquiry email', emailError);
+      // Continue with success response even if email fails
+    }
+
+    // Update email sent status
+    await prisma.aCInquiry.update({
+      where: { id: acInquiry.id },
+      data: { emailSent }
+    });
+
+    // Send success response
+    res.status(201).json({
+      success: true,
+      message: 'AC inquiry submitted successfully',
+      inquiryId
+    });
+
+  } catch (error) {
+    logger.error('Error processing AC inquiry', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get all AC inquiries (for admin)
+app.get('/api/ac-inquiries', async (req, res) => {
+  try {
+    const inquiries = await prisma.aCInquiry.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(inquiries);
+  } catch (error) {
+    logger.error('Error fetching AC inquiries', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

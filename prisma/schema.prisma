@@ -174,3 +174,34 @@ model ScooterRegistration {
   
   @@map("scooter_registrations")
 }
+
+enum ContactMethod {
+  EMAIL
+  TELEPHONE
+}
+
+model ACInquiry {
+  id                    String        @id @default(cuid())
+  inquiryId             String        @unique @map("inquiry_id") // AC-timestamp format
+  
+  // Form data
+  ownerName             String        @map("owner_name")
+  ownerUnit             String        @map("owner_unit")
+  ownerPhone            String        @map("owner_phone")
+  email                 String
+  isMultiZone           Boolean       @default(false) @map("is_multi_zone") // true for multi-zone, false for single-zone
+  bestContactMethod     ContactMethod @map("best_contact_method")
+  installationTiming    String        @map("installation_timing")
+  notes                 String?       // Optional notes
+  consentGiven          Boolean       @map("consent_given") // Required consent checkbox
+  
+  // Email tracking
+  emailSent             Boolean       @default(false) @map("email_sent")
+  
+  // Metadata
+  isActive              Boolean       @default(true) @map("is_active")
+  createdAt             DateTime      @default(now()) @map("created_at")
+  updatedAt             DateTime      @updatedAt @map("updated_at")
+  
+  @@map("ac_inquiries")
+}
