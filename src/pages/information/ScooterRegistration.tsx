@@ -23,7 +23,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { Turnstile } from '@marsidev/react-turnstile';
-import { CalendarIcon, Zap, AlertTriangle, DollarSign, Lock } from 'lucide-react';
+import { CalendarIcon, Zap, AlertTriangle, DollarSign, Lock, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 const formSchema = z.object({
@@ -300,44 +300,63 @@ const ScooterRegistration = () => {
                 </div>
 
                 {/* Terms and Conditions */}
-                <FormField
-                  control={form.control}
-                  name="acceptTerms"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                      <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          className="mt-1"
-                        />
-                      </FormControl>
-                      <div className="space-y-1 leading-none">
-                        <FormLabel className="text-sm font-normal">
-                          I agree to the terms and conditions of e-scooter storage, including the $50 refundable key deposit and storage in the designated parkade area only.
-                        </FormLabel>
-                        <FormMessage />
-                      </div>
-                    </FormItem>
-                  )}
-                />
-
-                {/* CAPTCHA */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Security Verification</label>
-                  <Turnstile 
-                    onSuccess={setTurnstileToken} 
-                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} 
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">Terms and Conditions</h3>
+                  
+                  <FormField
+                    control={form.control}
+                    name="acceptTerms"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="text-sm font-normal">
+                            I accept the terms and conditions for e-scooter registration
+                          </FormLabel>
+                          <FormDescription className="text-xs text-gray-500">
+                            By checking this box, you agree to comply with all strata bylaws regarding e-scooter storage and usage.
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
                   />
                 </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full sm:w-auto" 
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Submitting...' : 'Register E-Scooter'}
-                </Button>
+                {/* Turnstile CAPTCHA */}
+                <div className="flex justify-center">
+                  <Turnstile
+                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                    onSuccess={setTurnstileToken}
+                    onError={() => setTurnstileToken(null)}
+                    onExpire={() => setTurnstileToken(null)}
+                  />
+                </div>
+
+                {/* Submit Button */}
+                <div className="flex justify-center">
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    className="w-full md:w-auto"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="mr-2 h-4 w-4" />
+                        Submit Registration
+                      </>
+                    )}
+                  </Button>
+                </div>
               </form>
             </Form>
           </CardContent>
