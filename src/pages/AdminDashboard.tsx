@@ -1491,7 +1491,7 @@ const AdminDashboard = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                       {/* Emergency Contacts */}
                       <Card>
                         <CardHeader>
@@ -1555,6 +1555,24 @@ const AdminDashboard = () => {
                         <CardContent>
                           <Button 
                             onClick={() => exportFormData(petRegistrations, 'pet-registration')}
+                            className="w-full"
+                            variant="outline"
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Export CSV
+                          </Button>
+                        </CardContent>
+                      </Card>
+
+                      {/* Scooter Registrations */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-lg">Scooter Registrations</CardTitle>
+                          <CardDescription>{scooterRegistrations.length} submissions</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <Button 
+                            onClick={() => exportFormData(scooterRegistrations, 'scooter-registration')}
                             className="w-full"
                             variant="outline"
                           >
@@ -1668,6 +1686,42 @@ const AdminDashboard = () => {
                           {storageRentals.length > 5 && (
                             <p className="text-sm text-gray-500 text-center">
                               Showing 5 of {storageRentals.length} interests
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Scooter Registrations Details */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Scooter Registrations</CardTitle>
+                      <CardDescription>Recent scooter registration submissions</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {scooterRegistrations.length === 0 ? (
+                        <p className="text-gray-500">No scooter registrations yet.</p>
+                      ) : (
+                        <div className="space-y-4 max-h-96 overflow-y-auto">
+                          {scooterRegistrations.slice(0, 5).map((registration) => (
+                            <div key={registration.id} className="p-4 border rounded-lg bg-gray-50">
+                              <div className="flex justify-between items-start mb-2">
+                                <h4 className="font-semibold">Registration #{registration.registrationId}</h4>
+                                <span className="text-sm text-gray-500">
+                                  {new Date(registration.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <p className="text-sm"><strong>Unit:</strong> {registration.unitNumber}</p>
+                              <p className="text-sm"><strong>Owners:</strong> {registration.ownerNames}</p>
+                              <p className="text-sm"><strong>Scooters:</strong> {registration.numberOfScooters}</p>
+                              <p className="text-sm"><strong>Status:</strong> {registration.status}</p>
+                              <p className="text-sm"><strong>Deposit:</strong> {registration.depositPaid ? 'Paid' : 'Pending'}</p>
+                            </div>
+                          ))}
+                          {scooterRegistrations.length > 5 && (
+                            <p className="text-sm text-gray-500 text-center">
+                              Showing 5 of {scooterRegistrations.length} registrations
                             </p>
                           )}
                         </div>
