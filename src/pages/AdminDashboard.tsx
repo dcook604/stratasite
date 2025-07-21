@@ -547,63 +547,91 @@ const AdminDashboard = () => {
                 - Large screens: 5-column grid with better spacing
                 - Extra large: 10-column grid for optimal layout
               */}
-              <TabsList className="h-auto flex-nowrap overflow-x-auto md:grid md:grid-cols-5 lg:grid-cols-5 xl:grid-cols-10 md:overflow-visible md:flex-wrap md:gap-2">
-                <TabsTrigger value="announcements" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                  <Megaphone className="w-4 h-4 flex-shrink-0" />
-                  <span className="hidden sm:inline">Announcements</span>
-                  <span className="sm:hidden">Announce</span>
-                </TabsTrigger>
-                <TabsTrigger value="events" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                  <Calendar className="w-4 h-4 flex-shrink-0" />
-                  <span className="hidden sm:inline">Events</span>
-                  <span className="sm:hidden">Events</span>
-                </TabsTrigger>
-                <TabsTrigger value="pages" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                  <FileText className="w-4 h-4 flex-shrink-0" />
-                  <span className="hidden sm:inline">Pages</span>
-                  <span className="sm:hidden">Pages</span>
-                </TabsTrigger>
-                <TabsTrigger value="documents" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                  <FileText className="w-4 h-4 flex-shrink-0" />
-                  <span className="hidden sm:inline">Documents</span>
-                  <span className="sm:hidden">Docs</span>
-                </TabsTrigger>
-                <TabsTrigger value="marketplace" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                  <ShoppingCart className="w-4 h-4 flex-shrink-0" />
-                  <span className="hidden sm:inline">Marketplace</span>
-                  <span className="sm:hidden">Market</span>
-                </TabsTrigger>
-                <TabsTrigger value="event-requests" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                  <Calendar className="w-4 h-4 flex-shrink-0" />
-                  <span className="hidden sm:inline">Event Requests</span>
-                  <span className="sm:hidden">Requests</span>
-                </TabsTrigger>
-                <TabsTrigger value="scooter-registrations" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                  <Zap className="w-4 h-4 flex-shrink-0" />
-                  <span className="hidden sm:inline">Scooter Registrations</span>
-                  <span className="sm:hidden">Scooters</span>
-                </TabsTrigger>
-                <TabsTrigger value="pet-registrations" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                  <PawPrint className="w-4 h-4 flex-shrink-0" />
-                  <span className="hidden sm:inline">Pet Registrations</span>
-                  <span className="sm:hidden">Pets</span>
-                </TabsTrigger>
-                <TabsTrigger value="forms" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                  <ClipboardList className="w-4 h-4 flex-shrink-0" />
-                  <span className="hidden sm:inline">Forms</span>
-                  <span className="sm:hidden">Forms</span>
-                </TabsTrigger>
-                <TabsTrigger value="cleanup" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                  <Database className="w-4 h-4 flex-shrink-0" />
-                  <span className="hidden sm:inline">Cleanup</span>
-                  <span className="sm:hidden">Cleanup</span>
-                </TabsTrigger>
-                <TabsTrigger value="users" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                  <Users className="w-4 h-4 flex-shrink-0" />
-                  <span className="hidden sm:inline">Admin Users</span>
-                  <span className="sm:hidden">Users</span>
-                </TabsTrigger>
-              </TabsList>
+              {/* Multi-Row Organized Tab Layout */}
+              <div className="space-y-4 dashboard-tabs">
+                {/* Row 1: Content Management */}
+                <div className="flex flex-col space-y-2">
+                  <h3 className="text-sm font-medium text-muted-foreground px-2">Content Management</h3>
+                  <TabsList className="h-auto flex-nowrap overflow-x-auto md:flex-wrap md:overflow-visible md:gap-2">
+                    <TabsTrigger value="announcements" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                      <Megaphone className="w-4 h-4 flex-shrink-0" />
+                      <span className="hidden sm:inline">Announcements</span>
+                      <span className="sm:hidden">Announce</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="events" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                      <Calendar className="w-4 h-4 flex-shrink-0" />
+                      <span className="hidden sm:inline">Events</span>
+                      <span className="sm:hidden">Events</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="pages" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                      <FileText className="w-4 h-4 flex-shrink-0" />
+                      <span className="hidden sm:inline">Pages</span>
+                      <span className="sm:hidden">Pages</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="documents" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                      <FileText className="w-4 h-4 flex-shrink-0" />
+                      <span className="hidden sm:inline">Documents</span>
+                      <span className="sm:hidden">Docs</span>
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+
+                {/* Row 2: Forms & Registrations */}
+                <div className="flex flex-col space-y-2">
+                  <h3 className="text-sm font-medium text-muted-foreground px-2">Forms & Registrations</h3>
+                  <TabsList className="h-auto flex-nowrap overflow-x-auto md:flex-wrap md:overflow-visible md:gap-2">
+                    <TabsTrigger value="forms" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                      <ClipboardList className="w-4 h-4 flex-shrink-0" />
+                      <span className="hidden sm:inline">Forms</span>
+                      <span className="sm:hidden">Forms</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="scooter-registrations" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                      <Zap className="w-4 h-4 flex-shrink-0" />
+                      <span className="hidden sm:inline">Scooter Registrations</span>
+                      <span className="sm:hidden">Scooters</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="pet-registrations" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                      <PawPrint className="w-4 h-4 flex-shrink-0" />
+                      <span className="hidden sm:inline">Pet Registrations</span>
+                      <span className="sm:hidden">Pets</span>
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+
+                {/* Row 3: User Management */}
+                <div className="flex flex-col space-y-2">
+                  <h3 className="text-sm font-medium text-muted-foreground px-2">User Management</h3>
+                  <TabsList className="h-auto flex-nowrap overflow-x-auto md:flex-wrap md:overflow-visible md:gap-2">
+                    <TabsTrigger value="marketplace" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                      <ShoppingCart className="w-4 h-4 flex-shrink-0" />
+                      <span className="hidden sm:inline">Marketplace</span>
+                      <span className="sm:hidden">Market</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="event-requests" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                      <Calendar className="w-4 h-4 flex-shrink-0" />
+                      <span className="hidden sm:inline">Event Requests</span>
+                      <span className="sm:hidden">Requests</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="users" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                      <Users className="w-4 h-4 flex-shrink-0" />
+                      <span className="hidden sm:inline">Admin Users</span>
+                      <span className="sm:hidden">Users</span>
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+
+                {/* Row 4: System */}
+                <div className="flex flex-col space-y-2">
+                  <h3 className="text-sm font-medium text-muted-foreground px-2">System</h3>
+                  <TabsList className="h-auto flex-nowrap overflow-x-auto md:flex-wrap md:overflow-visible md:gap-2">
+                    <TabsTrigger value="cleanup" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                      <Database className="w-4 h-4 flex-shrink-0" />
+                      <span className="hidden sm:inline">Cleanup</span>
+                      <span className="sm:hidden">Cleanup</span>
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+              </div>
 
               <TabsContent value="announcements" className="space-y-6">
                 <Card>
