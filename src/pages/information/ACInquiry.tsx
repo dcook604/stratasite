@@ -92,7 +92,7 @@ const ACInquiry = () => {
       if (response.ok) {
         toast({
           title: "Inquiry submitted",
-          description: "Your AC inquiry has been submitted successfully. You will be contacted soon regarding your installation.",
+          description: "Your AC inquiry has been submitted successfully and saved to our database. You will be contacted soon regarding your installation.",
         });
         form.reset();
         setTurnstileToken(null);

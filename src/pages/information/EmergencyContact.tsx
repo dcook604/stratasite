@@ -106,7 +106,7 @@ const EmergencyContact = () => {
       if (response.ok) {
         toast({
           title: "Emergency Contact Information Submitted",
-          description: "Your emergency contact information has been submitted successfully. The management team will update their records accordingly.",
+          description: "Your emergency contact information has been submitted successfully and saved to our database.",
         });
         form.reset();
         setTurnstileToken(null);
