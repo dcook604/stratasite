@@ -1833,44 +1833,8 @@ app.post('/api/ac-inquiry', async (req, res) => {
         bestContactMethod,
         installationTiming,
         notes: notes || null,
-        consentGiven,
-        emailSent: false
+        consentGiven
       }
-    });
-
-    // Prepare inquiry data for email
-    const inquiryData = {
-      ownerName,
-      ownerUnit,
-      ownerPhone,
-      email,
-      isMultiZone: isMultiZone || false,
-      bestContactMethod,
-      installationTiming,
-      notes,
-      inquiryId
-    };
-
-    // Send email notification
-    let emailSent = false;
-    try {
-      await sendACInquiryEmail(inquiryData);
-      emailSent = true;
-      logger.info('AC inquiry email sent successfully', {
-        inquiryId,
-        ownerUnit,
-        ownerName,
-        timestamp: new Date().toISOString()
-      });
-    } catch (emailError) {
-      logger.error('Failed to send AC inquiry email', emailError);
-      // Continue with success response even if email fails
-    }
-
-    // Update email sent status
-    await prisma.aCInquiry.update({
-      where: { id: acInquiry.id },
-      data: { emailSent }
     });
 
     // Send success response
@@ -1962,44 +1926,8 @@ app.post('/api/storage-rental', async (req, res) => {
         bestContactMethod,
         interestedInInfo,
         consentGiven,
-        notes: notes || null,
-        emailSent: false
+        notes: notes || null
       }
-    });
-
-    // Prepare rental data for email
-    const rentalData = {
-      firstName,
-      lastName,
-      phoneNumber,
-      email,
-      unitNumber,
-      bestContactMethod,
-      interestedInInfo,
-      notes,
-      rentalId
-    };
-
-    // Send email notification
-    let emailSent = false;
-    try {
-      await sendStorageRentalEmail(rentalData);
-      emailSent = true;
-      logger.info('Storage rental interest email sent successfully', {
-        rentalId,
-        unitNumber,
-        fullName: `${firstName} ${lastName}`,
-        timestamp: new Date().toISOString()
-      });
-    } catch (emailError) {
-      logger.error('Failed to send storage rental interest email', emailError);
-      // Continue with success response even if email fails
-    }
-
-    // Update email sent status
-    await prisma.storageRental.update({
-      where: { id: storageRental.id },
-      data: { emailSent }
     });
 
     // Send success response
@@ -2096,42 +2024,39 @@ app.post('/api/emergency-contact', async (req, res) => {
       return res.status(400).json({ error: 'Invalid concierge key provided selection' });
     }
 
-    // Prepare emergency contact data for email
-    const emergencyData = {
-      unitNumber,
-      strataLotNumber,
-      registeredOwnerNames,
-      ownerEmail,
-      phoneHome,
-      phoneBusiness,
-      phoneOther,
-      phoneOtherSpecify,
-      nonResidentAddress,
-      emergencyContactName,
-      emergencyContactEmail,
-      allowManagementAccess,
-      conciergeKeyProvided,
-      dateProvidedToConcierge,
-      securityCode: securityCode ? '[PROVIDED]' : null  // Don't include actual code in email for security
-    };
+    // Generate contact ID
+    const contactId = `EC-${Date.now()}`;
 
-    // Send email notification
-    try {
-      await sendEmergencyContactEmail(emergencyData);
-      logger.info('Emergency contact email sent successfully', {
+    // Save to database
+    const emergencyContact = await prisma.emergencyContact.create({
+      data: {
+        contactId,
         unitNumber,
         strataLotNumber,
-        timestamp: new Date().toISOString()
-      });
-    } catch (emailError) {
-      logger.error('Failed to send emergency contact email', emailError);
-      // Continue with success response even if email fails
-    }
+        registeredOwnerNames,
+        ownerEmail: ownerEmail || null,
+        phoneHome: phoneHome || null,
+        phoneBusiness: phoneBusiness || null,
+        phoneOther: phoneOther || null,
+        phoneOtherSpecify: phoneOtherSpecify || null,
+        nonResidentAddress: nonResidentAddress || null,
+        nonResidentPhone: null, // Not in current form
+        emergencyContactName: emergencyContactName || null,
+        emergencyContactAddress: null, // Not in current form
+        emergencyContactPhone: null, // Not in current form
+        emergencyContactEmail: emergencyContactEmail || null,
+        allowManagementAccess,
+        conciergeKeyProvided,
+        dateProvidedToConcierge: dateProvidedToConcierge || null,
+        securityCode: securityCode || null
+      }
+    });
 
     // Send success response
     res.status(201).json({
       success: true,
-      message: 'Emergency contact information submitted successfully'
+      message: 'Emergency contact information submitted successfully and saved to database',
+      contactId
     });
 
   } catch (error) {
@@ -2377,6 +2302,48 @@ app.delete('/api/pet-registrations/:id', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     logger.error('Error deleting pet registration', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get all emergency contacts (admin only)
+app.get('/api/emergency-contacts', async (req, res) => {
+  try {
+    const emergencyContacts = await prisma.emergencyContact.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(emergencyContacts);
+  } catch (error) {
+    logger.error('Error fetching emergency contacts:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get all AC inquiries (admin only)
+app.get('/api/ac-inquiries', async (req, res) => {
+  try {
+    const acInquiries = await prisma.aCInquiry.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(acInquiries);
+  } catch (error) {
+    logger.error('Error fetching AC inquiries:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get all storage rentals (admin only)
+app.get('/api/storage-rentals', async (req, res) => {
+  try {
+    const storageRentals = await prisma.storageRental.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(storageRentals);
+  } catch (error) {
+    logger.error('Error fetching storage rentals:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

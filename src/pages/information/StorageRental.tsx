@@ -93,7 +93,7 @@ const StorageRental = () => {
       if (response.ok) {
         toast({
           title: "Interest submitted",
-          description: "Your storage locker interest has been submitted successfully. You will be contacted regarding availability.",
+          description: "Your storage locker interest has been submitted successfully and saved to our database. You will be contacted regarding availability.",
         });
         form.reset();
         setTurnstileToken(null);

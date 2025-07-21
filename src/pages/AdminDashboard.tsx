@@ -14,11 +14,12 @@ import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { RequireAdminAuth } from '@/components/hoc/RequireAdminAuth';
-import { Plus, Trash2, Edit2, Users, Calendar, FileText, Megaphone, ShoppingCart, Save, X, Database, AlertTriangle, CheckCircle, Zap, PawPrint } from 'lucide-react';
+import { Plus, Trash2, Edit2, Users, Calendar, FileText, Megaphone, ShoppingCart, Save, X, Database, AlertTriangle, CheckCircle, Zap, PawPrint, Download, ClipboardList } from 'lucide-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { cleanupMarketplaceData, getCleanupPreview, formatCleanupStats, CleanupOptions } from '@/utils/databaseCleanup';
 import ChangePasswordDialog from '@/components/shared/ChangePasswordDialog';
+import { exportFormData } from '@/utils/csvExport';
 
 const AdminDashboard = () => {
   const { adminUser, logout } = useAdminAuth();
@@ -35,6 +36,9 @@ const AdminDashboard = () => {
   const [eventRequests, setEventRequests] = useState([]);
   const [scooterRegistrations, setScooterRegistrations] = useState([]);
   const [petRegistrations, setPetRegistrations] = useState([]);
+  const [emergencyContacts, setEmergencyContacts] = useState([]);
+  const [acInquiries, setACInquiries] = useState([]);
+  const [storageRentals, setStorageRentals] = useState([]);
 
   // Form states
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' });
@@ -78,7 +82,10 @@ const AdminDashboard = () => {
         eventRequestsRes,
         documentsRes,
         scooterRegistrationsRes,
-        petRegistrationsRes
+        petRegistrationsRes,
+        emergencyContactsRes,
+        acInquiriesRes,
+        storageRentalsRes
       ] = await Promise.all([
         fetch('/api/announcements').catch(err => err),
         fetch('/api/events').catch(err => err),
@@ -88,7 +95,10 @@ const AdminDashboard = () => {
         fetch('/api/event-requests').catch(err => err),
         fetch('/api/documents').catch(err => err),
         fetch('/api/scooter-registrations').catch(err => err),
-        fetch('/api/pet-registrations').catch(err => err)
+        fetch('/api/pet-registrations').catch(err => err),
+        fetch('/api/emergency-contacts').catch(err => err),
+        fetch('/api/ac-inquiries').catch(err => err),
+        fetch('/api/storage-rentals').catch(err => err)
       ]);
 
       console.log('AdminDashboard: API responses received');
@@ -181,6 +191,36 @@ const AdminDashboard = () => {
       } else {
         console.error('AdminDashboard: Failed to load pet registrations:', petRegistrationsRes);
         setPetRegistrations([]);
+      }
+      
+      // Handle emergency contacts
+      if (emergencyContactsRes instanceof Response && emergencyContactsRes.ok) {
+        const emergencyContactsData = await emergencyContactsRes.json();
+        console.log('AdminDashboard: Emergency contacts loaded:', emergencyContactsData.length);
+        setEmergencyContacts(emergencyContactsData);
+      } else {
+        console.error('AdminDashboard: Failed to load emergency contacts:', emergencyContactsRes);
+        setEmergencyContacts([]);
+      }
+      
+      // Handle AC inquiries
+      if (acInquiriesRes instanceof Response && acInquiriesRes.ok) {
+        const acInquiriesData = await acInquiriesRes.json();
+        console.log('AdminDashboard: AC inquiries loaded:', acInquiriesData.length);
+        setACInquiries(acInquiriesData);
+      } else {
+        console.error('AdminDashboard: Failed to load AC inquiries:', acInquiriesRes);
+        setACInquiries([]);
+      }
+      
+      // Handle storage rentals
+      if (storageRentalsRes instanceof Response && storageRentalsRes.ok) {
+        const storageRentalsData = await storageRentalsRes.json();
+        console.log('AdminDashboard: Storage rentals loaded:', storageRentalsData.length);
+        setStorageRentals(storageRentalsData);
+      } else {
+        console.error('AdminDashboard: Failed to load storage rentals:', storageRentalsRes);
+        setStorageRentals([]);
       }
     } catch (error) {
       console.error('AdminDashboard: Error fetching data:', error);
@@ -501,49 +541,67 @@ const AdminDashboard = () => {
 
             <Tabs defaultValue="announcements" className="space-y-6">
               {/* 
-                This TabsList is styled to be a flex container that wraps on small screens,
-                and transitions to a 6-column grid on medium screens and larger.
+                Responsive tabs layout:
+                - Mobile/Tablet: Horizontal scrollable for better UX
+                - Medium screens: 5-column grid
+                - Large screens: 5-column grid with better spacing
+                - Extra large: 10-column grid for optimal layout
               */}
-              <TabsList className="h-auto flex-wrap justify-start md:grid md:grid-cols-5 lg:grid-cols-10 md:h-10">
-                <TabsTrigger value="announcements" className="flex items-center gap-2">
-                  <Megaphone className="w-4 h-4" />
-                  Announcements
+              <TabsList className="h-auto flex-nowrap overflow-x-auto md:grid md:grid-cols-5 lg:grid-cols-5 xl:grid-cols-10 md:overflow-visible md:flex-wrap md:gap-2">
+                <TabsTrigger value="announcements" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                  <Megaphone className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden sm:inline">Announcements</span>
+                  <span className="sm:hidden">Announce</span>
                 </TabsTrigger>
-                <TabsTrigger value="events" className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  Events
+                <TabsTrigger value="events" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                  <Calendar className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden sm:inline">Events</span>
+                  <span className="sm:hidden">Events</span>
                 </TabsTrigger>
-                <TabsTrigger value="pages" className="flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  Pages
+                <TabsTrigger value="pages" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                  <FileText className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden sm:inline">Pages</span>
+                  <span className="sm:hidden">Pages</span>
                 </TabsTrigger>
-                <TabsTrigger value="documents" className="flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  Documents
+                <TabsTrigger value="documents" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                  <FileText className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden sm:inline">Documents</span>
+                  <span className="sm:hidden">Docs</span>
                 </TabsTrigger>
-                <TabsTrigger value="marketplace" className="flex items-center gap-2">
-                  <ShoppingCart className="w-4 h-4" />
-                  Marketplace
+                <TabsTrigger value="marketplace" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                  <ShoppingCart className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden sm:inline">Marketplace</span>
+                  <span className="sm:hidden">Market</span>
                 </TabsTrigger>
-                <TabsTrigger value="event-requests" className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  Event Requests
+                <TabsTrigger value="event-requests" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                  <Calendar className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden sm:inline">Event Requests</span>
+                  <span className="sm:hidden">Requests</span>
                 </TabsTrigger>
-                <TabsTrigger value="scooter-registrations" className="flex items-center gap-2">
-                  <Zap className="w-4 h-4" />
-                  Scooter Registrations
+                <TabsTrigger value="scooter-registrations" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                  <Zap className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden sm:inline">Scooter Registrations</span>
+                  <span className="sm:hidden">Scooters</span>
                 </TabsTrigger>
-                <TabsTrigger value="pet-registrations" className="flex items-center gap-2">
-                  <PawPrint className="w-4 h-4" />
-                  Pet Registrations
+                <TabsTrigger value="pet-registrations" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                  <PawPrint className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden sm:inline">Pet Registrations</span>
+                  <span className="sm:hidden">Pets</span>
                 </TabsTrigger>
-                <TabsTrigger value="cleanup" className="flex items-center gap-2">
-                  <Database className="w-4 h-4" />
-                  Cleanup
+                <TabsTrigger value="forms" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                  <ClipboardList className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden sm:inline">Forms</span>
+                  <span className="sm:hidden">Forms</span>
                 </TabsTrigger>
-                <TabsTrigger value="users" className="flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  Admin Users
+                <TabsTrigger value="cleanup" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                  <Database className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden sm:inline">Cleanup</span>
+                  <span className="sm:hidden">Cleanup</span>
+                </TabsTrigger>
+                <TabsTrigger value="users" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                  <Users className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden sm:inline">Admin Users</span>
+                  <span className="sm:hidden">Users</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -1394,6 +1452,201 @@ const AdminDashboard = () => {
                     )}
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              <TabsContent value="forms" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Forms Management</CardTitle>
+                    <CardDescription>
+                      View and export form submissions. All form data is stored in the database and can be exported as CSV.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {/* Emergency Contacts */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-lg">Emergency Contacts</CardTitle>
+                          <CardDescription>{emergencyContacts.length} submissions</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <Button 
+                            onClick={() => exportFormData(emergencyContacts, 'emergency-contact')}
+                            className="w-full"
+                            variant="outline"
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Export CSV
+                          </Button>
+                        </CardContent>
+                      </Card>
+
+                      {/* AC Inquiries */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-lg">AC Inquiries</CardTitle>
+                          <CardDescription>{acInquiries.length} submissions</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <Button 
+                            onClick={() => exportFormData(acInquiries, 'ac-inquiry')}
+                            className="w-full"
+                            variant="outline"
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Export CSV
+                          </Button>
+                        </CardContent>
+                      </Card>
+
+                      {/* Storage Rentals */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-lg">Storage Rentals</CardTitle>
+                          <CardDescription>{storageRentals.length} submissions</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <Button 
+                            onClick={() => exportFormData(storageRentals, 'storage-rental')}
+                            className="w-full"
+                            variant="outline"
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Export CSV
+                          </Button>
+                        </CardContent>
+                      </Card>
+
+                      {/* Pet Registrations */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-lg">Pet Registrations</CardTitle>
+                          <CardDescription>{petRegistrations.length} submissions</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <Button 
+                            onClick={() => exportFormData(petRegistrations, 'pet-registration')}
+                            className="w-full"
+                            variant="outline"
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Export CSV
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Form Details Sections */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Emergency Contacts Details */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Emergency Contacts</CardTitle>
+                      <CardDescription>Recent emergency contact submissions</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {emergencyContacts.length === 0 ? (
+                        <p className="text-gray-500">No emergency contact submissions yet.</p>
+                      ) : (
+                        <div className="space-y-4 max-h-96 overflow-y-auto">
+                          {emergencyContacts.slice(0, 5).map((contact) => (
+                            <div key={contact.id} className="p-4 border rounded-lg bg-gray-50">
+                              <div className="flex justify-between items-start mb-2">
+                                <h4 className="font-semibold">Contact #{contact.contactId}</h4>
+                                <span className="text-sm text-gray-500">
+                                  {new Date(contact.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <p className="text-sm"><strong>Unit:</strong> {contact.unitNumber}</p>
+                              <p className="text-sm"><strong>Owner:</strong> {contact.registeredOwnerNames}</p>
+                              {contact.emergencyContactName && (
+                                <p className="text-sm"><strong>Emergency Contact:</strong> {contact.emergencyContactName}</p>
+                              )}
+                            </div>
+                          ))}
+                          {emergencyContacts.length > 5 && (
+                            <p className="text-sm text-gray-500 text-center">
+                              Showing 5 of {emergencyContacts.length} submissions
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* AC Inquiries Details */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>AC Inquiries</CardTitle>
+                      <CardDescription>Recent AC installation inquiries</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {acInquiries.length === 0 ? (
+                        <p className="text-gray-500">No AC inquiries yet.</p>
+                      ) : (
+                        <div className="space-y-4 max-h-96 overflow-y-auto">
+                          {acInquiries.slice(0, 5).map((inquiry) => (
+                            <div key={inquiry.id} className="p-4 border rounded-lg bg-gray-50">
+                              <div className="flex justify-between items-start mb-2">
+                                <h4 className="font-semibold">Inquiry #{inquiry.inquiryId}</h4>
+                                <span className="text-sm text-gray-500">
+                                  {new Date(inquiry.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <p className="text-sm"><strong>Owner:</strong> {inquiry.ownerName}</p>
+                              <p className="text-sm"><strong>Unit:</strong> {inquiry.ownerUnit}</p>
+                              <p className="text-sm"><strong>Type:</strong> {inquiry.isMultiZone ? 'Multi-Zone' : 'Single-Zone'}</p>
+                              <p className="text-sm"><strong>Contact:</strong> {inquiry.bestContactMethod === 'EMAIL' ? 'Email' : 'Telephone'}</p>
+                            </div>
+                          ))}
+                          {acInquiries.length > 5 && (
+                            <p className="text-sm text-gray-500 text-center">
+                              Showing 5 of {acInquiries.length} inquiries
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Storage Rentals Details */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Storage Rentals</CardTitle>
+                      <CardDescription>Recent storage rental interests</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {storageRentals.length === 0 ? (
+                        <p className="text-gray-500">No storage rental interests yet.</p>
+                      ) : (
+                        <div className="space-y-4 max-h-96 overflow-y-auto">
+                          {storageRentals.slice(0, 5).map((rental) => (
+                            <div key={rental.id} className="p-4 border rounded-lg bg-gray-50">
+                              <div className="flex justify-between items-start mb-2">
+                                <h4 className="font-semibold">Rental #{rental.rentalId}</h4>
+                                <span className="text-sm text-gray-500">
+                                  {new Date(rental.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <p className="text-sm"><strong>Name:</strong> {rental.firstName} {rental.lastName}</p>
+                              <p className="text-sm"><strong>Unit:</strong> {rental.unitNumber}</p>
+                              <p className="text-sm"><strong>Contact:</strong> {rental.bestContactMethod === 'EMAIL' ? 'Email' : 'Telephone'}</p>
+                              <p className="text-sm"><strong>Interested:</strong> {rental.interestedInInfo ? 'Yes' : 'No'}</p>
+                            </div>
+                          ))}
+                          {storageRentals.length > 5 && (
+                            <p className="text-sm text-gray-500 text-center">
+                              Showing 5 of {storageRentals.length} interests
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
               </TabsContent>
 
               <TabsContent value="cleanup" className="space-y-6">

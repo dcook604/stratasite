@@ -195,9 +195,6 @@ model ACInquiry {
   notes                 String?       // Optional notes
   consentGiven          Boolean       @map("consent_given") // Required consent checkbox
   
-  // Email tracking
-  emailSent             Boolean       @default(false) @map("email_sent")
-  
   // Metadata
   isActive              Boolean       @default(true) @map("is_active")
   createdAt             DateTime      @default(now()) @map("created_at")
@@ -221,9 +218,6 @@ model StorageRental {
   consentGiven          Boolean       @map("consent_given") // Required consent checkbox
   notes                 String?       // Optional notes/comments
   
-  // Email tracking
-  emailSent             Boolean       @default(false) @map("email_sent")
-  
   // Metadata
   isActive              Boolean       @default(true) @map("is_active")
   createdAt             DateTime      @default(now()) @map("created_at")
@@ -241,6 +235,46 @@ enum PetRegistrationStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+model EmergencyContact {
+  id                    String   @id @default(cuid())
+  contactId             String   @unique @map("contact_id") // EC-timestamp format
+  
+  // Unit Information
+  unitNumber            String   @map("unit_number")
+  strataLotNumber       String   @map("strata_lot_number")
+  registeredOwnerNames  String   @map("registered_owner_names")
+  ownerEmail            String?  @map("owner_email")
+  
+  // Contact Phone Numbers
+  phoneHome             String?  @map("phone_home")
+  phoneBusiness         String?  @map("phone_business")
+  phoneOther            String?  @map("phone_other")
+  phoneOtherSpecify     String?  @map("phone_other_specify")
+  
+  // Non-resident Information
+  nonResidentAddress    String?  @map("non_resident_address")
+  nonResidentPhone      String?  @map("non_resident_phone")
+  
+  // Emergency Contact Information
+  emergencyContactName  String?  @map("emergency_contact_name")
+  emergencyContactAddress String? @map("emergency_contact_address")
+  emergencyContactPhone String?  @map("emergency_contact_phone")
+  emergencyContactEmail String?  @map("emergency_contact_email")
+  
+  // Access Information
+  allowManagementAccess String   @map("allow_management_access") // "YES" or "NO"
+  conciergeKeyProvided String   @map("concierge_key_provided") // "YES" or "NO"
+  dateProvidedToConcierge String? @map("date_provided_to_concierge")
+  securityCode          String?  @map("security_code")
+  
+  // Metadata
+  isActive              Boolean  @default(true) @map("is_active")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  
+  @@map("emergency_contacts")
 }
 
 model PetRegistration {
@@ -269,9 +303,6 @@ model PetRegistration {
   // Admin fields
   status              PetRegistrationStatus    @default(PENDING)
   notes               String?                  // Admin notes
-  
-  // Email tracking
-  emailSent           Boolean                  @default(false) @map("email_sent")
   
   // Metadata
   isActive            Boolean                  @default(true) @map("is_active")
