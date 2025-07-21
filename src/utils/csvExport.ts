@@ -150,11 +150,36 @@ export function formatPetRegistrationForCSV(data: any[]): any[] {
 }
 
 /**
+ * Format Scooter Registration data for CSV export
+ */
+export function formatScooterRegistrationForCSV(data: any[]): any[] {
+  return data.map(item => ({
+    'Registration ID': item.registrationId,
+    'Registration Date': item.registrationDate,
+    'Unit Number': item.unitNumber,
+    'Number of Scooters': item.numberOfScooters,
+    'Description': item.description,
+    'Owner Names': item.ownerNames,
+    'Email': item.email,
+    'Phone': item.phone || '',
+    'Status': item.status,
+    'Key Number': item.keyNumber || '',
+    'Deposit Paid': item.depositPaid ? 'Yes' : 'No',
+    'Deposit Amount': item.depositAmount,
+    'Notes': item.notes || '',
+    'Email Sent': item.emailSent ? 'Yes' : 'No',
+    'Active': item.isActive ? 'Yes' : 'No',
+    'Submitted Date': new Date(item.createdAt).toLocaleDateString(),
+    'Last Updated': new Date(item.updatedAt).toLocaleDateString()
+  }));
+}
+
+/**
  * Export form data as CSV
  */
 export function exportFormData(
   data: any[], 
-  formType: 'emergency-contact' | 'ac-inquiry' | 'storage-rental' | 'pet-registration',
+  formType: 'emergency-contact' | 'ac-inquiry' | 'storage-rental' | 'pet-registration' | 'scooter-registration',
   options: CSVExportOptions = {}
 ): void {
   let formattedData: any[];
@@ -176,6 +201,10 @@ export function exportFormData(
     case 'pet-registration':
       formattedData = formatPetRegistrationForCSV(data);
       defaultFilename = `pet-registrations-${new Date().toISOString().split('T')[0]}.csv`;
+      break;
+    case 'scooter-registration':
+      formattedData = formatScooterRegistrationForCSV(data);
+      defaultFilename = `scooter-registrations-${new Date().toISOString().split('T')[0]}.csv`;
       break;
     default:
       throw new Error(`Unknown form type: ${formType}`);
