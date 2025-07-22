@@ -55,6 +55,17 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+// Verify SMTP connection on startup
+transporter.verify(function(error, success) {
+  if (error) {
+    console.log('SMTP connection failed:', error);
+    logger.error('SMTP connection failed', error);
+  } else {
+    console.log('SMTP server is ready to take our messages');
+    logger.info('SMTP server is ready to take our messages');
+  }
+});
+
 // Ensure the upload directory exists in the persistent data volume
 const uploadDir = path.join(__dirname, 'data', 'uploads', 'marketplace');
 if (!fs.existsSync(uploadDir)) {
@@ -1017,7 +1028,7 @@ const sendEmergencyContactEmail = async (emergencyData) => {
 
   const mailOptions = {
     from: `"Spectrum 4 Emergency Contact" <${process.env.SMTP_USER}@spectrum4.ca>`,
-    to: 'abrajlovic@ascentpm.com, jennifer.danczak@spectrum4.ca, Hercules@spectrum4.ca, dcook@spectrum4.ca, spectrumconcierge@ranchogroup.com, sdelair@ascentpm.com',
+    to: 'dcook@spectrum4.ca, abrajlovic@ascentpm.com, jennifer.danczak@spectrum4.ca, hercules@spectrum4.ca',
     subject: emailSubject,
     html: emailBody
   };
@@ -1080,7 +1091,7 @@ const sendPetRegistrationEmail = async (petData) => {
 
   const mailOptions = {
     from: `"Spectrum 4 Pet Registration" <${process.env.SMTP_USER}@spectrum4.ca>`,
-    to: 'dcook@spectrum4.ca, sdelair@ascentpm.com, Hercules@spectrum4.ca, jennifer.danczak@spectrum4.ca, abrajlovic@ascentpm.com',
+    to: 'dcook@spectrum4.ca, abrajlovic@ascentpm.com, jennifer.danczak@spectrum4.ca, hercules@spectrum4.ca',
     subject: emailSubject,
     html: emailBody
   };
@@ -2051,6 +2062,36 @@ app.post('/api/emergency-contact', async (req, res) => {
         securityCode: securityCode || null
       }
     });
+
+    // Send email notification
+    try {
+      await sendEmergencyContactEmail({
+        unitNumber,
+        strataLotNumber,
+        registeredOwnerNames,
+        ownerEmail,
+        phoneHome,
+        phoneBusiness,
+        phoneOther,
+        phoneOtherSpecify,
+        nonResidentAddress,
+        emergencyContactName,
+        emergencyContactEmail,
+        allowManagementAccess,
+        conciergeKeyProvided,
+        dateProvidedToConcierge,
+        securityCode
+      });
+      
+      logger.info('Emergency contact email sent successfully', {
+        contactId,
+        unitNumber,
+        timestamp: new Date().toISOString()
+      });
+    } catch (emailError) {
+      logger.error('Failed to send emergency contact email', emailError);
+      // Continue with success response even if email fails
+    }
 
     // Send success response
     res.status(201).json({
