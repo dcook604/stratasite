@@ -304,6 +304,9 @@ model PetRegistration {
   status              PetRegistrationStatus    @default(PENDING)
   notes               String?                  // Admin notes
   
+  // Email tracking
+  emailSent           Boolean                  @default(false) @map("email_sent")
+  
   // Metadata
   isActive            Boolean                  @default(true) @map("is_active")
   createdAt           DateTime                 @default(now()) @map("created_at")
