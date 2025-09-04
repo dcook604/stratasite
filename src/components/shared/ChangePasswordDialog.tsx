@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { useAdminAuth } from '@/context/AdminAuthContext';
 import { KeyRound } from 'lucide-react';
 
 interface ChangePasswordDialogProps {
@@ -26,6 +27,10 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({ adminUserId
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const { toast } = useToast();
+  const { adminUser } = useAdminAuth();
+  
+  // Determine if this is the current user changing their own password
+  const isOwnPassword = adminUser?.id === adminUserId;
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,18 +39,35 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({ adminUserId
       return;
     }
 
+    // For own password change, require current password
+    if (isOwnPassword && !currentPassword) {
+      toast({ title: 'Error', description: 'Current password is required.', variant: 'destructive' });
+      return;
+    }
+
     setIsSaving(true);
     try {
-      const response = await fetch(`/api/admin/users/${adminUserId}/password`, {
+      const endpoint = isOwnPassword 
+        ? `/api/admin/users/${adminUserId}/password`
+        : `/api/admin/users/${adminUserId}/reset-password`;
+      
+      const body = isOwnPassword 
+        ? { currentPassword, newPassword }
+        : { newPassword };
+
+      const response = await fetch(endpoint, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currentPassword, newPassword }),
+        body: JSON.stringify(body),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        toast({ title: 'Success', description: 'Password updated successfully.' });
+        toast({ 
+          title: 'Success', 
+          description: isOwnPassword ? 'Password updated successfully.' : 'Password reset successfully.' 
+        });
         onPasswordChanged();
         setIsOpen(false);
         // Reset fields
@@ -72,27 +94,55 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({ adminUserId
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Change Administrator Password</DialogTitle>
+          <DialogTitle>
+            {isOwnPassword ? 'Change Your Password' : 'Reset Administrator Password'}
+          </DialogTitle>
           <DialogDescription>
-            Enter the current and new password below. The new password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a special character.
+            {isOwnPassword 
+              ? 'Enter your current password and new password below. The new password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a special character.'
+              : 'Enter a new password for this administrator. The new password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a special character.'
+            }
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleChangePassword} className="space-y-4">
-          <div>
-            <Label htmlFor="current-password">Current Password</Label>
-            <Input id="current-password" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required />
-          </div>
+          {isOwnPassword && (
+            <div>
+              <Label htmlFor="current-password">Current Password</Label>
+              <Input 
+                id="current-password" 
+                type="password" 
+                value={currentPassword} 
+                onChange={(e) => setCurrentPassword(e.target.value)} 
+                required 
+              />
+            </div>
+          )}
           <div>
             <Label htmlFor="new-password">New Password</Label>
-            <Input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
+            <Input 
+              id="new-password" 
+              type="password" 
+              value={newPassword} 
+              onChange={(e) => setNewPassword(e.target.value)} 
+              required 
+            />
           </div>
           <div>
             <Label htmlFor="confirm-password">Confirm New Password</Label>
-            <Input id="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+            <Input 
+              id="confirm-password" 
+              type="password" 
+              value={confirmPassword} 
+              onChange={(e) => setConfirmPassword(e.target.value)} 
+              required 
+            />
           </div>
           <DialogFooter>
             <Button type="submit" disabled={isSaving}>
-              {isSaving ? 'Saving...' : 'Save New Password'}
+              {isSaving 
+                ? (isOwnPassword ? 'Updating...' : 'Resetting...') 
+                : (isOwnPassword ? 'Update Password' : 'Reset Password')
+              }
             </Button>
           </DialogFooter>
         </form>
