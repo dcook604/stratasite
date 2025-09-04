@@ -772,6 +772,44 @@ app.put('/api/admin/users/:id/password', async (req, res) => {
   }
 });
 
+// Admin password reset endpoint (no current password required)
+app.put('/api/admin/users/:id/reset-password', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+
+    // 1. Fetch the user
+    const admin = await prisma.adminUser.findUnique({ where: { id } });
+    if (!admin) {
+      return res.status(404).json({ error: 'Admin user not found' });
+    }
+
+    // 2. Validate the new password strength
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({ 
+        error: 'New password must be at least 8 characters long and contain uppercase, lowercase, number, and special character' 
+      });
+    }
+
+    // 3. Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // 4. Update the password in the database
+    await prisma.adminUser.update({
+      where: { id },
+      data: { password: hashedPassword }
+    });
+
+    logger.info('Password reset successfully for admin', { adminId: id });
+    res.json({ success: true, message: 'Password reset successfully' });
+
+  } catch (error) {
+    logger.error('Error resetting admin password', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Middleware to verify Cloudflare Turnstile token
 const verifyTurnstile = async (token) => {
   if (!token) {

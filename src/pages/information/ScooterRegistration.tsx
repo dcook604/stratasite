@@ -142,7 +142,7 @@ const ScooterRegistration = () => {
           <AlertDescription className="text-amber-800">
             <div className="space-y-2">
               <p className="font-semibold">Important Notice:</p>
-              <p>All E-Scooters must be stored in the gated, secured, parkade storage area. This area provides bike racks and power outlets at zero cost to Spectrum 4 Residents.</p>
+              <p>All E-Scooters must be stored in the gated, secured, parkade storage area.</p>
               <p className="font-semibold text-red-700">As of September 1, 2025, E-Scooters will no longer be allowed inside the building.</p>
             </div>
           </AlertDescription>
