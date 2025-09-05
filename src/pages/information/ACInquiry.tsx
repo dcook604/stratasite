@@ -95,12 +95,12 @@ const ACInquiry = () => {
         const result = await response.json();
         
         // Navigate to acknowledgment page with success data
-        navigate('/acknowledgment', {
+        navigate('/form-acknowledgment', {
           state: {
-            type: 'ac-inquiry',
-            title: 'AC Inquiry Submitted!',
-            description: 'Your AC inquiry has been submitted successfully and saved to our database.',
-            registrationId: result.id || result.inquiryId,
+            formType: 'ac-inquiry',
+            formName: 'AC Inquiry',
+            submissionId: result.id || result.inquiryId,
+            message: 'Your AC inquiry has been submitted successfully and saved to our database.',
             nextSteps: [
               'You will be contacted soon regarding your installation.',
               'Our team will review your requirements and availability.',

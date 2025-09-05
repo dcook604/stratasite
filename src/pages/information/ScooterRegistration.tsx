@@ -94,12 +94,12 @@ const ScooterRegistration = () => {
         const result = await response.json();
         
         // Navigate to acknowledgment page with success data
-        navigate('/acknowledgment', {
+        navigate('/form-acknowledgment', {
           state: {
-            type: 'scooter-registration',
-            title: 'E-Scooter Registration Submitted!',
-            description: 'Your e-scooter registration has been submitted successfully.',
-            registrationId: result.registrationId,
+            formType: 'scooter-registration',
+            formName: 'E-Scooter Registration',
+            submissionId: result.registrationId,
+            message: 'Your e-scooter registration has been submitted successfully.',
             nextSteps: [
               'You will receive a confirmation email shortly.',
               'The strata council will review your registration.',

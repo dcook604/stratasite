@@ -96,12 +96,12 @@ const StorageRental = () => {
         const result = await response.json();
         
         // Navigate to acknowledgment page with success data
-        navigate('/acknowledgment', {
+        navigate('/form-acknowledgment', {
           state: {
-            type: 'storage-rental',
-            title: 'Storage Locker Interest Submitted!',
-            description: 'Your storage locker interest has been submitted successfully and saved to our database.',
-            registrationId: result.id || result.interestId,
+            formType: 'storage-rental',
+            formName: 'Storage Locker Interest',
+            submissionId: result.id || result.interestId,
+            message: 'Your storage locker interest has been submitted successfully and saved to our database.',
             nextSteps: [
               'You will be contacted regarding availability.',
               'We will notify you when storage lockers become available.',
