@@ -23,6 +23,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { Turnstile } from '@marsidev/react-turnstile';
+import { useNavigate } from 'react-router-dom';
 import { Snowflake, User, Phone, Mail, Settings, Clock, MessageSquare, CheckCircle } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Loader2 } from 'lucide-react';
@@ -49,6 +50,7 @@ type ACInquiryValues = z.infer<typeof formSchema>;
 
 const ACInquiry = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   
@@ -90,12 +92,22 @@ const ACInquiry = () => {
       });
 
       if (response.ok) {
-        toast({
-          title: "Inquiry submitted",
-          description: "Your AC inquiry has been submitted successfully and saved to our database. You will be contacted soon regarding your installation.",
+        const result = await response.json();
+        
+        // Navigate to acknowledgment page with success data
+        navigate('/acknowledgment', {
+          state: {
+            type: 'ac-inquiry',
+            title: 'AC Inquiry Submitted!',
+            description: 'Your AC inquiry has been submitted successfully and saved to our database.',
+            registrationId: result.id || result.inquiryId,
+            nextSteps: [
+              'You will be contacted soon regarding your installation.',
+              'Our team will review your requirements and availability.',
+              'We will schedule a consultation at your convenience.'
+            ]
+          }
         });
-        form.reset();
-        setTurnstileToken(null);
       } else {
         throw new Error('Failed to submit inquiry');
       }

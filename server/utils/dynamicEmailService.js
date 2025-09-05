@@ -1,5 +1,5 @@
-const nodemailer = require('nodemailer');
-const { PrismaClient } = require('@prisma/client');
+import nodemailer from 'nodemailer';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -338,7 +338,7 @@ const sendFormEmailFallback = async (formName, formData) => {
   return { success: true, fallback: true };
 };
 
-module.exports = {
+export {
   sendDynamicFormEmail,
   sendFormEmailFallback,
   emailTemplates

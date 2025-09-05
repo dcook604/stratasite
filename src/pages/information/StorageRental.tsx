@@ -23,6 +23,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { Turnstile } from '@marsidev/react-turnstile';
+import { useNavigate } from 'react-router-dom';
 import { Package, User, Phone, Mail, MessageSquare, CheckCircle, DollarSign, Lock, Calendar, Loader2 } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
@@ -50,6 +51,7 @@ type StorageRentalValues = z.infer<typeof formSchema>;
 
 const StorageRental = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   
@@ -91,12 +93,22 @@ const StorageRental = () => {
       });
 
       if (response.ok) {
-        toast({
-          title: "Interest submitted",
-          description: "Your storage locker interest has been submitted successfully and saved to our database. You will be contacted regarding availability.",
+        const result = await response.json();
+        
+        // Navigate to acknowledgment page with success data
+        navigate('/acknowledgment', {
+          state: {
+            type: 'storage-rental',
+            title: 'Storage Locker Interest Submitted!',
+            description: 'Your storage locker interest has been submitted successfully and saved to our database.',
+            registrationId: result.id || result.interestId,
+            nextSteps: [
+              'You will be contacted regarding availability.',
+              'We will notify you when storage lockers become available.',
+              'Priority is given based on submission date and unit requirements.'
+            ]
+          }
         });
-        form.reset();
-        setTurnstileToken(null);
       } else {
         throw new Error('Failed to submit interest');
       }
