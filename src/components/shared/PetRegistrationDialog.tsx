@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,6 +51,7 @@ interface PetRegistrationDialogProps {
 
 const PetRegistrationDialog: React.FC<PetRegistrationDialogProps> = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [turnstileKey, setTurnstileKey] = useState(Date.now());
   const [selectedPhotos, setSelectedPhotos] = useState<File[]>([]);
@@ -183,17 +185,21 @@ const PetRegistrationDialog: React.FC<PetRegistrationDialogProps> = ({ children 
         throw new Error(result.error || 'Failed to submit pet registration');
       }
 
-      toast({
-        title: "Registration Submitted!",
-        description: "Your pet registration has been submitted successfully. You will receive a confirmation email shortly.",
-      });
-
-      // Reset and close dialog
-      form.reset();
-      setSelectedPhotos([]);
-      setPhotoPreviews([]);
-      setTurnstileKey(Date.now());
+      // Close dialog and navigate to acknowledgment page
       setIsOpen(false);
+      navigate('/acknowledgment', {
+        state: {
+          type: 'pet-registration',
+          title: 'Pet Registration Submitted!',
+          description: 'Your pet registration has been submitted successfully.',
+          registrationId: result.registrationId,
+          nextSteps: [
+            'You will receive a confirmation email shortly.',
+            'The strata council will review your registration.',
+            'You will be contacted if additional information is needed.'
+          ]
+        }
+      });
 
     } catch (error) {
       console.error('Pet registration error:', error);

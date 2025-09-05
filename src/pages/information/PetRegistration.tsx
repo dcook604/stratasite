@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,6 +50,7 @@ type FormData = z.infer<typeof formSchema>;
 
 const PetRegistration: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
   const [turnstileKey, setTurnstileKey] = useState(Date.now());
   const [selectedPhotos, setSelectedPhotos] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
@@ -170,16 +172,20 @@ const PetRegistration: React.FC = () => {
         throw new Error(result.error || 'Failed to submit pet registration');
       }
 
-      toast({
-        title: "Registration Submitted!",
-        description: "Your pet registration has been submitted successfully. You will receive a confirmation email shortly.",
+      // Navigate to acknowledgment page with success data
+      navigate('/acknowledgment', {
+        state: {
+          type: 'pet-registration',
+          title: 'Pet Registration Submitted!',
+          description: 'Your pet registration has been submitted successfully.',
+          registrationId: result.registrationId,
+          nextSteps: [
+            'You will receive a confirmation email shortly.',
+            'The strata council will review your registration.',
+            'You will be contacted if additional information is needed.'
+          ]
+        }
       });
-
-      // Reset form
-      form.reset();
-      setSelectedPhotos([]);
-      setPhotoPreviews([]);
-      setTurnstileKey(Date.now()); // Reset Turnstile
 
     } catch (error) {
       console.error('Pet registration error:', error);

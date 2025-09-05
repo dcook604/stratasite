@@ -25,6 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { CalendarIcon, Zap, AlertTriangle, DollarSign, Lock, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 const formSchema = z.object({
   date: z.string().min(1, { message: 'Date is required' }),
@@ -49,6 +50,7 @@ type ScooterRegistrationValues = z.infer<typeof formSchema>;
 
 const ScooterRegistration = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   
@@ -89,12 +91,22 @@ const ScooterRegistration = () => {
       });
 
       if (response.ok) {
-        toast({
-          title: "Registration submitted",
-          description: "Your e-scooter registration has been submitted successfully. You will receive a confirmation email shortly.",
+        const result = await response.json();
+        
+        // Navigate to acknowledgment page with success data
+        navigate('/acknowledgment', {
+          state: {
+            type: 'scooter-registration',
+            title: 'E-Scooter Registration Submitted!',
+            description: 'Your e-scooter registration has been submitted successfully.',
+            registrationId: result.registrationId,
+            nextSteps: [
+              'You will receive a confirmation email shortly.',
+              'The strata council will review your registration.',
+              'You will be contacted regarding key assignment and deposit payment.'
+            ]
+          }
         });
-        form.reset();
-        setTurnstileToken(null);
       } else {
         throw new Error('Failed to submit registration');
       }

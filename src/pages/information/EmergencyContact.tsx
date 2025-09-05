@@ -23,6 +23,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { Turnstile } from '@marsidev/react-turnstile';
+import { useNavigate } from 'react-router-dom';
 import { Phone, Shield, AlertTriangle, Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
@@ -54,6 +55,7 @@ type EmergencyContactValues = z.infer<typeof formSchema>;
 
 const EmergencyContact = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   
@@ -104,12 +106,22 @@ const EmergencyContact = () => {
       });
 
       if (response.ok) {
-        toast({
-          title: "Emergency Contact Information Submitted",
-          description: "Your emergency contact information has been submitted successfully and saved to our database.",
+        const result = await response.json();
+        
+        // Navigate to acknowledgment page with success data
+        navigate('/acknowledgment', {
+          state: {
+            type: 'emergency-contact',
+            title: 'Emergency Contact Information Submitted!',
+            description: 'Your emergency contact information has been submitted successfully and saved to our database.',
+            registrationId: result.id || result.contactId,
+            nextSteps: [
+              'Your emergency contact information is now on file.',
+              'This information will be used in case of emergencies.',
+              'Please update this information if your contacts change.'
+            ]
+          }
         });
-        form.reset();
-        setTurnstileToken(null);
       } else {
         throw new Error('Failed to submit emergency contact information');
       }

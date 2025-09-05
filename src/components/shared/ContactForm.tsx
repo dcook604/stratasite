@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -28,6 +29,7 @@ type ContactFormValues = z.infer<typeof formSchema>;
 
 const ContactForm = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(formSchema),
@@ -41,10 +43,21 @@ const ContactForm = () => {
 
   const onSubmit = (data: ContactFormValues) => {
     console.log('Form submitted:', data);
-    toast({
-      title: "Message sent",
-      description: "Thank you for your message. We'll get back to you shortly.",
+    
+    // Navigate to acknowledgment page with success data
+    navigate('/acknowledgment', {
+      state: {
+        type: 'contact',
+        title: 'Message Sent!',
+        description: "Thank you for your message. We'll get back to you shortly.",
+        nextSteps: [
+          'We will review your message and respond as soon as possible.',
+          'For urgent matters, please contact the building management directly.',
+          'You can also reach us through other contact methods listed on our website.'
+        ]
+      }
     });
+    
     form.reset();
   };
 
