@@ -109,12 +109,12 @@ const EmergencyContact = () => {
         const result = await response.json();
         
         // Navigate to acknowledgment page with success data
-        navigate('/acknowledgment', {
+        navigate('/form-acknowledgment', {
           state: {
-            type: 'emergency-contact',
-            title: 'Emergency Contact Information Submitted!',
-            description: 'Your emergency contact information has been submitted successfully and saved to our database.',
-            registrationId: result.id || result.contactId,
+            formType: 'emergency-contact',
+            formName: 'Emergency Contact Information',
+            submissionId: result.id || result.contactId,
+            message: 'Your emergency contact information has been submitted successfully and saved to our database.',
             nextSteps: [
               'Your emergency contact information is now on file.',
               'This information will be used in case of emergencies.',

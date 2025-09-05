@@ -173,12 +173,12 @@ const PetRegistration: React.FC = () => {
       }
 
       // Navigate to acknowledgment page with success data
-      navigate('/acknowledgment', {
+      navigate('/form-acknowledgment', {
         state: {
-          type: 'pet-registration',
-          title: 'Pet Registration Submitted!',
-          description: 'Your pet registration has been submitted successfully.',
-          registrationId: result.registrationId,
+          formType: 'pet-registration',
+          formName: 'Pet Registration',
+          submissionId: result.registrationId,
+          message: 'Your pet registration has been submitted successfully.',
           nextSteps: [
             'You will receive a confirmation email shortly.',
             'The strata council will review your registration.',

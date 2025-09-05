@@ -45,11 +45,11 @@ const ContactForm = () => {
     console.log('Form submitted:', data);
     
     // Navigate to acknowledgment page with success data
-    navigate('/acknowledgment', {
+    navigate('/form-acknowledgment', {
       state: {
-        type: 'contact',
-        title: 'Message Sent!',
-        description: "Thank you for your message. We'll get back to you shortly.",
+        formType: 'contact',
+        formName: 'Contact Form',
+        message: "Thank you for your message. We'll get back to you shortly.",
         nextSteps: [
           'We will review your message and respond as soon as possible.',
           'For urgent matters, please contact the building management directly.',
