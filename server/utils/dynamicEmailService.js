@@ -5,14 +5,28 @@ const prisma = new PrismaClient();
 
 // Create transporter (reuse existing configuration)
 const createTransporter = () => {
+  // Use proper hostname for certificate validation (same as server.js)
+  const smtpHost = process.env.SMTP_HOST || 'mail.spectrum4.ca';
+  const smtpPort = parseInt(process.env.SMTP_PORT) || 587;
+  
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || '10.0.0.1',
-    port: parseInt(process.env.SMTP_PORT) || 587,
-    secure: false,
+    host: smtpHost,
+    port: smtpPort,
+    secure: false, // true for 465, false for other ports like 587
     auth: {
       user: process.env.SMTP_USER || 'superbase',
       pass: process.env.SMTP_PASS || 'superbase'
-    }
+    },
+    tls: {
+      // Only reject unauthorized if using a proper hostname
+      rejectUnauthorized: smtpHost !== '10.0.0.1' && smtpHost !== 'localhost',
+      // Allow connecting to mail.spectrum4.ca from different IPs
+      servername: smtpHost === 'mail.spectrum4.ca' ? 'mail.spectrum4.ca' : undefined
+    },
+    // Connection timeout and retry settings
+    connectionTimeout: 60000, // 60 seconds
+    greetingTimeout: 30000,    // 30 seconds
+    socketTimeout: 60000       // 60 seconds
   });
 };
 
