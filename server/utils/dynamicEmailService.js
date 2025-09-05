@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 // Create transporter (reuse existing configuration)
 const createTransporter = () => {
-  return nodemailer.createTransporter({
+  return nodemailer.createTransport({
     host: process.env.SMTP_HOST || '10.0.0.1',
     port: parseInt(process.env.SMTP_PORT) || 587,
     secure: false,

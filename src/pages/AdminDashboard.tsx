@@ -52,6 +52,10 @@ const AdminDashboard = () => {
   const [editingPage, setEditingPage] = useState(null);
   const [editPageData, setEditPageData] = useState({ slug: '', title: '', content: '' });
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  
+  // Scooter registration edit states
+  const [scooterEdits, setScooterEdits] = useState({});
+  const [savingScooter, setSavingScooter] = useState({});
 
   // Cleanup state
   const [cleanupOptions, setCleanupOptions] = useState<CleanupOptions>({
@@ -485,22 +489,82 @@ const AdminDashboard = () => {
     }
   };
 
-  const updateScooterRegistration = async (id, updates) => {
+  // Helper function to get current scooter edit data
+  const getScooterEditData = (registration) => {
+    return scooterEdits[registration.id] || {
+      status: registration.status,
+      keyNumber: registration.keyNumber || '',
+      depositAmount: registration.depositAmount || 50,
+      depositPaid: registration.depositPaid,
+      notes: registration.notes || ''
+    };
+  };
+
+  // Helper function to update local scooter edit state
+  const updateScooterEdit = (id, field, value) => {
+    setScooterEdits(prev => ({
+      ...prev,
+      [id]: {
+        ...getScooterEditData(scooterRegistrations.find(r => r.id === id)),
+        [field]: value
+      }
+    }));
+  };
+
+  // Helper function to check if scooter has unsaved changes
+  const hasScooterChanges = (registration) => {
+    const edits = scooterEdits[registration.id];
+    if (!edits) return false;
+    
+    return (
+      edits.status !== registration.status ||
+      edits.keyNumber !== (registration.keyNumber || '') ||
+      edits.depositAmount !== registration.depositAmount ||
+      edits.depositPaid !== registration.depositPaid ||
+      edits.notes !== (registration.notes || '')
+    );
+  };
+
+  // Submit scooter registration updates
+  const updateScooterRegistration = async (id) => {
+    const edits = scooterEdits[id];
+    if (!edits) return;
+
+    setSavingScooter(prev => ({ ...prev, [id]: true }));
+    
     try {
       const response = await fetch(`/api/scooter-registrations/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
+        body: JSON.stringify(edits)
       });
+      
       if (response.ok) {
         toast({ title: "Success", description: "Scooter registration updated successfully." });
+        // Clear the edit state for this registration
+        setScooterEdits(prev => {
+          const newEdits = { ...prev };
+          delete newEdits[id];
+          return newEdits;
+        });
         fetchData(); // Refresh all data
       } else {
         throw new Error('Failed to update scooter registration');
       }
     } catch (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setSavingScooter(prev => ({ ...prev, [id]: false }));
     }
+  };
+
+  // Cancel scooter registration edits
+  const cancelScooterEdit = (id) => {
+    setScooterEdits(prev => {
+      const newEdits = { ...prev };
+      delete newEdits[id];
+      return newEdits;
+    });
   };
 
   const deleteScooterRegistration = async (id) => {
@@ -1135,135 +1199,167 @@ const AdminDashboard = () => {
                       <p className="text-gray-500">No scooter registrations yet.</p>
                     ) : (
                       <div className="space-y-6">
-                        {scooterRegistrations.map((registration) => (
-                          <div key={registration.id} className="p-6 border rounded-lg bg-gray-50">
-                            <div className="flex justify-between items-start mb-4">
-                              <div>
-                                <h3 className="font-semibold text-lg">Registration #{registration.registrationId}</h3>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <span className={`px-2 py-1 text-xs rounded font-medium ${
-                                    registration.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                                    registration.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
-                                    registration.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
-                                    registration.status === 'KEY_ISSUED' ? 'bg-blue-100 text-blue-800' :
-                                    registration.status === 'DEPOSIT_PAID' ? 'bg-purple-100 text-purple-800' :
-                                    'bg-gray-100 text-gray-800'
-                                  }`}>
-                                    {registration.status.replace('_', ' ')}
-                                  </span>
-                                  {registration.emailSent ? (
-                                    <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
-                                      Email Sent
+                        {scooterRegistrations.map((registration) => {
+                          const editData = getScooterEditData(registration);
+                          const hasChanges = hasScooterChanges(registration);
+                          const isSaving = savingScooter[registration.id];
+                          
+                          return (
+                            <div key={registration.id} className="p-6 border rounded-lg bg-gray-50">
+                              <div className="flex justify-between items-start mb-4">
+                                <div>
+                                  <h3 className="font-semibold text-lg">Registration #{registration.registrationId}</h3>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className={`px-2 py-1 text-xs rounded font-medium ${
+                                      editData.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                      editData.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
+                                      editData.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                                      editData.status === 'KEY_ISSUED' ? 'bg-blue-100 text-blue-800' :
+                                      editData.status === 'DEPOSIT_PAID' ? 'bg-purple-100 text-purple-800' :
+                                      'bg-gray-100 text-gray-800'
+                                    }`}>
+                                      {editData.status.replace('_', ' ')}
                                     </span>
-                                  ) : (
-                                    <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">
-                                      Email Failed
-                                    </span>
-                                  )}
+                                    {registration.emailSent ? (
+                                      <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                                        Email Sent
+                                      </span>
+                                    ) : (
+                                      <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">
+                                        Email Failed
+                                      </span>
+                                    )}
+                                    {hasChanges && (
+                                      <span className="px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded">
+                                        Unsaved Changes
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  Submitted: {new Date(registration.createdAt).toLocaleDateString()}
                                 </div>
                               </div>
-                              <div className="text-sm text-gray-500">
-                                Submitted: {new Date(registration.createdAt).toLocaleDateString()}
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                                <div>
+                                  <Label className="font-medium text-sm">Unit & Owner</Label>
+                                  <p className="text-sm">Unit {registration.unitNumber}</p>
+                                  <p className="text-sm">{registration.ownerNames}</p>
+                                </div>
+                                <div>
+                                  <Label className="font-medium text-sm">Contact Info</Label>
+                                  <p className="text-sm">{registration.email}</p>
+                                  <p className="text-sm">{registration.phone || 'No phone provided'}</p>
+                                </div>
+                                <div>
+                                  <Label className="font-medium text-sm">E-Scooter Details</Label>
+                                  <p className="text-sm">{registration.numberOfScooters} scooter(s)</p>
+                                  <p className="text-sm">Date: {registration.registrationDate}</p>
+                                </div>
                               </div>
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                              <div>
-                                <Label className="font-medium text-sm">Unit & Owner</Label>
-                                <p className="text-sm">Unit {registration.unitNumber}</p>
-                                <p className="text-sm">{registration.ownerNames}</p>
+                              
+                              <div className="mb-4">
+                                <Label className="font-medium text-sm">Description</Label>
+                                <p className="text-sm text-gray-700 mt-1">{registration.description}</p>
                               </div>
-                              <div>
-                                <Label className="font-medium text-sm">Contact Info</Label>
-                                <p className="text-sm">{registration.email}</p>
-                                <p className="text-sm">{registration.phone || 'No phone provided'}</p>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                                <div>
+                                  <Label htmlFor={`status-${registration.id}`} className="text-sm font-medium">Status</Label>
+                                  <select
+                                    id={`status-${registration.id}`}
+                                    className="w-full mt-1 p-2 border rounded text-sm"
+                                    value={editData.status}
+                                    onChange={(e) => updateScooterEdit(registration.id, 'status', e.target.value)}
+                                  >
+                                    <option value="PENDING">Pending</option>
+                                    <option value="APPROVED">Approved</option>
+                                    <option value="REJECTED">Rejected</option>
+                                    <option value="KEY_ISSUED">Key Issued</option>
+                                    <option value="DEPOSIT_PAID">Deposit Paid</option>
+                                  </select>
+                                </div>
+                                <div>
+                                  <Label htmlFor={`key-${registration.id}`} className="text-sm font-medium">Key Number</Label>
+                                  <Input
+                                    id={`key-${registration.id}`}
+                                    className="mt-1 text-sm"
+                                    value={editData.keyNumber}
+                                    onChange={(e) => updateScooterEdit(registration.id, 'keyNumber', e.target.value)}
+                                    placeholder="e.g. K-001"
+                                  />
+                                </div>
+                                <div>
+                                  <Label htmlFor={`deposit-${registration.id}`} className="text-sm font-medium">Deposit Amount</Label>
+                                  <Input
+                                    id={`deposit-${registration.id}`}
+                                    type="number"
+                                    step="0.01"
+                                    className="mt-1 text-sm"
+                                    value={editData.depositAmount}
+                                    onChange={(e) => updateScooterEdit(registration.id, 'depositAmount', e.target.value)}
+                                  />
+                                </div>
+                                <div className="flex items-center space-x-2 mt-6">
+                                  <Checkbox
+                                    id={`deposit-paid-${registration.id}`}
+                                    checked={editData.depositPaid}
+                                    onCheckedChange={(checked) => updateScooterEdit(registration.id, 'depositPaid', checked)}
+                                  />
+                                  <Label htmlFor={`deposit-paid-${registration.id}`} className="text-sm">Deposit Paid</Label>
+                                </div>
                               </div>
-                              <div>
-                                <Label className="font-medium text-sm">E-Scooter Details</Label>
-                                <p className="text-sm">{registration.numberOfScooters} scooter(s)</p>
-                                <p className="text-sm">Date: {registration.registrationDate}</p>
-                              </div>
-                            </div>
-                            
-                            <div className="mb-4">
-                              <Label className="font-medium text-sm">Description</Label>
-                              <p className="text-sm text-gray-700 mt-1">{registration.description}</p>
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                              <div>
-                                <Label htmlFor={`status-${registration.id}`} className="text-sm font-medium">Status</Label>
-                                <select
-                                  id={`status-${registration.id}`}
-                                  className="w-full mt-1 p-2 border rounded text-sm"
-                                  value={registration.status}
-                                  onChange={(e) => updateScooterRegistration(registration.id, { status: e.target.value })}
-                                >
-                                  <option value="PENDING">Pending</option>
-                                  <option value="APPROVED">Approved</option>
-                                  <option value="REJECTED">Rejected</option>
-                                  <option value="KEY_ISSUED">Key Issued</option>
-                                  <option value="DEPOSIT_PAID">Deposit Paid</option>
-                                </select>
-                              </div>
-                              <div>
-                                <Label htmlFor={`key-${registration.id}`} className="text-sm font-medium">Key Number</Label>
-                                <Input
-                                  id={`key-${registration.id}`}
+                              
+                              <div className="mb-4">
+                                <Label htmlFor={`notes-${registration.id}`} className="text-sm font-medium">Admin Notes</Label>
+                                <Textarea
+                                  id={`notes-${registration.id}`}
                                   className="mt-1 text-sm"
-                                  value={registration.keyNumber || ''}
-                                  onChange={(e) => updateScooterRegistration(registration.id, { keyNumber: e.target.value })}
-                                  placeholder="e.g. K-001"
+                                  rows={2}
+                                  value={editData.notes}
+                                  onChange={(e) => updateScooterEdit(registration.id, 'notes', e.target.value)}
+                                  placeholder="Add any admin notes here..."
                                 />
                               </div>
-                              <div>
-                                <Label htmlFor={`deposit-${registration.id}`} className="text-sm font-medium">Deposit Amount</Label>
-                                <Input
-                                  id={`deposit-${registration.id}`}
-                                  type="number"
-                                  step="0.01"
-                                  className="mt-1 text-sm"
-                                  value={registration.depositAmount || 50}
-                                  onChange={(e) => updateScooterRegistration(registration.id, { depositAmount: e.target.value })}
-                                />
-                              </div>
-                              <div className="flex items-center space-x-2 mt-6">
-                                <Checkbox
-                                  id={`deposit-paid-${registration.id}`}
-                                  checked={registration.depositPaid}
-                                  onCheckedChange={(checked) => updateScooterRegistration(registration.id, { depositPaid: checked })}
-                                />
-                                <Label htmlFor={`deposit-paid-${registration.id}`} className="text-sm">Deposit Paid</Label>
+                              
+                              <div className="flex justify-between items-center pt-4 border-t">
+                                <div className="text-sm text-gray-500">
+                                  Last updated: {new Date(registration.updatedAt).toLocaleString()}
+                                </div>
+                                <div className="flex gap-2">
+                                  {hasChanges && (
+                                    <>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => cancelScooterEdit(registration.id)}
+                                        disabled={isSaving}
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => updateScooterRegistration(registration.id)}
+                                        disabled={isSaving}
+                                      >
+                                        {isSaving ? 'Saving...' : 'Save Changes'}
+                                      </Button>
+                                    </>
+                                  )}
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => deleteScooterRegistration(registration.id)}
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete
+                                  </Button>
+                                </div>
                               </div>
                             </div>
-                            
-                            <div className="mb-4">
-                              <Label htmlFor={`notes-${registration.id}`} className="text-sm font-medium">Admin Notes</Label>
-                              <Textarea
-                                id={`notes-${registration.id}`}
-                                className="mt-1 text-sm"
-                                rows={2}
-                                value={registration.notes || ''}
-                                onChange={(e) => updateScooterRegistration(registration.id, { notes: e.target.value })}
-                                placeholder="Add any admin notes here..."
-                              />
-                            </div>
-                            
-                            <div className="flex justify-between items-center pt-4 border-t">
-                              <div className="text-sm text-gray-500">
-                                Last updated: {new Date(registration.updatedAt).toLocaleString()}
-                              </div>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => deleteScooterRegistration(registration.id)}
-                              >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Delete
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </CardContent>
