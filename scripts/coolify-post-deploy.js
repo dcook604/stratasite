@@ -86,13 +86,18 @@ const formConfigurations = [
   }
 ];
 
-async function seedFormConfigurations() {
-  console.log('🌱 Seeding form configurations...');
+async function setupFormManagement() {
+  console.log('🚀 Setting up Form Management System for Coolify deployment...');
   
   try {
-    // Clear existing configurations
-    await prisma.formEmailRecipient.deleteMany();
-    await prisma.formConfiguration.deleteMany();
+    // Check if form configurations already exist
+    const existingConfigs = await prisma.formConfiguration.findMany();
+    if (existingConfigs.length > 0) {
+      console.log('✅ Form configurations already exist, skipping seed');
+      return;
+    }
+    
+    console.log('🌱 Seeding form configurations...');
     
     // Create form configurations with recipients
     for (const config of formConfigurations) {
@@ -115,24 +120,28 @@ async function seedFormConfigurations() {
       console.log(`✅ Created form configuration: ${config.displayName}`);
     }
     
-    console.log('🎉 Form configurations seeded successfully!');
+    console.log('🎉 Form Management System setup completed successfully!');
+    console.log('📋 Pre-configured forms:');
+    formConfigurations.forEach(config => {
+      console.log(`  • ${config.displayName} (${config.recipients.length} recipients)`);
+    });
+    
   } catch (error) {
-    console.error('❌ Error seeding form configurations:', error);
-    throw error;
+    console.error('❌ Error setting up Form Management System:', error);
+    // Don't throw error to prevent deployment failure
+    console.log('⚠️  Continuing deployment without form management setup...');
   } finally {
     await prisma.$disconnect();
   }
 }
 
-// Run the seed function
-seedFormConfigurations()
+// Run the setup
+setupFormManagement()
   .then(() => {
-    console.log('✅ Seeding completed');
+    console.log('✅ Coolify post-deploy setup completed');
     process.exit(0);
   })
   .catch((error) => {
-    console.error('❌ Seeding failed:', error);
-    process.exit(1);
+    console.error('❌ Coolify post-deploy setup failed:', error);
+    process.exit(0); // Don't fail deployment
   });
-
-export { seedFormConfigurations };

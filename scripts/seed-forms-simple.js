@@ -90,9 +90,12 @@ async function seedFormConfigurations() {
   console.log('🌱 Seeding form configurations...');
   
   try {
-    // Clear existing configurations
-    await prisma.formEmailRecipient.deleteMany();
-    await prisma.formConfiguration.deleteMany();
+    // Check if form configurations already exist
+    const existingConfigs = await prisma.formConfiguration.findMany();
+    if (existingConfigs.length > 0) {
+      console.log('✅ Form configurations already exist, skipping seed');
+      return;
+    }
     
     // Create form configurations with recipients
     for (const config of formConfigurations) {
@@ -134,5 +137,3 @@ seedFormConfigurations()
     console.error('❌ Seeding failed:', error);
     process.exit(1);
   });
-
-export { seedFormConfigurations };
