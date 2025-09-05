@@ -58,21 +58,21 @@ export const StorageRental = lazy(() =>
 
 // Marketplace - rich feature set, can be lazy loaded
 export const Marketplace = lazy(() => 
-  import('@/pages/Marketplace').then(module => ({
+  import('@/pages/information/Marketplace').then(module => ({
     default: module.default
   }))
 );
 
 // Documents page with file handling
 export const Documents = lazy(() => 
-  import('@/pages/Documents').then(module => ({
+  import('@/pages/information/Documents').then(module => ({
     default: module.default
   }))
 );
 
 // Welcome package with potentially large content
 export const WelcomePackage = lazy(() => 
-  import('@/pages/WelcomePackage').then(module => ({
+  import('@/pages/information/WelcomePackage').then(module => ({
     default: module.default
   }))
 );
