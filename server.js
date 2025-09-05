@@ -836,7 +836,7 @@ const verifyTurnstile = async (token) => {
 
 // Function to send scooter registration email (now using dynamic service)
 const sendScooterRegistrationEmail = async (registrationData) => {
-  const { sendDynamicFormEmail, sendFormEmailFallback } = await import('./utils/dynamicEmailService.js');
+  const { sendDynamicFormEmail, sendFormEmailFallback } = await import('./server/utils/dynamicEmailService.js');
   
   try {
     // Try dynamic email service first
@@ -867,7 +867,7 @@ const sendScooterRegistrationEmail = async (registrationData) => {
 
 // Function to send AC inquiry email (now using dynamic service)
 const sendACInquiryEmail = async (inquiryData) => {
-  const { sendDynamicFormEmail, sendFormEmailFallback } = await import('./utils/dynamicEmailService.js');
+  const { sendDynamicFormEmail, sendFormEmailFallback } = await import('./server/utils/dynamicEmailService.js');
   
   try {
     // Try dynamic email service first
@@ -898,7 +898,7 @@ const sendACInquiryEmail = async (inquiryData) => {
 
 // Function to send storage rental interest email (now using dynamic service)
 const sendStorageRentalEmail = async (rentalData) => {
-  const { sendDynamicFormEmail, sendFormEmailFallback } = await import('./utils/dynamicEmailService.js');
+  const { sendDynamicFormEmail, sendFormEmailFallback } = await import('./server/utils/dynamicEmailService.js');
   
   try {
     // Try dynamic email service first
@@ -929,7 +929,7 @@ const sendStorageRentalEmail = async (rentalData) => {
 
 // Function to send emergency contact email (now using dynamic service)
 const sendEmergencyContactEmail = async (emergencyData) => {
-  const { sendDynamicFormEmail, sendFormEmailFallback } = await import('./utils/dynamicEmailService.js');
+  const { sendDynamicFormEmail, sendFormEmailFallback } = await import('./server/utils/dynamicEmailService.js');
   
   try {
     // Try dynamic email service first
@@ -960,7 +960,7 @@ const sendEmergencyContactEmail = async (emergencyData) => {
 
 // Function to send pet registration email (now using dynamic service)
 const sendPetRegistrationEmail = async (petData) => {
-  const { sendDynamicFormEmail, sendFormEmailFallback } = await import('./utils/dynamicEmailService.js');
+  const { sendDynamicFormEmail, sendFormEmailFallback } = await import('./server/utils/dynamicEmailService.js');
   
   try {
     // Try dynamic email service first
