@@ -14,12 +14,13 @@ import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { RequireAdminAuth } from '@/components/hoc/RequireAdminAuth';
-import { Plus, Trash2, Edit2, Users, Calendar, FileText, Megaphone, ShoppingCart, Save, X, Database, AlertTriangle, CheckCircle, Zap, PawPrint, Download, ClipboardList } from 'lucide-react';
+import { Plus, Trash2, Edit2, Users, Calendar, FileText, Megaphone, ShoppingCart, Save, X, Database, AlertTriangle, CheckCircle, Zap, PawPrint, Download, ClipboardList, Settings } from 'lucide-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { cleanupMarketplaceData, getCleanupPreview, formatCleanupStats, CleanupOptions } from '@/utils/databaseCleanup';
 import ChangePasswordDialog from '@/components/shared/ChangePasswordDialog';
 import { exportFormData } from '@/utils/csvExport';
+import FormManagement from '@/components/admin/FormManagement';
 
 const AdminDashboard = () => {
   const { adminUser, logout } = useAdminAuth();
@@ -580,9 +581,9 @@ const AdminDashboard = () => {
                 <div className="flex flex-col space-y-2">
                   <h3 className="text-sm font-medium text-muted-foreground px-2">Forms & Registrations</h3>
                   <TabsList className="h-auto flex-nowrap overflow-x-auto md:flex-wrap md:overflow-visible md:gap-2">
-                    <TabsTrigger value="forms" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                      <ClipboardList className="w-4 h-4 flex-shrink-0" />
-                      <span className="hidden sm:inline">Forms</span>
+                    <TabsTrigger value="form-management" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                      <Settings className="w-4 h-4 flex-shrink-0" />
+                      <span className="hidden sm:inline">Form Management</span>
                       <span className="sm:hidden">Forms</span>
                     </TabsTrigger>
                     <TabsTrigger value="scooter-registrations" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
@@ -1115,6 +1116,10 @@ const AdminDashboard = () => {
                     )}
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              <TabsContent value="form-management" className="space-y-6">
+                <FormManagement />
               </TabsContent>
 
               <TabsContent value="scooter-registrations" className="space-y-6">
