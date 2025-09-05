@@ -40,6 +40,13 @@ const FormManagement = () => {
   const [editingConfig, setEditingConfig] = useState<FormConfiguration | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [availableForms, setAvailableForms] = useState<Array<{
+    formName: string;
+    displayName: string;
+    description: string;
+    path: string;
+  }>>([]);
+  const [selectedForm, setSelectedForm] = useState<string>('');
   const [newForm, setNewForm] = useState<Omit<FormConfiguration, 'id'>>({
     formName: '',
     displayName: '',
@@ -59,6 +66,18 @@ const FormManagement = () => {
     isPrimary: false
   });
 
+  // Available forms from the website
+  const allWebsiteForms = [
+    { formName: 'scooter-registration', displayName: 'E-Scooter Registration', description: 'Registration form for e-scooter storage in the parkade', path: '/scooter-registration' },
+    { formName: 'ac-inquiry', displayName: 'AC Installation Inquiry', description: 'Inquiry form for air conditioning installation', path: '/ac-inquiry' },
+    { formName: 'storage-rental', displayName: 'Storage Rental Interest', description: 'Interest form for storage rental inquiries', path: '/storage-rental' },
+    { formName: 'emergency-contact', displayName: 'Emergency Contact Information', description: 'Emergency contact information form for residents', path: '/emergency-contact' },
+    { formName: 'pet-registration', displayName: 'Pet Registration', description: 'Pet registration form for residents', path: '/pet-registration' },
+    { formName: 'contact', displayName: 'Contact Form', description: 'General contact form for inquiries', path: '/contact' },
+    { formName: 'marketplace', displayName: 'Marketplace Post', description: 'Marketplace item posting form', path: '/marketplace' },
+    { formName: 'event-request', displayName: 'Event Request', description: 'Request form for community events', path: '/calendar' }
+  ];
+
   // Fetch form configurations
   const fetchFormConfigs = async () => {
     setLoading(true);
@@ -67,6 +86,11 @@ const FormManagement = () => {
       if (response.ok) {
         const data = await response.json();
         setFormConfigs(data);
+        
+        // Filter out forms that are already configured
+        const configuredFormNames = data.map((config: FormConfiguration) => config.formName);
+        const available = allWebsiteForms.filter(form => !configuredFormNames.includes(form.formName));
+        setAvailableForms(available);
       } else {
         throw new Error('Failed to fetch form configurations');
       }
@@ -198,6 +222,26 @@ const FormManagement = () => {
     setIsEditDialogOpen(true);
   };
 
+  // Handle form selection
+  const handleFormSelection = (formName: string) => {
+    const selectedFormData = allWebsiteForms.find(form => form.formName === formName);
+    if (selectedFormData) {
+      setSelectedForm(formName);
+      setNewForm({
+        formName: selectedFormData.formName,
+        displayName: selectedFormData.displayName,
+        description: selectedFormData.description,
+        isActive: true,
+        emailConfig: {
+          subject: `New ${selectedFormData.displayName} - {{unitNumber}}`,
+          fromName: `Spectrum 4 ${selectedFormData.displayName}`,
+          template: selectedFormData.formName
+        },
+        recipients: []
+      });
+    }
+  };
+
   // Create new form configuration
   const createFormConfig = async (config: Omit<FormConfiguration, 'id'>) => {
     try {
@@ -214,6 +258,19 @@ const FormManagement = () => {
         });
         fetchFormConfigs();
         setIsCreateDialogOpen(false);
+        setSelectedForm('');
+        setNewForm({
+          formName: '',
+          displayName: '',
+          description: '',
+          isActive: true,
+          emailConfig: {
+            subject: '',
+            fromName: '',
+            template: ''
+          },
+          recipients: []
+        });
       } else {
         throw new Error('Failed to create form configuration');
       }
@@ -238,7 +295,7 @@ const FormManagement = () => {
         </div>
         <Button onClick={() => setIsCreateDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Form
+          Add Existing Form
         </Button>
       </div>
 
@@ -517,90 +574,150 @@ const FormManagement = () => {
 
       {/* Create Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Create New Form Configuration</DialogTitle>
+            <DialogTitle>Add Form to Management</DialogTitle>
             <DialogDescription>
-              Add a new form configuration with email recipients and settings
+              Select an existing form from your website to add email management
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-6">
-            {/* Basic Info */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Form Selection */}
+            {!selectedForm && (
               <div>
-                <Label htmlFor="newFormName">Form Name</Label>
-                <Input
-                  id="newFormName"
-                  placeholder="e.g., contact-form"
-                  value={newForm.formName}
-                  onChange={(e) => setNewForm({
-                    ...newForm,
-                    formName: e.target.value
-                  })}
-                />
+                <Label>Select a Form to Add</Label>
+                <div className="mt-2 grid gap-3">
+                  {availableForms.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>All available forms are already configured</p>
+                      <p className="text-sm">No additional forms to add</p>
+                    </div>
+                  ) : (
+                    availableForms.map((form) => (
+                      <Card 
+                        key={form.formName} 
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => handleFormSelection(form.formName)}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h3 className="font-medium">{form.displayName}</h3>
+                              <p className="text-sm text-muted-foreground">{form.description}</p>
+                              <p className="text-xs text-muted-foreground mt-1">Path: {form.path}</p>
+                            </div>
+                            <Button variant="outline" size="sm">
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
               </div>
-              <div>
-                <Label htmlFor="newDisplayName">Display Name</Label>
-                <Input
-                  id="newDisplayName"
-                  placeholder="e.g., Contact Form"
-                  value={newForm.displayName}
-                  onChange={(e) => setNewForm({
-                    ...newForm,
-                    displayName: e.target.value
-                  })}
-                />
-              </div>
-            </div>
+            )}
 
-            <div>
-              <Label htmlFor="newDescription">Description</Label>
-              <Textarea
-                id="newDescription"
-                placeholder="Description of the form"
-                value={newForm.description}
-                onChange={(e) => setNewForm({
-                  ...newForm,
-                  description: e.target.value
-                })}
-                rows={2}
-              />
-            </div>
+            {/* Form Configuration */}
+            {selectedForm && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                  <div>
+                    <h3 className="font-medium">Configuring: {newForm.displayName}</h3>
+                    <p className="text-sm text-muted-foreground">{newForm.description}</p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setSelectedForm('');
+                      setNewForm({
+                        formName: '',
+                        displayName: '',
+                        description: '',
+                        isActive: true,
+                        emailConfig: {
+                          subject: '',
+                          fromName: '',
+                          template: ''
+                        },
+                        recipients: []
+                      });
+                    }}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Change Form
+                  </Button>
+                </div>
 
-            {/* Email Config */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="newEmailSubject">Email Subject</Label>
-                <Input
-                  id="newEmailSubject"
-                  placeholder="e.g., New Contact Form - Unit {unitNumber}"
-                  value={newForm.emailConfig.subject}
-                  onChange={(e) => setNewForm({
-                    ...newForm,
-                    emailConfig: {
-                      ...newForm.emailConfig,
-                      subject: e.target.value
-                    }
-                  })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="newFromName">From Name</Label>
-                <Input
-                  id="newFromName"
-                  placeholder="e.g., Spectrum 4 Contact Form"
-                  value={newForm.emailConfig.fromName}
-                  onChange={(e) => setNewForm({
-                    ...newForm,
-                    emailConfig: {
-                      ...newForm.emailConfig,
-                      fromName: e.target.value
-                    }
-                  })}
-                />
-              </div>
-            </div>
+                {/* Basic Info - Read Only */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="newFormName">Form Name</Label>
+                    <Input
+                      id="newFormName"
+                      value={newForm.formName}
+                      disabled
+                      className="bg-muted"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="newDisplayName">Display Name</Label>
+                    <Input
+                      id="newDisplayName"
+                      value={newForm.displayName}
+                      disabled
+                      className="bg-muted"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="newDescription">Description</Label>
+                  <Textarea
+                    id="newDescription"
+                    value={newForm.description}
+                    disabled
+                    className="bg-muted"
+                    rows={2}
+                  />
+                </div>
+
+                {/* Email Config */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="newEmailSubject">Email Subject</Label>
+                    <Input
+                      id="newEmailSubject"
+                      placeholder="e.g., New Contact Form - Unit {unitNumber}"
+                      value={newForm.emailConfig.subject}
+                      onChange={(e) => setNewForm({
+                        ...newForm,
+                        emailConfig: {
+                          ...newForm.emailConfig,
+                          subject: e.target.value
+                        }
+                      })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="newFromName">From Name</Label>
+                    <Input
+                      id="newFromName"
+                      placeholder="e.g., Spectrum 4 Contact Form"
+                      value={newForm.emailConfig.fromName}
+                      onChange={(e) => setNewForm({
+                        ...newForm,
+                        emailConfig: {
+                          ...newForm.emailConfig,
+                          fromName: e.target.value
+                        }
+                      })}
+                    />
+                  </div>
+                </div>
 
             {/* Recipients */}
             <div>
@@ -708,36 +825,39 @@ const FormManagement = () => {
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsCreateDialogOpen(false);
-                  setNewForm({
-                    formName: '',
-                    displayName: '',
-                    description: '',
-                    isActive: true,
-                    emailConfig: {
-                      subject: '',
-                      fromName: '',
-                      template: ''
-                    },
-                    recipients: []
-                  });
-                }}
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={() => createFormConfig(newForm)}
-                disabled={!newForm.formName || !newForm.displayName || !newForm.emailConfig.subject}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create Form
-              </Button>
-            </div>
+                {/* Actions */}
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsCreateDialogOpen(false);
+                      setSelectedForm('');
+                      setNewForm({
+                        formName: '',
+                        displayName: '',
+                        description: '',
+                        isActive: true,
+                        emailConfig: {
+                          subject: '',
+                          fromName: '',
+                          template: ''
+                        },
+                        recipients: []
+                      });
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={() => createFormConfig(newForm)}
+                    disabled={!newForm.formName || !newForm.displayName || !newForm.emailConfig.subject}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Form
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
