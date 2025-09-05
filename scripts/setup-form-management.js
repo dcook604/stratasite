@@ -1,5 +1,5 @@
-const { PrismaClient } = require('@prisma/client');
-const { seedFormConfigurations } = require('./seed-form-configurations');
+import { PrismaClient } from '@prisma/client';
+import { seedFormConfigurations } from './seed-form-configurations.js';
 
 const prisma = new PrismaClient();
 
@@ -9,7 +9,7 @@ async function setupFormManagement() {
   try {
     // Step 1: Generate Prisma client (if needed)
     console.log('📦 Generating Prisma client...');
-    const { execSync } = require('child_process');
+    const { execSync } = await import('child_process');
     execSync('npx prisma generate', { stdio: 'inherit' });
     
     // Step 2: Push schema to database
@@ -43,16 +43,14 @@ async function setupFormManagement() {
 }
 
 // Run the setup
-if (require.main === module) {
-  setupFormManagement()
-    .then(() => {
-      console.log('🎉 Setup completed successfully!');
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error('💥 Setup failed:', error);
-      process.exit(1);
-    });
-}
+setupFormManagement()
+  .then(() => {
+    console.log('🎉 Setup completed successfully!');
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error('💥 Setup failed:', error);
+    process.exit(1);
+  });
 
-module.exports = { setupFormManagement };
+export { setupFormManagement };

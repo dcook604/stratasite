@@ -40,6 +40,18 @@ const FormManagement = () => {
   const [editingConfig, setEditingConfig] = useState<FormConfiguration | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [newForm, setNewForm] = useState<Omit<FormConfiguration, 'id'>>({
+    formName: '',
+    displayName: '',
+    description: '',
+    isActive: true,
+    emailConfig: {
+      subject: '',
+      fromName: '',
+      template: ''
+    },
+    recipients: []
+  });
   const [newRecipient, setNewRecipient] = useState<FormEmailRecipient>({
     email: '',
     name: '',
@@ -184,6 +196,35 @@ const FormManagement = () => {
   const openEditDialog = (config: FormConfiguration) => {
     setEditingConfig({ ...config });
     setIsEditDialogOpen(true);
+  };
+
+  // Create new form configuration
+  const createFormConfig = async (config: Omit<FormConfiguration, 'id'>) => {
+    try {
+      const response = await fetch('/api/form-configurations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Form configuration created successfully"
+        });
+        fetchFormConfigs();
+        setIsCreateDialogOpen(false);
+      } else {
+        throw new Error('Failed to create form configuration');
+      }
+    } catch (error) {
+      console.error('Error creating form configuration:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create form configuration",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -474,19 +515,229 @@ const FormManagement = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Create Dialog - Placeholder for now */}
+      {/* Create Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create New Form Configuration</DialogTitle>
             <DialogDescription>
-              This feature will be available in a future update. For now, form configurations are managed through the database.
+              Add a new form configuration with email recipients and settings
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-end">
-            <Button onClick={() => setIsCreateDialogOpen(false)}>
-              Close
-            </Button>
+          
+          <div className="space-y-6">
+            {/* Basic Info */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="newFormName">Form Name</Label>
+                <Input
+                  id="newFormName"
+                  placeholder="e.g., contact-form"
+                  value={newForm.formName}
+                  onChange={(e) => setNewForm({
+                    ...newForm,
+                    formName: e.target.value
+                  })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="newDisplayName">Display Name</Label>
+                <Input
+                  id="newDisplayName"
+                  placeholder="e.g., Contact Form"
+                  value={newForm.displayName}
+                  onChange={(e) => setNewForm({
+                    ...newForm,
+                    displayName: e.target.value
+                  })}
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="newDescription">Description</Label>
+              <Textarea
+                id="newDescription"
+                placeholder="Description of the form"
+                value={newForm.description}
+                onChange={(e) => setNewForm({
+                  ...newForm,
+                  description: e.target.value
+                })}
+                rows={2}
+              />
+            </div>
+
+            {/* Email Config */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="newEmailSubject">Email Subject</Label>
+                <Input
+                  id="newEmailSubject"
+                  placeholder="e.g., New Contact Form - Unit {unitNumber}"
+                  value={newForm.emailConfig.subject}
+                  onChange={(e) => setNewForm({
+                    ...newForm,
+                    emailConfig: {
+                      ...newForm.emailConfig,
+                      subject: e.target.value
+                    }
+                  })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="newFromName">From Name</Label>
+                <Input
+                  id="newFromName"
+                  placeholder="e.g., Spectrum 4 Contact Form"
+                  value={newForm.emailConfig.fromName}
+                  onChange={(e) => setNewForm({
+                    ...newForm,
+                    emailConfig: {
+                      ...newForm.emailConfig,
+                      fromName: e.target.value
+                    }
+                  })}
+                />
+              </div>
+            </div>
+
+            {/* Recipients */}
+            <div>
+              <Label>Email Recipients</Label>
+              <div className="mt-2 space-y-2">
+                {newForm.recipients.map((recipient, index) => (
+                  <div key={index} className="flex items-center gap-2 p-3 border rounded">
+                    <div className="flex-1 grid grid-cols-2 gap-2">
+                      <Input
+                        placeholder="Email address"
+                        value={recipient.email}
+                        onChange={(e) => {
+                          const updatedRecipients = [...newForm.recipients];
+                          updatedRecipients[index] = { ...recipient, email: e.target.value };
+                          setNewForm({
+                            ...newForm,
+                            recipients: updatedRecipients
+                          });
+                        }}
+                      />
+                      <Input
+                        placeholder="Display name (optional)"
+                        value={recipient.name || ''}
+                        onChange={(e) => {
+                          const updatedRecipients = [...newForm.recipients];
+                          updatedRecipients[index] = { ...recipient, name: e.target.value };
+                          setNewForm({
+                            ...newForm,
+                            recipients: updatedRecipients
+                          });
+                        }}
+                      />
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const updatedRecipients = newForm.recipients.filter((_, i) => i !== index);
+                        setNewForm({
+                          ...newForm,
+                          recipients: updatedRecipients
+                        });
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add New Recipient */}
+              <div className="mt-4 p-3 border-2 border-dashed rounded">
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    placeholder="Email address"
+                    value={newRecipient.email}
+                    onChange={(e) => setNewRecipient({
+                      ...newRecipient,
+                      email: e.target.value
+                    })}
+                  />
+                  <Input
+                    placeholder="Display name (optional)"
+                    value={newRecipient.name}
+                    onChange={(e) => setNewRecipient({
+                      ...newRecipient,
+                      name: e.target.value
+                    })}
+                  />
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <Button 
+                    onClick={() => {
+                      if (!newRecipient.email) {
+                        toast({
+                          title: "Error",
+                          description: "Email address is required",
+                          variant: "destructive"
+                        });
+                        return;
+                      }
+                      setNewForm({
+                        ...newForm,
+                        recipients: [...newForm.recipients, { ...newRecipient, id: Date.now().toString() }]
+                      });
+                      setNewRecipient({ email: '', name: '', isActive: true, isPrimary: false });
+                    }} 
+                    size="sm"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Recipient
+                  </Button>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="newRecipientPrimary"
+                      checked={newRecipient.isPrimary}
+                      onCheckedChange={(checked) => setNewRecipient({
+                        ...newRecipient,
+                        isPrimary: checked
+                      })}
+                    />
+                    <Label htmlFor="newRecipientPrimary" className="text-sm">Primary</Label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsCreateDialogOpen(false);
+                  setNewForm({
+                    formName: '',
+                    displayName: '',
+                    description: '',
+                    isActive: true,
+                    emailConfig: {
+                      subject: '',
+                      fromName: '',
+                      template: ''
+                    },
+                    recipients: []
+                  });
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => createFormConfig(newForm)}
+                disabled={!newForm.formName || !newForm.displayName || !newForm.emailConfig.subject}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Form
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

@@ -14,6 +14,7 @@
     "db:seed": "node scripts/seed.js",
     "db:studio": "prisma studio",
     "setup:forms": "node scripts/setup-form-management.js",
+    "postdeploy": "node scripts/coolify-post-deploy.js",
     "start": "node server.js"
   },
   "dependencies": {
