@@ -3,79 +3,146 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Suspense } from "react";
 import { AdminAuthProvider } from "./context/AdminAuthContext";
+import ErrorBoundary from "./components/error/ErrorBoundary";
+import SkipLink from "./components/accessibility/SkipLink";
+
+// Core pages - loaded immediately
 import Index from "./pages/Index";
-import Calendar from "./pages/Calendar";
-import AdminLogin from "./pages/AdminLogin";
-import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import DynamicPage from "./pages/DynamicPage";
-import Bylaws from "./pages/Bylaws";
-import Marketplace from "./pages/information/Marketplace";
-import Documents from "./pages/information/Documents";
-import WelcomePackage from "./pages/information/WelcomePackage";
-import ScooterRegistration from "./pages/information/ScooterRegistration";
-import EmergencyContact from "./pages/information/EmergencyContact";
-import ACInquiry from "./pages/information/ACInquiry";
-import StorageRental from "./pages/information/StorageRental";
-import PetRegistration from "./pages/information/PetRegistration";
 import FormAcknowledgment from "./pages/FormAcknowledgment";
+
+// Lazy-loaded components for better performance
+import {
+  AdminDashboard,
+  AdminLogin,
+  Bylaws,
+  Calendar,
+  ScooterRegistration,
+  PetRegistration,
+  EmergencyContact,
+  ACInquiry,
+  StorageRental,
+  Marketplace,
+  Documents,
+  WelcomePackage,
+  LazyLoadingFallback
+} from "./components/lazy/LazyComponents";
 
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <BrowserRouter>
-        <AdminAuthProvider>
-          <Toaster />
-          <Sonner />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/gallery" element={<DynamicPage />} />
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            {/* Interactive Bylaws */}
-            <Route path="/bylaws" element={<Bylaws />} />
-            {/* Dynamic pages - these will load from database */}
-            <Route path="/contact" element={<DynamicPage />} />
-            <Route path="/fees" element={<DynamicPage />} />
-            <Route path="/recycling" element={<DynamicPage />} />
-            <Route path="/organics" element={<DynamicPage />} />
-            <Route path="/renovations" element={<DynamicPage />} />
-            {/* Documents page */}
-            <Route path="/documents" element={<Documents />} />
-            {/* Welcome Package page */}
-            <Route path="/welcome-package" element={<WelcomePackage />} />
-            {/* Scooter Registration page */}
-            <Route path="/scooter-registration" element={<ScooterRegistration />} />
-            {/* Emergency Contact page */}
-            <Route path="/emergency-contact" element={<EmergencyContact />} />
-            {/* AC Inquiry page */}
-            <Route path="/ac-inquiry" element={<ACInquiry />} />
-            {/* Storage Rental page */}
-            <Route path="/storage-rental" element={<StorageRental />} />
-            {/* Pet Registration page */}
-            <Route path="/pet-registration" element={<PetRegistration />} />
-            {/* Form Acknowledgment page */}
-            <Route path="/form-acknowledgment" element={<FormAcknowledgment />} />
-            {/* Interactive Marketplace */}
-            <Route path="/marketplace" element={<Marketplace />} />
-            {/* Legacy information routes - redirect to new slugs */}
-            <Route path="/information/recycling" element={<DynamicPage />} />
-            <Route path="/information/organics" element={<DynamicPage />} />
-            <Route path="/information/fees" element={<DynamicPage />} />
-            <Route path="/information/renovations" element={<DynamicPage />} />
-            <Route path="/information/marketplace" element={<Marketplace />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="/not-found" element={<NotFound />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AdminAuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <BrowserRouter>
+          <AdminAuthProvider>
+            <SkipLink />
+            <Toaster />
+            <Sonner />
+            <Suspense fallback={<LazyLoadingFallback />}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/calendar" element={
+                  <Suspense fallback={<LazyLoadingFallback />}>
+                    <Calendar />
+                  </Suspense>
+                } />
+                <Route path="/gallery" element={<DynamicPage />} />
+                <Route path="/admin/login" element={
+                  <Suspense fallback={<LazyLoadingFallback />}>
+                    <AdminLogin />
+                  </Suspense>
+                } />
+                <Route path="/admin/dashboard" element={
+                  <Suspense fallback={<LazyLoadingFallback />}>
+                    <AdminDashboard />
+                  </Suspense>
+                } />
+                {/* Interactive Bylaws */}
+                <Route path="/bylaws" element={
+                  <Suspense fallback={<LazyLoadingFallback />}>
+                    <Bylaws />
+                  </Suspense>
+                } />
+                {/* Dynamic pages - these will load from database */}
+                <Route path="/contact" element={<DynamicPage />} />
+                <Route path="/fees" element={<DynamicPage />} />
+                <Route path="/recycling" element={<DynamicPage />} />
+                <Route path="/organics" element={<DynamicPage />} />
+                <Route path="/renovations" element={<DynamicPage />} />
+                {/* Documents page */}
+                <Route path="/documents" element={
+                  <Suspense fallback={<LazyLoadingFallback />}>
+                    <Documents />
+                  </Suspense>
+                } />
+                {/* Welcome Package page */}
+                <Route path="/welcome-package" element={
+                  <Suspense fallback={<LazyLoadingFallback />}>
+                    <WelcomePackage />
+                  </Suspense>
+                } />
+                {/* Scooter Registration page */}
+                <Route path="/scooter-registration" element={
+                  <Suspense fallback={<LazyLoadingFallback />}>
+                    <ScooterRegistration />
+                  </Suspense>
+                } />
+                {/* Emergency Contact page */}
+                <Route path="/emergency-contact" element={
+                  <Suspense fallback={<LazyLoadingFallback />}>
+                    <EmergencyContact />
+                  </Suspense>
+                } />
+                {/* AC Inquiry page */}
+                <Route path="/ac-inquiry" element={
+                  <Suspense fallback={<LazyLoadingFallback />}>
+                    <ACInquiry />
+                  </Suspense>
+                } />
+                {/* Storage Rental page */}
+                <Route path="/storage-rental" element={
+                  <Suspense fallback={<LazyLoadingFallback />}>
+                    <StorageRental />
+                  </Suspense>
+                } />
+                {/* Pet Registration page */}
+                <Route path="/pet-registration" element={
+                  <Suspense fallback={<LazyLoadingFallback />}>
+                    <PetRegistration />
+                  </Suspense>
+                } />
+                {/* Form Acknowledgment page */}
+                <Route path="/form-acknowledgment" element={<FormAcknowledgment />} />
+                {/* Interactive Marketplace */}
+                <Route path="/marketplace" element={
+                  <Suspense fallback={<LazyLoadingFallback />}>
+                    <Marketplace />
+                  </Suspense>
+                } />
+                {/* Legacy information routes - redirect to new slugs */}
+                <Route path="/information/recycling" element={<DynamicPage />} />
+                <Route path="/information/organics" element={<DynamicPage />} />
+                <Route path="/information/fees" element={<DynamicPage />} />
+                <Route path="/information/renovations" element={<DynamicPage />} />
+                <Route path="/information/marketplace" element={
+                  <Suspense fallback={<LazyLoadingFallback />}>
+                    <Marketplace />
+                  </Suspense>
+                } />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="/not-found" element={<NotFound />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </AdminAuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
