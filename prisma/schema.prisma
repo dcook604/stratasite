@@ -314,3 +314,33 @@ model PetRegistration {
   
   @@map("pet_registrations")
 }
+
+model FormConfiguration {
+  id          String   @id @default(cuid())
+  formName    String   @unique @map("form_name") // e.g., "scooter-registration"
+  displayName String   @map("display_name") // e.g., "E-Scooter Registration"
+  description String?  // Optional description
+  isActive    Boolean  @default(true) @map("is_active")
+  emailConfig Json     @map("email_config") // Email template and settings
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  recipients  FormEmailRecipient[]
+  
+  @@map("form_configurations")
+}
+
+model FormEmailRecipient {
+  id                String   @id @default(cuid())
+  formConfigId      String   @map("form_config_id")
+  email             String
+  name              String?  // Optional display name
+  isActive          Boolean  @default(true) @map("is_active")
+  isPrimary         Boolean  @default(false) @map("is_primary") // Primary recipient
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  
+  formConfiguration FormConfiguration @relation(fields: [formConfigId], references: [id], onDelete: Cascade)
+  
+  @@map("form_email_recipients")
+}

@@ -834,313 +834,160 @@ const verifyTurnstile = async (token) => {
   }
 };
 
-// Function to send scooter registration email
+// Function to send scooter registration email (now using dynamic service)
 const sendScooterRegistrationEmail = async (registrationData) => {
-  const {
-    date, unitNumber, numberOfScooters, description, ownerNames,
-    email, phone, registrationId
-  } = registrationData;
-
-  const emailSubject = `New E-Scooter Registration - Unit ${unitNumber}`;
-  const emailBody = `
-    <h2>New E-Scooter Registration Submitted</h2>
-    
-    <h3>Registration Details:</h3>
-    <ul>
-      <li><strong>Registration ID:</strong> ${registrationId}</li>
-      <li><strong>Date:</strong> ${date}</li>
-      <li><strong>Unit Number:</strong> ${unitNumber}</li>
-      <li><strong>Number of E-Scooters:</strong> ${numberOfScooters}</li>
-      <li><strong>Owner Name(s):</strong> ${ownerNames}</li>
-      <li><strong>Contact Email:</strong> ${email}</li>
-      <li><strong>Contact Phone:</strong> ${phone || 'Not provided'}</li>
-    </ul>
-    
-    <h3>E-Scooter Description:</h3>
-    <p>${description}</p>
-    
-    <hr>
-    <p><strong>Key Deposit Required:</strong> $50 (Refundable)</p>
-    <p><strong>Storage Location:</strong> Gated, secured parkade storage area</p>
-    <p><strong>Terms Accepted:</strong> Yes - Storage in designated parkade area only</p>
-    
-    <p><em>Submitted on ${new Date().toLocaleString()}</em></p>
-  `;
-
-  const mailOptions = {
-    from: `"Spectrum 4 E-Scooter Registration" <${process.env.SMTP_USER}@spectrum4.ca>`,
-    to: 'dcook@spectrum4.ca, jen.danczak@gmail.com',
-    subject: emailSubject,
-    html: emailBody
-  };
-
+  const { sendDynamicFormEmail, sendFormEmailFallback } = require('./utils/dynamicEmailService');
+  
   try {
-    await transporter.sendMail(mailOptions);
-    logger.info('Scooter registration email sent successfully', { registrationId, recipients: mailOptions.to });
-    return true;
+    // Try dynamic email service first
+    const result = await sendDynamicFormEmail('scooter-registration', registrationData);
+    
+    if (result.success) {
+      logger.info('Scooter registration email sent successfully via dynamic service', { 
+        registrationId: registrationData.registrationId, 
+        recipients: result.recipients 
+      });
+      return true;
+    } else {
+      // Fallback to original method if dynamic service fails
+      logger.warn('Dynamic email service failed, using fallback', { error: result.error });
+      return await sendFormEmailFallback('scooter-registration', registrationData);
+    }
   } catch (error) {
     logger.error('Failed to send scooter registration email', error);
-    throw error;
+    // Try fallback as last resort
+    try {
+      return await sendFormEmailFallback('scooter-registration', registrationData);
+    } catch (fallbackError) {
+      logger.error('Fallback email sending also failed', fallbackError);
+      throw error;
+    }
   }
 };
 
-// Function to send AC inquiry email
+// Function to send AC inquiry email (now using dynamic service)
 const sendACInquiryEmail = async (inquiryData) => {
-  const {
-    ownerName, ownerUnit, ownerPhone, email, isMultiZone, bestContactMethod,
-    installationTiming, notes, inquiryId
-  } = inquiryData;
-
-  const installationType = isMultiZone ? 'Multi-Zone' : 'Single-Zone';
-  const contactMethodDisplay = bestContactMethod === 'EMAIL' ? 'Email' : 'Telephone';
-
-  const emailSubject = `New AC Installation Inquiry - Unit ${ownerUnit}`;
-  const emailBody = `
-    <h2>New AC Installation Inquiry Submitted</h2>
-    
-    <h3>Inquiry Details:</h3>
-    <ul>
-      <li><strong>Inquiry ID:</strong> ${inquiryId}</li>
-      <li><strong>Owner Name:</strong> ${ownerName}</li>
-      <li><strong>Unit Number:</strong> ${ownerUnit}</li>
-      <li><strong>Phone Number:</strong> ${ownerPhone}</li>
-      <li><strong>Email Address:</strong> ${email}</li>
-    </ul>
-    
-    <h3>Installation Preferences:</h3>
-    <ul>
-      <li><strong>Installation Type:</strong> ${installationType}</li>
-      <li><strong>Preferred Contact Method:</strong> ${contactMethodDisplay}</li>
-      <li><strong>Installation Timing:</strong> ${installationTiming}</li>
-    </ul>
-    
-    ${notes ? `
-    <h3>Additional Notes:</h3>
-    <p>${notes}</p>
-    ` : ''}
-    
-    <hr>
-    <p><strong>Consent Given:</strong> Yes - Customer has consented to receiving installation information from Airlux</p>
-    
-    <p><em>Submitted on ${new Date().toLocaleString()}</em></p>
-  `;
-
-  const mailOptions = {
-    from: `"Spectrum 4 AC Inquiry" <${process.env.SMTP_USER}@spectrum4.ca>`,
-    to: 'dcook@spectrum4.ca, info@airlux.ca',
-    subject: emailSubject,
-    html: emailBody
-  };
-
+  const { sendDynamicFormEmail, sendFormEmailFallback } = require('./utils/dynamicEmailService');
+  
   try {
-    await transporter.sendMail(mailOptions);
-    logger.info('AC inquiry email sent successfully', { inquiryId, recipients: mailOptions.to });
-    return true;
+    // Try dynamic email service first
+    const result = await sendDynamicFormEmail('ac-inquiry', inquiryData);
+    
+    if (result.success) {
+      logger.info('AC inquiry email sent successfully via dynamic service', { 
+        inquiryId: inquiryData.inquiryId, 
+        recipients: result.recipients 
+      });
+      return true;
+    } else {
+      // Fallback to original method if dynamic service fails
+      logger.warn('Dynamic email service failed, using fallback', { error: result.error });
+      return await sendFormEmailFallback('ac-inquiry', inquiryData);
+    }
   } catch (error) {
     logger.error('Failed to send AC inquiry email', error);
-    throw error;
+    // Try fallback as last resort
+    try {
+      return await sendFormEmailFallback('ac-inquiry', inquiryData);
+    } catch (fallbackError) {
+      logger.error('Fallback email sending also failed', fallbackError);
+      throw error;
+    }
   }
 };
 
-// Function to send storage rental interest email
+// Function to send storage rental interest email (now using dynamic service)
 const sendStorageRentalEmail = async (rentalData) => {
-  const {
-    firstName, lastName, phoneNumber, email, unitNumber, bestContactMethod,
-    interestedInInfo, notes, rentalId
-  } = rentalData;
-
-  const contactMethodDisplay = bestContactMethod === 'EMAIL' ? 'Email' : 'Telephone';
-  const fullName = `${firstName} ${lastName}`;
-
-  const emailSubject = `New Storage Locker Interest - Unit ${unitNumber}`;
-  const emailBody = `
-    <h2>New Storage Locker Rental Interest Submitted</h2>
-    
-    <h3>Interest Details:</h3>
-    <ul>
-      <li><strong>Interest ID:</strong> ${rentalId}</li>
-      <li><strong>Resident Name:</strong> ${fullName}</li>
-      <li><strong>Unit Number:</strong> ${unitNumber}</li>
-      <li><strong>Phone Number:</strong> ${phoneNumber}</li>
-      <li><strong>Email Address:</strong> ${email}</li>
-    </ul>
-    
-    <h3>Contact Preferences:</h3>
-    <ul>
-      <li><strong>Preferred Contact Method:</strong> ${contactMethodDisplay}</li>
-      <li><strong>Interested in Information:</strong> ${interestedInInfo ? 'Yes' : 'No'}</li>
-    </ul>
-    
-    ${notes ? `
-    <h3>Additional Notes/Comments:</h3>
-    <p>${notes}</p>
-    ` : ''}
-    
-    <hr>
-    <h3>Storage Locker Details Reminder:</h3>
-    <ul>
-      <li><strong>Available Lockers:</strong> 16-18 secure storage lockers</li>
-      <li><strong>Dimensions (Approximately):</strong> 35" (3') x 50" (4.2')</li>
-      <li><strong>Height:</strong> 6' to 8' (varies by location)</li>
-      <li><strong>Monthly Rental:</strong> $120/month</li>
-      <li><strong>Admin Fee:</strong> $50 (one-time, non-refundable)</li>
-      <li><strong>Payment:</strong> Monthly electronic debit</li>
-      <li><strong>Target Completion:</strong> 2025</li>
-    </ul>
-    
-    <p><strong>Consent Given:</strong> Yes - Resident has consented to receiving information from Spectrum 4 BCS2611</p>
-    
-    <p><em>Submitted on ${new Date().toLocaleString()}</em></p>
-  `;
-
-  const mailOptions = {
-    from: `"Spectrum 4 Storage Rental" <${process.env.SMTP_USER}@spectrum4.ca>`,
-    to: 'dcook@spectrum4.ca, jennifer.danczak@spectrum4.ca',
-    subject: emailSubject,
-    html: emailBody
-  };
-
+  const { sendDynamicFormEmail, sendFormEmailFallback } = require('./utils/dynamicEmailService');
+  
   try {
-    await transporter.sendMail(mailOptions);
-    logger.info('Storage rental interest email sent successfully', { rentalId, recipients: mailOptions.to });
-    return true;
+    // Try dynamic email service first
+    const result = await sendDynamicFormEmail('storage-rental', rentalData);
+    
+    if (result.success) {
+      logger.info('Storage rental email sent successfully via dynamic service', { 
+        rentalId: rentalData.rentalId, 
+        recipients: result.recipients 
+      });
+      return true;
+    } else {
+      // Fallback to original method if dynamic service fails
+      logger.warn('Dynamic email service failed, using fallback', { error: result.error });
+      return await sendFormEmailFallback('storage-rental', rentalData);
+    }
   } catch (error) {
-    logger.error('Failed to send storage rental interest email', error);
-    throw error;
+    logger.error('Failed to send storage rental email', error);
+    // Try fallback as last resort
+    try {
+      return await sendFormEmailFallback('storage-rental', rentalData);
+    } catch (fallbackError) {
+      logger.error('Fallback email sending also failed', fallbackError);
+      throw error;
+    }
   }
 };
 
-// Function to send emergency contact email
+// Function to send emergency contact email (now using dynamic service)
 const sendEmergencyContactEmail = async (emergencyData) => {
-  const {
-    unitNumber, strataLotNumber, registeredOwnerNames, ownerEmail, phoneHome, phoneBusiness, 
-    phoneOther, phoneOtherSpecify, nonResidentAddress, emergencyContactName, emergencyContactEmail,
-    allowManagementAccess, conciergeKeyProvided, dateProvidedToConcierge, securityCode
-  } = emergencyData;
-
-  const emailSubject = `Emergency Contact Information Updated - Unit ${unitNumber}`;
-  const emailBody = `
-    <h2>Emergency Contact Information Form Submitted</h2>
-    
-    <h3>Unit Information:</h3>
-    <ul>
-      <li><strong>Unit #:</strong> ${unitNumber}</li>
-      <li><strong>Strata Lot #:</strong> ${strataLotNumber}</li>
-      <li><strong>Registered Owner(s):</strong> ${registeredOwnerNames}</li>
-      ${ownerEmail ? `<li><strong>Owner Email:</strong> ${ownerEmail}</li>` : ''}
-    </ul>
-    
-    <h3>Contact Phone Numbers:</h3>
-    <ul>
-      ${phoneHome ? `<li><strong>Home:</strong> ${phoneHome}</li>` : ''}
-      ${phoneBusiness ? `<li><strong>Business:</strong> ${phoneBusiness}</li>` : ''}
-      ${phoneOther ? `<li><strong>Other:</strong> ${phoneOther}</li>` : ''}
-      ${phoneOtherSpecify ? `<li><strong>Other (Specify):</strong> ${phoneOtherSpecify}</li>` : ''}
-    </ul>
-    
-    ${nonResidentAddress ? `
-    <h3>Non-resident Owner Information:</h3>
-    <p>${nonResidentAddress}</p>
-    ` : ''}
-    
-    ${emergencyContactName ? `
-    <h3>Emergency Contact:</h3>
-    <p>${emergencyContactName}</p>
-    ${emergencyContactEmail ? `<p><strong>Emergency Contact Email:</strong> ${emergencyContactEmail}</p>` : ''}
-    ` : ''}
-    
-    <h3>Key and Access Information:</h3>
-    <p><strong>Emergency contact has spare key/code for access:</strong> ${allowManagementAccess}</p>
-    <p><strong>Spare key/access code provided to concierge:</strong> ${conciergeKeyProvided}</p>
-    ${dateProvidedToConcierge ? `<p><strong>Date provided to concierge:</strong> ${dateProvidedToConcierge}</p>` : ''}
-    
-    ${securityCode ? `
-    <h3>Security Information:</h3>
-    <p><strong>Access Code Provided:</strong> Yes (see confidential records)</p>
-    ` : '<p><strong>Access Code:</strong> Not provided</p>'}
-    
-    <hr>
-    <p><em>This information is confidential and for emergency contact purposes only.</em></p>
-    <p><em>Submitted on ${new Date().toLocaleString()}</em></p>
-  `;
-
-  const mailOptions = {
-    from: `"Spectrum 4 Emergency Contact" <${process.env.SMTP_USER}@spectrum4.ca>`,
-    to: 'dcook@spectrum4.ca, abrajlovic@ascentpm.com, jennifer.danczak@spectrum4.ca, hercules@spectrum4.ca',
-    subject: emailSubject,
-    html: emailBody
-  };
-
+  const { sendDynamicFormEmail, sendFormEmailFallback } = require('./utils/dynamicEmailService');
+  
   try {
-    await transporter.sendMail(mailOptions);
-    logger.info('Emergency contact email sent successfully', { unitNumber, recipients: mailOptions.to });
-    return true;
+    // Try dynamic email service first
+    const result = await sendDynamicFormEmail('emergency-contact', emergencyData);
+    
+    if (result.success) {
+      logger.info('Emergency contact email sent successfully via dynamic service', { 
+        unitNumber: emergencyData.unitNumber, 
+        recipients: result.recipients 
+      });
+      return true;
+    } else {
+      // Fallback to original method if dynamic service fails
+      logger.warn('Dynamic email service failed, using fallback', { error: result.error });
+      return await sendFormEmailFallback('emergency-contact', emergencyData);
+    }
   } catch (error) {
     logger.error('Failed to send emergency contact email', error);
-    throw error;
+    // Try fallback as last resort
+    try {
+      return await sendFormEmailFallback('emergency-contact', emergencyData);
+    } catch (fallbackError) {
+      logger.error('Fallback email sending also failed', fallbackError);
+      throw error;
+    }
   }
 };
 
-// Function to send pet registration email
+// Function to send pet registration email (now using dynamic service)
 const sendPetRegistrationEmail = async (petData) => {
-  const {
-    registrationId, ownerName, suiteNumber, phoneNumber, email, occupancyType,
-    petName, petAge, petHeight, petColor, petType, petBreed, petWeight,
-    distinguishingMarks, licenseNumber, photos
-  } = petData;
-
-  const emailSubject = `Pet Registration Submission - ${petName} (Unit ${suiteNumber})`;
-  const emailBody = `
-    <h2>Pet Registration Form Submitted</h2>
-    
-    <p><strong>Registration ID:</strong> ${registrationId}</p>
-    
-    <h3>Owner/Tenant Information:</h3>
-    <ul>
-      <li><strong>Owner Name:</strong> ${ownerName}</li>
-      <li><strong>Suite #:</strong> ${suiteNumber}</li>
-      <li><strong>Phone Number:</strong> ${phoneNumber}</li>
-      <li><strong>Email:</strong> ${email}</li>
-      <li><strong>Occupancy Type:</strong> ${occupancyType === 'TENANT' ? 'Tenant' : 'Owner Occupied'}</li>
-    </ul>
-    
-    <h3>Pet Registration Details:</h3>
-    <ul>
-      <li><strong>Pet Name:</strong> ${petName}</li>
-      <li><strong>Age:</strong> ${petAge}</li>
-      <li><strong>Height:</strong> ${petHeight}</li>
-      <li><strong>Color:</strong> ${petColor}</li>
-      <li><strong>Type:</strong> ${petType}</li>
-      <li><strong>Breed:</strong> ${petBreed}</li>
-      <li><strong>Weight:</strong> ${petWeight}</li>
-      ${distinguishingMarks ? `<li><strong>Distinguishing Marks:</strong> ${distinguishingMarks}</li>` : ''}
-      ${licenseNumber ? `<li><strong>License #:</strong> ${licenseNumber}</li>` : ''}
-    </ul>
-    
-    ${photos && photos.length > 0 ? `
-    <h3>Pet Photos:</h3>
-    <p>${photos.length} photo(s) uploaded. Photos are stored on the server and available in the admin dashboard.</p>
-    ` : '<p><strong>Photos:</strong> No photos uploaded</p>'}
-    
-    <hr>
-    <p><em>This pet registration requires approval from strata management.</em></p>
-    <p><em>Submitted on ${new Date().toLocaleString()}</em></p>
-  `;
-
-  const mailOptions = {
-    from: `"Spectrum 4 Pet Registration" <${process.env.SMTP_USER}@spectrum4.ca>`,
-    to: 'dcook@spectrum4.ca, abrajlovic@ascentpm.com, jennifer.danczak@spectrum4.ca, hercules@spectrum4.ca',
-    subject: emailSubject,
-    html: emailBody
-  };
-
+  const { sendDynamicFormEmail, sendFormEmailFallback } = require('./utils/dynamicEmailService');
+  
   try {
-    await transporter.sendMail(mailOptions);
-    logger.info('Pet registration email sent successfully', { registrationId, petName, suiteNumber, recipients: mailOptions.to });
-    return true;
+    // Try dynamic email service first
+    const result = await sendDynamicFormEmail('pet-registration', petData);
+    
+    if (result.success) {
+      logger.info('Pet registration email sent successfully via dynamic service', { 
+        registrationId: petData.registrationId, 
+        petName: petData.petName,
+        suiteNumber: petData.suiteNumber,
+        recipients: result.recipients 
+      });
+      return true;
+    } else {
+      // Fallback to original method if dynamic service fails
+      logger.warn('Dynamic email service failed, using fallback', { error: result.error });
+      return await sendFormEmailFallback('pet-registration', petData);
+    }
   } catch (error) {
     logger.error('Failed to send pet registration email', error);
-    throw error;
+    // Try fallback as last resort
+    try {
+      return await sendFormEmailFallback('pet-registration', petData);
+    } catch (fallbackError) {
+      logger.error('Fallback email sending also failed', fallbackError);
+      throw error;
+    }
   }
 };
 
@@ -2423,6 +2270,213 @@ app.get('/api/storage-rentals', async (req, res) => {
     res.json(storageRentals);
   } catch (error) {
     logger.error('Error fetching storage rentals:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// --- Form Configuration API Routes ---
+// Get all form configurations
+app.get('/api/form-configurations', async (req, res) => {
+  try {
+    const formConfigs = await prisma.formConfiguration.findMany({
+      include: {
+        recipients: {
+          where: { isActive: true },
+          orderBy: { isPrimary: 'desc' }
+        }
+      },
+      orderBy: { displayName: 'asc' }
+    });
+    res.json(formConfigs);
+  } catch (error) {
+    logger.error('Error fetching form configurations:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get specific form configuration
+app.get('/api/form-configurations/:formName', async (req, res) => {
+  try {
+    const { formName } = req.params;
+    const formConfig = await prisma.formConfiguration.findUnique({
+      where: { formName },
+      include: {
+        recipients: {
+          where: { isActive: true },
+          orderBy: { isPrimary: 'desc' }
+        }
+      }
+    });
+    
+    if (!formConfig) {
+      return res.status(404).json({ error: 'Form configuration not found' });
+    }
+    
+    res.json(formConfig);
+  } catch (error) {
+    logger.error('Error fetching form configuration:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update form configuration
+app.put('/api/form-configurations/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { displayName, description, isActive, emailConfig, recipients } = req.body;
+    
+    // Update form configuration
+    const updatedConfig = await prisma.formConfiguration.update({
+      where: { id },
+      data: {
+        displayName,
+        description,
+        isActive,
+        emailConfig
+      }
+    });
+    
+    // Update recipients if provided
+    if (recipients) {
+      // Delete existing recipients
+      await prisma.formEmailRecipient.deleteMany({
+        where: { formConfigId: id }
+      });
+      
+      // Create new recipients
+      await prisma.formEmailRecipient.createMany({
+        data: recipients.map(recipient => ({
+          ...recipient,
+          formConfigId: id
+        }))
+      });
+    }
+    
+    // Return updated configuration with recipients
+    const result = await prisma.formConfiguration.findUnique({
+      where: { id },
+      include: {
+        recipients: {
+          where: { isActive: true },
+          orderBy: { isPrimary: 'desc' }
+        }
+      }
+    });
+    
+    logger.info('Form configuration updated', { id, formName: updatedConfig.formName });
+    res.json(result);
+  } catch (error) {
+    logger.error('Error updating form configuration:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Create new form configuration
+app.post('/api/form-configurations', async (req, res) => {
+  try {
+    const { formName, displayName, description, isActive, emailConfig, recipients } = req.body;
+    
+    // Validate required fields
+    if (!formName || !displayName || !emailConfig) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    // Check if form name already exists
+    const existingConfig = await prisma.formConfiguration.findUnique({
+      where: { formName }
+    });
+    
+    if (existingConfig) {
+      return res.status(400).json({ error: 'Form configuration already exists' });
+    }
+    
+    // Create form configuration
+    const newConfig = await prisma.formConfiguration.create({
+      data: {
+        formName,
+        displayName,
+        description,
+        isActive: isActive !== false,
+        emailConfig
+      }
+    });
+    
+    // Create recipients if provided
+    if (recipients && recipients.length > 0) {
+      await prisma.formEmailRecipient.createMany({
+        data: recipients.map(recipient => ({
+          ...recipient,
+          formConfigId: newConfig.id
+        }))
+      });
+    }
+    
+    // Return created configuration with recipients
+    const result = await prisma.formConfiguration.findUnique({
+      where: { id: newConfig.id },
+      include: {
+        recipients: {
+          where: { isActive: true },
+          orderBy: { isPrimary: 'desc' }
+        }
+      }
+    });
+    
+    logger.info('Form configuration created', { id: newConfig.id, formName });
+    res.json(result);
+  } catch (error) {
+    logger.error('Error creating form configuration:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Delete form configuration
+app.delete('/api/form-configurations/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Delete recipients first (cascade should handle this, but being explicit)
+    await prisma.formEmailRecipient.deleteMany({
+      where: { formConfigId: id }
+    });
+    
+    // Delete form configuration
+    await prisma.formConfiguration.delete({
+      where: { id }
+    });
+    
+    logger.info('Form configuration deleted', { id });
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Error deleting form configuration:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get form configuration by form name (for dynamic email sending)
+app.get('/api/form-configurations/by-name/:formName', async (req, res) => {
+  try {
+    const { formName } = req.params;
+    const formConfig = await prisma.formConfiguration.findUnique({
+      where: { 
+        formName,
+        isActive: true
+      },
+      include: {
+        recipients: {
+          where: { isActive: true },
+          orderBy: { isPrimary: 'desc' }
+        }
+      }
+    });
+    
+    if (!formConfig) {
+      return res.status(404).json({ error: 'Form configuration not found' });
+    }
+    
+    res.json(formConfig);
+  } catch (error) {
+    logger.error('Error fetching form configuration by name:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
