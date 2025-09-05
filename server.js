@@ -18,42 +18,37 @@ const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3331;
 
 // Configure SMTP transporter for email sending
-// Auto-detect Docker host for SMTP connection
-const getDockerHost = () => {
-  // If explicitly set, use it
-  if (process.env.SMTP_HOST && process.env.SMTP_HOST !== 'localhost') {
-    return process.env.SMTP_HOST;
-  }
+// Use proper hostname for certificate validation
+const getSmtpConfig = () => {
+  // Use hostname from environment or default to mail.spectrum4.ca
+  const smtpHost = process.env.SMTP_HOST || 'mail.spectrum4.ca';
+  const smtpPort = parseInt(process.env.SMTP_PORT) || 587;
   
-  // Try common Docker host addresses
-  const dockerHosts = [
-    'host.docker.internal',  // Docker Desktop
-    '10.0.0.1',             // Your Docker bridge gateway
-    '172.17.0.1',           // Common Docker bridge
-    '172.18.0.1',           // Alternative Docker bridge
-    '38.102.125.145',       // Your VPS IP
-    'localhost'             // Fallback
-  ];
+  console.log(`[SMTP] Host: ${smtpHost}, Port: ${smtpPort}`);
   
-  // Return the first available or default to the bridge gateway
-  return process.env.NODE_ENV === 'production' ? '10.0.0.1' : 'localhost';
+  return {
+    host: smtpHost,
+    port: smtpPort,
+    secure: false, // true for 465, false for other ports like 587
+    auth: {
+      user: process.env.SMTP_USER || 'superbase',
+      pass: process.env.SMTP_PASS || 'n2hm13i'
+    },
+    tls: {
+      // Only reject unauthorized if using a proper hostname
+      rejectUnauthorized: smtpHost !== '10.0.0.1' && smtpHost !== 'localhost',
+      // Allow connecting to mail.spectrum4.ca from different IPs
+      servername: smtpHost === 'mail.spectrum4.ca' ? 'mail.spectrum4.ca' : undefined
+    },
+    // Connection timeout and retry settings
+    connectionTimeout: 60000, // 60 seconds
+    greetingTimeout: 30000,    // 30 seconds
+    socketTimeout: 60000       // 60 seconds
+  };
 };
 
-const smtpHost = getDockerHost();
-console.log(`[SMTP] Host: ${smtpHost}, Port: ${process.env.SMTP_PORT || 587}`);
-
-const transporter = nodemailer.createTransport({
-  host: smtpHost,
-  port: parseInt(process.env.SMTP_PORT) || 587,
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER || 'superbase',
-    pass: process.env.SMTP_PASS || 'n2hm13i'
-  },
-  tls: {
-    rejectUnauthorized: false // Allow self-signed certificates
-  }
-});
+const smtpConfig = getSmtpConfig();
+const transporter = nodemailer.createTransport(smtpConfig);
 
 // Verify SMTP connection on startup
 transporter.verify(function(error, success) {

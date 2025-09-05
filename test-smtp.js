@@ -9,17 +9,28 @@ const testSMTP = async () => {
   console.log('SMTP_USER:', process.env.SMTP_USER || 'not set');
   console.log('SMTP_PASS:', process.env.SMTP_PASS ? '***set***' : 'not set');
 
+  // Use proper hostname for certificate validation
+  const smtpHost = process.env.SMTP_HOST || 'mail.spectrum4.ca';
+  const smtpPort = parseInt(process.env.SMTP_PORT) || 587;
+  
   const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || '10.0.0.1',
-    port: parseInt(process.env.SMTP_PORT) || 587,
-    secure: false,
+    host: smtpHost,
+    port: smtpPort,
+    secure: false, // true for 465, false for other ports like 587
     auth: {
       user: process.env.SMTP_USER || 'superbase',
       pass: process.env.SMTP_PASS || 'n2hm13i'
     },
     tls: {
-      rejectUnauthorized: false
-    }
+      // Only reject unauthorized if using a proper hostname
+      rejectUnauthorized: smtpHost !== '10.0.0.1' && smtpHost !== 'localhost',
+      // Allow connecting to mail.spectrum4.ca from different IPs
+      servername: smtpHost === 'mail.spectrum4.ca' ? 'mail.spectrum4.ca' : undefined
+    },
+    // Connection timeout and retry settings
+    connectionTimeout: 60000, // 60 seconds
+    greetingTimeout: 30000,    // 30 seconds
+    socketTimeout: 60000       // 60 seconds
   });
 
   try {
