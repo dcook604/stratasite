@@ -20,6 +20,7 @@ import 'react-quill/dist/quill.snow.css';
 import { cleanupMarketplaceData, getCleanupPreview, formatCleanupStats, CleanupOptions } from '@/utils/databaseCleanup';
 import ChangePasswordDialog from '@/components/shared/ChangePasswordDialog';
 import { exportFormData } from '@/utils/csvExport';
+import { exportFormDataAsExcel } from '@/utils/excelExport';
 import FormManagement from '@/components/admin/FormManagement';
 
 const AdminDashboard = () => {
@@ -1369,10 +1370,36 @@ const AdminDashboard = () => {
               <TabsContent value="pet-registrations" className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Pet Registration Management</CardTitle>
-                    <CardDescription>
-                      Manage pet registrations and update approval statuses. Maximum 2 pets allowed per unit.
-                    </CardDescription>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle>Pet Registration Management</CardTitle>
+                        <CardDescription>
+                          Manage pet registrations and update approval statuses. Maximum 2 pets allowed per unit.
+                        </CardDescription>
+                      </div>
+                      {petRegistrations.length > 0 && (
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => exportFormData(petRegistrations, 'pet-registration')}
+                            className="flex items-center gap-2"
+                          >
+                            <Download className="h-4 w-4" />
+                            Export CSV
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => exportFormDataAsExcel(petRegistrations, 'pet-registration')}
+                            className="flex items-center gap-2"
+                          >
+                            <Download className="h-4 w-4" />
+                            Export Excel
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </CardHeader>
                   <CardContent>
                     {petRegistrations.length === 0 ? (
@@ -1600,14 +1627,24 @@ const AdminDashboard = () => {
                           <CardDescription>{emergencyContacts.length} submissions</CardDescription>
                         </CardHeader>
                         <CardContent>
-                          <Button 
-                            onClick={() => exportFormData(emergencyContacts, 'emergency-contact')}
-                            className="w-full"
-                            variant="outline"
-                          >
-                            <Download className="w-4 h-4 mr-2" />
-                            Export CSV
-                          </Button>
+                          <div className="space-y-2">
+                            <Button 
+                              onClick={() => exportFormData(emergencyContacts, 'emergency-contact')}
+                              className="w-full"
+                              variant="outline"
+                            >
+                              <Download className="w-4 h-4 mr-2" />
+                              Export CSV
+                            </Button>
+                            <Button 
+                              onClick={() => exportFormDataAsExcel(emergencyContacts, 'emergency-contact')}
+                              className="w-full"
+                              variant="outline"
+                            >
+                              <Download className="w-4 h-4 mr-2" />
+                              Export Excel
+                            </Button>
+                          </div>
                         </CardContent>
                       </Card>
 
@@ -1618,14 +1655,24 @@ const AdminDashboard = () => {
                           <CardDescription>{acInquiries.length} submissions</CardDescription>
                         </CardHeader>
                         <CardContent>
-                          <Button 
-                            onClick={() => exportFormData(acInquiries, 'ac-inquiry')}
-                            className="w-full"
-                            variant="outline"
-                          >
-                            <Download className="w-4 h-4 mr-2" />
-                            Export CSV
-                          </Button>
+                          <div className="space-y-2">
+                            <Button 
+                              onClick={() => exportFormData(acInquiries, 'ac-inquiry')}
+                              className="w-full"
+                              variant="outline"
+                            >
+                              <Download className="w-4 h-4 mr-2" />
+                              Export CSV
+                            </Button>
+                            <Button 
+                              onClick={() => exportFormDataAsExcel(acInquiries, 'ac-inquiry')}
+                              className="w-full"
+                              variant="outline"
+                            >
+                              <Download className="w-4 h-4 mr-2" />
+                              Export Excel
+                            </Button>
+                          </div>
                         </CardContent>
                       </Card>
 
@@ -1636,14 +1683,24 @@ const AdminDashboard = () => {
                           <CardDescription>{storageRentals.length} submissions</CardDescription>
                         </CardHeader>
                         <CardContent>
-                          <Button 
-                            onClick={() => exportFormData(storageRentals, 'storage-rental')}
-                            className="w-full"
-                            variant="outline"
-                          >
-                            <Download className="w-4 h-4 mr-2" />
-                            Export CSV
-                          </Button>
+                          <div className="space-y-2">
+                            <Button 
+                              onClick={() => exportFormData(storageRentals, 'storage-rental')}
+                              className="w-full"
+                              variant="outline"
+                            >
+                              <Download className="w-4 h-4 mr-2" />
+                              Export CSV
+                            </Button>
+                            <Button 
+                              onClick={() => exportFormDataAsExcel(storageRentals, 'storage-rental')}
+                              className="w-full"
+                              variant="outline"
+                            >
+                              <Download className="w-4 h-4 mr-2" />
+                              Export Excel
+                            </Button>
+                          </div>
                         </CardContent>
                       </Card>
 
@@ -1654,14 +1711,24 @@ const AdminDashboard = () => {
                           <CardDescription>{petRegistrations.length} submissions</CardDescription>
                         </CardHeader>
                         <CardContent>
-                          <Button 
-                            onClick={() => exportFormData(petRegistrations, 'pet-registration')}
-                            className="w-full"
-                            variant="outline"
-                          >
-                            <Download className="w-4 h-4 mr-2" />
-                            Export CSV
-                          </Button>
+                          <div className="space-y-2">
+                            <Button 
+                              onClick={() => exportFormData(petRegistrations, 'pet-registration')}
+                              className="w-full"
+                              variant="outline"
+                            >
+                              <Download className="w-4 h-4 mr-2" />
+                              Export CSV
+                            </Button>
+                            <Button 
+                              onClick={() => exportFormDataAsExcel(petRegistrations, 'pet-registration')}
+                              className="w-full"
+                              variant="outline"
+                            >
+                              <Download className="w-4 h-4 mr-2" />
+                              Export Excel
+                            </Button>
+                          </div>
                         </CardContent>
                       </Card>
 
@@ -1672,14 +1739,24 @@ const AdminDashboard = () => {
                           <CardDescription>{scooterRegistrations.length} submissions</CardDescription>
                         </CardHeader>
                         <CardContent>
-                          <Button 
-                            onClick={() => exportFormData(scooterRegistrations, 'scooter-registration')}
-                            className="w-full"
-                            variant="outline"
-                          >
-                            <Download className="w-4 h-4 mr-2" />
-                            Export CSV
-                          </Button>
+                          <div className="space-y-2">
+                            <Button 
+                              onClick={() => exportFormData(scooterRegistrations, 'scooter-registration')}
+                              className="w-full"
+                              variant="outline"
+                            >
+                              <Download className="w-4 h-4 mr-2" />
+                              Export CSV
+                            </Button>
+                            <Button 
+                              onClick={() => exportFormDataAsExcel(scooterRegistrations, 'scooter-registration')}
+                              className="w-full"
+                              variant="outline"
+                            >
+                              <Download className="w-4 h-4 mr-2" />
+                              Export Excel
+                            </Button>
+                          </div>
                         </CardContent>
                       </Card>
                     </div>
