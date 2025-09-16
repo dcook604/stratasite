@@ -74,10 +74,23 @@ const upload = multer({
   storage: storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB file size limit for documents
   fileFilter: (req, file, cb) => {
-    // Check if this is for image upload (marketplace) or document upload
-    const isImageUpload = req.path.includes('/image');
+    // Check if this is for image upload (marketplace or pet registration) or document upload
+    const isImageUpload = req.path.includes('/image') || 
+                         req.path.includes('/pet-registration') ||
+                         file.fieldname === 'photos' ||
+                         file.fieldname === 'image';
+    
+    // Debug logging to help troubleshoot
+    logger.debug('File upload validation', {
+      path: req.path,
+      fieldname: file.fieldname,
+      isImageUpload,
+      mimetype: file.mimetype,
+      originalname: file.originalname
+    });
     
     if (isImageUpload) {
+      // Image upload validation
       const allowedTypes = /jpeg|jpg|png|webp/;
       const mimetype = allowedTypes.test(file.mimetype);
       const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -87,7 +100,7 @@ const upload = multer({
       }
       cb(new Error('Error: Image upload only supports JPEG, JPG, PNG, and WebP filetypes'));
     } else {
-      // Document upload
+      // Document upload validation
       const allowedMimeTypes = [
         'application/pdf',
         'application/msword',
