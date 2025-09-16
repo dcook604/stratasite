@@ -2,46 +2,52 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files first for better Docker layer caching
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install dependencies
-RUN npm ci --legacy-peer-deps
+# Install ALL dependencies (including dev) for building
+RUN npm install --legacy-peer-deps
 
-# Copy source code
+# Copy all source files
 COPY . .
 
-# Generate Prisma client and build
-RUN npm run db:generate
-RUN npm run build
+# Generate Prisma client
+RUN npx prisma generate
+
+# Build the application (using npx for reliability)
+RUN npx vite build
 
 # Production stage
 FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Install sqlite3
+# Install system dependencies
 RUN apk add --no-cache sqlite
 
-# Copy built application and server
+# Copy package files for production install
+COPY package*.json ./
+
+# Install only production dependencies
+RUN npm ci --only=production --legacy-peer-deps
+
+# Copy built application and necessary files
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/prisma ./prisma/
 COPY --from=builder /app/scripts ./scripts/
 COPY --from=builder /app/server ./server/
-COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/server.js ./
 
-# Create data directory for SQLite and persistent uploads
-RUN mkdir -p /app/data/uploads/documents /app/data/uploads/marketplace /app/public/uploads/marketplace
+# Create data directories for persistence
+RUN mkdir -p /app/data/uploads/documents /app/data/uploads/marketplace /app/public/uploads
 
-# Set environment variables
+# Set production environment variables
 ENV NODE_ENV=production
 ENV DATABASE_URL="file:/app/data/database.db"
 
-# Expose port
+# Expose the application port
 EXPOSE 3331
 
-# Start command - push schema changes then start the server
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss && npm start"]
+# Start command with database setup
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node server.js"]
