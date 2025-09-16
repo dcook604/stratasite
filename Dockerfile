@@ -10,7 +10,7 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install ALL dependencies (including dev) for building
-RUN npm install --legacy-peer-deps
+RUN npm ci --legacy-peer-deps && npm cache clean --force
 
 # Copy all source files
 COPY . .
