@@ -46,6 +46,34 @@ export const isValidImageFile = (file: File): { valid: boolean; error?: string }
   return { valid: true };
 };
 
+// Document upload validation
+export const isValidDocumentFile = (file: File): { valid: boolean; error?: string } => {
+  const allowedTypes = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ];
+  const maxSize = 10 * 1024 * 1024; // 10MB
+  
+  if (!allowedTypes.includes(file.type)) {
+    return { valid: false, error: 'Only PDF and Word documents are allowed' };
+  }
+  
+  if (file.size > maxSize) {
+    return { valid: false, error: 'File size must be less than 10MB' };
+  }
+  
+  return { valid: true };
+};
+
+// Determine if upload should be treated as image based on context
+export const isImageUploadContext = (path: string, fieldname: string): boolean => {
+  return path.includes('/image') || 
+         path.includes('/pet-registration') ||
+         fieldname === 'photos' ||
+         fieldname === 'image';
+};
+
 // SQL injection prevention for search queries
 export const sanitizeSearchQuery = (query: string): string => {
   return query
