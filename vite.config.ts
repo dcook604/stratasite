@@ -47,7 +47,8 @@ export default defineConfig(({ mode }) => ({
   
   plugins: [
     react(),
-    mode === 'development' &&
+    // Only use componentTagger in development and when not in Docker
+    mode === 'development' && !process.env.DOCKER_BUILD &&
     componentTagger(),
   ].filter(Boolean),
   

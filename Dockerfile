@@ -2,6 +2,9 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Set environment variable to indicate Docker build
+ENV DOCKER_BUILD=true
+
 # Copy package files first for better Docker layer caching
 COPY package*.json ./
 COPY prisma ./prisma/
@@ -13,10 +16,10 @@ RUN npm install --legacy-peer-deps
 COPY . .
 
 # Generate Prisma client
-RUN npx prisma generate
+RUN npm run db:generate
 
-# Build the application (using npx for reliability)
-RUN npx vite build
+# Build the application using npm scripts (ensures proper module resolution)
+RUN npm run build
 
 # Production stage
 FROM node:20-alpine AS runner
