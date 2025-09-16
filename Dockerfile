@@ -5,13 +5,17 @@ WORKDIR /app
 # Set environment variable to indicate Docker build
 ENV DOCKER_BUILD=true
 
+# Add node_modules/.bin to PATH
+ENV PATH="/app/node_modules/.bin:${PATH}"
+
 # Copy package files first for better Docker layer caching
 COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install ALL dependencies (including dev) for building
 # Using npm install instead of ci to handle lock file updates
-RUN npm install --legacy-peer-deps && npm cache clean --force
+# Force install all dependencies including devDependencies
+RUN npm install --legacy-peer-deps --include=dev && npm cache clean --force
 
 # Copy all source files
 COPY . .
