@@ -70,48 +70,221 @@ if (!fs.existsSync(uploadDir)) {
 // Multer storage configuration
 const storage = multer.memoryStorage(); // Use memory storage to process with sharp
 
+/**
+ * UPLOAD MIDDLEWARE DOCUMENTATION
+ * 
+ * This file implements dedicated upload middlewares for different types of file uploads:
+ * 
+ * 1. petRegistrationUpload - For pet registration photos (JPEG, PNG, WebP up to 5MB, max 3 files)
+ * 2. documentUpload - For admin document uploads (PDF, Word docs up to 10MB, single file)
+ * 3. marketplaceImageUpload - For marketplace images (JPEG, PNG, WebP up to 5MB, single file)
+ * 4. upload - Generic fallback middleware (deprecated, use specific middlewares above)
+ * 
+ * Each middleware includes:
+ * - File type validation (MIME type + extension)
+ * - File size limits
+ * - File count limits
+ * - Detailed error logging
+ * - User-friendly error messages
+ * 
+ * Endpoints using these middlewares:
+ * - /api/pet-registration (petRegistrationUpload)
+ * - /api/documents (documentUpload)
+ * - /api/upload/image (marketplaceImageUpload)
+ * 
+ * All endpoints now include proper error handling that catches multer errors
+ * and returns meaningful error messages to the frontend.
+ */
+
+// Dedicated upload configuration for pet registration (images only)
+const petRegistrationUpload = multer({
+  storage: storage,
+  limits: { 
+    fileSize: 5 * 1024 * 1024, // 5MB limit for pet photos
+    files: 3 // Maximum 3 photos
+  },
+  fileFilter: (req, file, cb) => {
+    // Only allow image uploads for pet registration
+    const imageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const allowedExtensions = /\.(jpeg|jpg|png|webp)$/i;
+    
+    const validMimeType = imageTypes.includes(file.mimetype);
+    const validExtension = allowedExtensions.test(file.originalname);
+    
+    if (validMimeType && validExtension) {
+      return cb(null, true);
+    }
+    
+    logger.warn('Invalid image file rejected in pet registration', {
+      mimetype: file.mimetype,
+      originalname: file.originalname,
+      validMimeType,
+      validExtension
+    });
+    
+    return cb(new Error('Pet photos must be JPEG, PNG, or WebP images'));
+  }
+});
+
+// Dedicated upload configuration for documents (admin only)
+const documentUpload = multer({
+  storage: storage,
+  limits: { 
+    fileSize: 10 * 1024 * 1024, // 10MB limit for documents
+    files: 1 // Single document upload
+  },
+  fileFilter: (req, file, cb) => {
+    // Only allow PDF and Word documents
+    const documentTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    const allowedExtensions = /\.(pdf|doc|docx)$/i;
+    
+    const validMimeType = documentTypes.includes(file.mimetype);
+    const validExtension = allowedExtensions.test(file.originalname);
+    
+    if (validMimeType && validExtension) {
+      return cb(null, true);
+    }
+    
+    logger.warn('Invalid document file rejected', {
+      mimetype: file.mimetype,
+      originalname: file.originalname,
+      validMimeType,
+      validExtension
+    });
+    
+    return cb(new Error('Documents must be PDF or Word files'));
+  }
+});
+
+// Dedicated upload configuration for marketplace images
+const marketplaceImageUpload = multer({
+  storage: storage,
+  limits: { 
+    fileSize: 5 * 1024 * 1024, // 5MB limit for marketplace images
+    files: 1 // Single image upload
+  },
+  fileFilter: (req, file, cb) => {
+    // Only allow image uploads for marketplace
+    const imageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const allowedExtensions = /\.(jpeg|jpg|png|webp)$/i;
+    
+    const validMimeType = imageTypes.includes(file.mimetype);
+    const validExtension = allowedExtensions.test(file.originalname);
+    
+    if (validMimeType && validExtension) {
+      return cb(null, true);
+    }
+    
+    logger.warn('Invalid image file rejected in marketplace', {
+      mimetype: file.mimetype,
+      originalname: file.originalname,
+      validMimeType,
+      validExtension
+    });
+    
+    return cb(new Error('Marketplace images must be JPEG, PNG, or WebP files'));
+  }
+});
+
 const upload = multer({ 
   storage: storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB file size limit for documents
   fileFilter: (req, file, cb) => {
-    // Check if this is for image upload (marketplace or pet registration) or document upload
+    // Determine upload type based on endpoint and field name
     const isImageUpload = req.path.includes('/image') || 
                          req.path.includes('/pet-registration') ||
+                         req.path.includes('/marketplace') ||
                          file.fieldname === 'photos' ||
                          file.fieldname === 'image';
+    
+    const isDocumentUpload = req.path.includes('/document') ||
+                            file.fieldname === 'document' ||
+                            file.fieldname === 'documents';
     
     // Debug logging to help troubleshoot
     logger.debug('File upload validation', {
       path: req.path,
       fieldname: file.fieldname,
       isImageUpload,
+      isDocumentUpload,
       mimetype: file.mimetype,
       originalname: file.originalname
     });
     
     if (isImageUpload) {
-      // Image upload validation
-      const allowedTypes = /jpeg|jpg|png|webp/;
-      const mimetype = allowedTypes.test(file.mimetype);
-      const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+      // Image upload validation for marketplace and pet registration
+      const imageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      const allowedExtensions = /\.(jpeg|jpg|png|webp)$/i;
       
-      if (mimetype && extname) {
+      const validMimeType = imageTypes.includes(file.mimetype);
+      const validExtension = allowedExtensions.test(file.originalname);
+      
+      if (validMimeType && validExtension) {
         return cb(null, true);
       }
-      cb(new Error('Error: Image upload only supports JPEG, JPG, PNG, and WebP filetypes'));
-    } else {
+      
+      logger.warn('Invalid image file rejected', {
+        path: req.path,
+        fieldname: file.fieldname,
+        mimetype: file.mimetype,
+        originalname: file.originalname,
+        validMimeType,
+        validExtension
+      });
+      
+      return cb(new Error('Image upload only supports JPEG, PNG, and WebP filetypes'));
+    } 
+    
+    if (isDocumentUpload) {
       // Document upload validation
-      const allowedMimeTypes = [
+      const documentTypes = [
         'application/pdf',
         'application/msword',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
       ];
       
-      if (allowedMimeTypes.includes(file.mimetype)) {
+      if (documentTypes.includes(file.mimetype)) {
         return cb(null, true);
       }
-      cb(new Error('Error: Document upload only supports PDF and Word document filetypes'));
+      
+      logger.warn('Invalid document file rejected', {
+        path: req.path,
+        fieldname: file.fieldname,
+        mimetype: file.mimetype,
+        originalname: file.originalname
+      });
+      
+      return cb(new Error('Document upload only supports PDF and Word document filetypes'));
     }
+    
+    // If we can't determine the upload type, default based on mimetype
+    const imageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (imageTypes.includes(file.mimetype)) {
+      return cb(null, true);
+    }
+    
+    const documentTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    if (documentTypes.includes(file.mimetype)) {
+      return cb(null, true);
+    }
+    
+    // Reject unknown file types
+    logger.warn('Unknown file type rejected', {
+      path: req.path,
+      fieldname: file.fieldname,
+      mimetype: file.mimetype,
+      originalname: file.originalname
+    });
+    
+    return cb(new Error('Unsupported file type. Please upload images (JPEG, PNG, WebP) or documents (PDF, Word)'));
   }
 });
 
@@ -186,6 +359,52 @@ const errorHandler = (err, req, res, next) => {
   
   if (res.headersSent) {
     return next(err);
+  }
+  
+  // Handle multer errors that weren't caught by endpoint-specific handlers
+  if (err instanceof multer.MulterError) {
+    logger.error('Unhandled multer error', {
+      error: err.message,
+      code: err.code,
+      field: err.field,
+      path: req.path
+    });
+    
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ 
+        error: 'File size too large. Please check the file size limits.' 
+      });
+    }
+    if (err.code === 'LIMIT_FILE_COUNT') {
+      return res.status(400).json({ 
+        error: 'Too many files uploaded.' 
+      });
+    }
+    if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+      return res.status(400).json({ 
+        error: 'Unexpected file field. Please check your upload form.' 
+      });
+    }
+    
+    return res.status(400).json({ 
+      error: 'File upload error. Please try again.' 
+    });
+  }
+  
+  // Handle other file upload errors
+  if (err.message && (
+    err.message.includes('upload') || 
+    err.message.includes('file') ||
+    err.message.includes('image') ||
+    err.message.includes('document')
+  )) {
+    logger.error('Unhandled file upload error', {
+      error: err.message,
+      path: req.path
+    });
+    return res.status(400).json({ 
+      error: 'File upload error. Please check your files and try again.' 
+    });
   }
   
   res.status(500).json({ 
@@ -559,19 +778,44 @@ app.get('/api/documents/:id/download', async (req, res) => {
   }
 });
 
-app.post('/api/documents', upload.single('document'), async (req, res) => {
-  try {
-    const { title, description } = req.body;
-    
-    if (!req.file) {
-      return res.status(400).json({ error: 'No document file provided' });
+app.post('/api/documents', (req, res) => {
+  documentUpload.single('document')(req, res, async (err) => {
+    // Handle multer errors
+    if (err) {
+      logger.error('File upload error in document upload', {
+        error: err.message,
+        path: req.path,
+        file: req.file ? { name: req.file.originalname, type: req.file.mimetype } : null
+      });
+      
+      // Send user-friendly error message for document upload
+      if (err.message.includes('Documents must be')) {
+        return res.status(400).json({ error: err.message });
+      }
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ 
+          error: 'Document file size too large. Please ensure the document is under 10MB.' 
+        });
+      }
+      if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+        return res.status(400).json({ 
+          error: 'Unexpected file field. Please use the "document" field.' 
+        });
+      }
+      
+      // Generic error for other cases
+      return res.status(400).json({ 
+        error: 'Document upload error. Please check your file and try again.' 
+      });
     }
-    
-    // Validate file type
-    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    if (!allowedTypes.includes(req.file.mimetype)) {
-      return res.status(400).json({ error: 'Only PDF and Word documents are allowed' });
-    }
+
+    // Continue with normal processing if no upload errors
+    try {
+      const { title, description } = req.body;
+      
+      if (!req.file) {
+        return res.status(400).json({ error: 'No document file provided' });
+      }
     
     // Create documents directory if it doesn't exist (in persistent data directory)
     const documentsDir = path.join(__dirname, 'data', 'uploads', 'documents');
@@ -611,10 +855,11 @@ app.post('/api/documents', upload.single('document'), async (req, res) => {
     
     logger.info('Document uploaded', { id: document.id, title, fileName: req.file.originalname });
     res.json(document);
-  } catch (error) {
-    logger.error('Error uploading document', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+    } catch (error) {
+      logger.error('Error uploading document', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
 });
 
 app.put('/api/documents/:id', async (req, res) => {
@@ -1438,30 +1683,65 @@ app.get('/api/health', (req, res) => {
 });
 
 // --- Image Upload API Route ---
-app.post('/api/upload/image', upload.single('image'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ success: false, error: 'No image file provided.' });
-  }
+app.post('/api/upload/image', (req, res) => {
+  marketplaceImageUpload.single('image')(req, res, async (err) => {
+    // Handle multer errors
+    if (err) {
+      logger.error('File upload error in marketplace image upload', {
+        error: err.message,
+        path: req.path,
+        file: req.file ? { name: req.file.originalname, type: req.file.mimetype } : null
+      });
+      
+      // Send user-friendly error message for marketplace image upload
+      if (err.message.includes('Marketplace images must be')) {
+        return res.status(400).json({ success: false, error: err.message });
+      }
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Image file size too large. Please ensure the image is under 5MB.' 
+        });
+      }
+      if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Unexpected file field. Please use the "image" field.' 
+        });
+      }
+      
+      // Generic error for other cases
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Image upload error. Please check your file and try again.' 
+      });
+    }
 
-  try {
-    const filename = `marketplace-${Date.now()}-${Math.round(Math.random() * 1E9)}.webp`;
-    const filepath = path.join(uploadDir, filename);
+    // Continue with normal processing if no upload errors
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No image file provided.' });
+    }
 
-    // Process image with sharp
-    await sharp(req.file.buffer)
-      .resize({ width: 800, withoutEnlargement: true }) // Resize to max 800px width
-      .webp({ quality: 80 }) // Convert to WebP with 80% quality
-      .toFile(filepath);
+    try {
+      const filename = `marketplace-${Date.now()}-${Math.round(Math.random() * 1E9)}.webp`;
+      const filepath = path.join(uploadDir, filename);
 
-    const imageUrl = `/data/uploads/marketplace/${filename}`;
-    
-    logger.info('Image uploaded successfully', { imageUrl });
-    res.json({ success: true, imageUrl });
+      // Process image with sharp
+      await sharp(req.file.buffer)
+        .resize({ width: 800, withoutEnlargement: true }) // Resize to max 800px width
+        .webp({ quality: 80 }) // Convert to WebP with 80% quality
+        .toFile(filepath);
 
-  } catch (error) {
-    logger.error('Error processing image upload', error);
-    res.status(500).json({ success: false, error: 'Failed to process image.' });
-  }
+      const imageUrl = `/data/uploads/marketplace/${filename}`;
+      
+      logger.info('Image uploaded successfully', { imageUrl });
+      res.json({ success: true, imageUrl });
+
+    } catch (error) {
+      logger.error('Error processing image upload', error);
+      res.status(500).json({ success: false, error: 'Failed to process image.' });
+    }
+  });
 });
 
 // --- Event Request API Routes ---
@@ -2000,13 +2280,46 @@ app.post('/api/emergency-contact', async (req, res) => {
 });
 
 // Submit pet registration
-app.post('/api/pet-registration', upload.array('photos', 3), async (req, res) => {
-  try {
-    const {
-      ownerName, suiteNumber, phoneNumber, email, occupancyType,
-      petName, petAge, petHeight, petColor, petType, petBreed, petWeight,
-      distinguishingMarks, licenseNumber, turnstileToken
-    } = req.body;
+app.post('/api/pet-registration', (req, res) => {
+  petRegistrationUpload.array('photos', 3)(req, res, async (err) => {
+    // Handle multer errors
+    if (err) {
+      logger.error('File upload error in pet registration', {
+        error: err.message,
+        path: req.path,
+        files: req.files ? req.files.map(f => ({ name: f.originalname, type: f.mimetype })) : []
+      });
+      
+      // Send user-friendly error message for pet registration
+      if (err.message.includes('Pet photos must be')) {
+        return res.status(400).json({ 
+          error: err.message 
+        });
+      }
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ 
+          error: 'Photo file size too large. Please ensure each photo is under 5MB.' 
+        });
+      }
+      if (err.code === 'LIMIT_FILE_COUNT') {
+        return res.status(400).json({ 
+          error: 'Too many photos. You can upload a maximum of 3 photos.' 
+        });
+      }
+      
+      // Generic error for other cases
+      return res.status(400).json({ 
+        error: 'Photo upload error. Please check your image files and try again.' 
+      });
+    }
+
+    // Continue with normal processing if no upload errors
+    try {
+      const {
+        ownerName, suiteNumber, phoneNumber, email, occupancyType,
+        petName, petAge, petHeight, petColor, petType, petBreed, petWeight,
+        distinguishingMarks, licenseNumber, turnstileToken
+      } = req.body;
 
     // Verify Turnstile CAPTCHA
     const isTurnstileValid = await verifyTurnstile(turnstileToken);
@@ -2132,10 +2445,11 @@ app.post('/api/pet-registration', upload.array('photos', 3), async (req, res) =>
       registrationId
     });
 
-  } catch (error) {
-    logger.error('Error processing pet registration submission', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+    } catch (error) {
+      logger.error('Error processing pet registration submission', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
 });
 
 // Get all pet registrations (admin only)
