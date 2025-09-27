@@ -58,5 +58,8 @@ ENV DATABASE_URL="file:/app/data/database.db"
 # Expose the application port
 EXPOSE 3331
 
-# Start command with database setup using migrations
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run postdeploy && node server.js"]
+# Make startup script executable and use it
+RUN chmod +x /app/scripts/startup.sh
+
+# Start command using robust startup script
+CMD ["/app/scripts/startup.sh"]
