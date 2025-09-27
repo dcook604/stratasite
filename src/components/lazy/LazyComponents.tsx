@@ -62,6 +62,12 @@ export const FormK = lazy(() =>
   }))
 );
 
+export const TenantSignature = lazy(() => 
+  import('@/pages/TenantSignature').then(module => ({
+    default: module.default
+  }))
+);
+
 // Marketplace - rich feature set, can be lazy loaded
 export const Marketplace = lazy(() => 
   import('@/pages/information/Marketplace').then(module => ({

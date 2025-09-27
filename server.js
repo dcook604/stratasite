@@ -2604,10 +2604,12 @@ app.post('/api/form-k-submission', async (req, res) => {
       tenant1Name, tenant1HomePhone, tenant1OfficePhone, tenant1CellPhone, tenant1Email,
       tenant2Name, tenant2HomePhone, tenant2OfficePhone, tenant2CellPhone, tenant2Email,
       tenancyCommencingDay, tenancyCommencingDate, tenancyCommencingYear,
-      landlordName, landlordAddress, landlordSignature,
-      tenant1Signature, tenant2Signature,
+      landlordName, landlordAddress, landlordSignatureName, landlordSignatureDate,
+      tenantSigningMethod, tenant1SignatureName, tenant1SignatureDate,
+      tenant2SignatureName, tenant2SignatureDate,
       ownerMailingAddress, ownerHomePhone, ownerWorkPhone, ownerFax, ownerCellular, ownerEmail,
-      submissionDate, captchaToken
+      submissionDate, captchaToken,
+      requiresTenantSignatures, landlordSignatureCompleted, tenant1SignatureCompleted, tenant2SignatureCompleted
     } = req.body;
 
     // Verify Turnstile CAPTCHA
@@ -2623,9 +2625,35 @@ app.post('/api/form-k-submission', async (req, res) => {
       return res.status(400).json({ error: 'Required fields are missing' });
     }
 
-    // Validate required signatures
-    if (!landlordSignature || !tenant1Signature) {
-      return res.status(400).json({ error: 'Required signatures are missing' });
+    // Validate landlord signature
+    if (!landlordSignatureName) {
+      return res.status(400).json({ error: 'Landlord signature is required' });
+    }
+
+    // Validate tenant signatures based on method
+    if (tenantSigningMethod === 'present' && !tenant1SignatureName) {
+      return res.status(400).json({ error: 'Tenant signature is required when tenants are present' });
+    }
+
+    if (tenantSigningMethod === 'email' && !tenant1Email) {
+      return res.status(400).json({ error: 'Tenant email is required for email signature method' });
+    }
+
+    // Generate signature tokens for email method
+    let tenant1Token = null;
+    let tenant2Token = null;
+    let tenant1Expiry = null;
+    let tenant2Expiry = null;
+
+    if (tenantSigningMethod === 'email') {
+      const crypto = require('crypto');
+      tenant1Token = crypto.randomBytes(32).toString('hex');
+      tenant1Expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+      
+      if (tenant2Name && tenant2Email) {
+        tenant2Token = crypto.randomBytes(32).toString('hex');
+        tenant2Expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+      }
     }
 
     // Create Form K submission record
@@ -2652,9 +2680,21 @@ app.post('/api/form-k-submission', async (req, res) => {
         tenancyCommencingYear,
         landlordName,
         landlordAddress,
-        landlordSignature,
-        tenant1Signature,
-        tenant2Signature: tenant2Signature || null,
+        landlordSignatureName,
+        landlordSignatureDate,
+        tenantSigningMethod,
+        tenant1SignatureName: tenant1SignatureName || null,
+        tenant1SignatureDate: tenant1SignatureDate || null,
+        tenant2SignatureName: tenant2SignatureName || null,
+        tenant2SignatureDate: tenant2SignatureDate || null,
+        landlordSignatureCompleted: true,
+        tenant1SignatureCompleted: tenantSigningMethod === 'present' && !!tenant1SignatureName,
+        tenant2SignatureCompleted: tenantSigningMethod === 'present' && !!tenant2SignatureName,
+        requiresTenantSignatures: tenantSigningMethod === 'email',
+        tenant1SignatureToken: tenant1Token,
+        tenant2SignatureToken: tenant2Token,
+        tenant1TokenExpiry: tenant1Expiry,
+        tenant2TokenExpiry: tenant2Expiry,
         ownerMailingAddress,
         ownerHomePhone: ownerHomePhone || null,
         ownerWorkPhone: ownerWorkPhone || null,
@@ -2673,42 +2713,103 @@ app.post('/api/form-k-submission', async (req, res) => {
       strataPlan
     });
 
-    // Try to send email via dynamic service
-    try {
-      const emailData = {
-        strataPlan,
-        address,
-        unitNumber,
-        strataLotNumber,
-        tenant1Name,
-        tenant2Name: tenant2Name || 'N/A',
-        tenancyCommencingDay,
-        tenancyCommencingDate,
-        tenancyCommencingYear,
-        landlordName,
-        landlordAddress,
-        ownerMailingAddress,
-        submissionDate,
-        submissionId: formKSubmission.id
-      };
+    // Only send admin notification if form is complete (all signatures collected)
+    const isFormComplete = landlordSignatureCompleted && 
+                          tenant1SignatureCompleted && 
+                          (!tenant2Name || tenant2SignatureCompleted);
 
-      const { sendDynamicFormEmail } = require('./utils/dynamicEmailService');
-      await sendDynamicFormEmail('form-k', emailData);
-      
-      // Update email sent status
-      await prisma.formKSubmission.update({
-        where: { id: formKSubmission.id },
-        data: { emailSent: true }
-      });
+    if (isFormComplete) {
+      try {
+        const emailData = {
+          strataPlan,
+          address,
+          unitNumber,
+          strataLotNumber,
+          tenant1Name,
+          tenant2Name: tenant2Name || 'N/A',
+          tenancyCommencingDay,
+          tenancyCommencingDate,
+          tenancyCommencingYear,
+          landlordName,
+          landlordAddress,
+          ownerMailingAddress,
+          submissionDate,
+          submissionId: formKSubmission.id,
+          formStatus: 'COMPLETE'
+        };
 
-      logger.info('Form K notification email sent', { 
+        const { sendDynamicFormEmail } = require('./utils/dynamicEmailService');
+        await sendDynamicFormEmail('form-k', emailData);
+        
+        // Update email sent status
+        await prisma.formKSubmission.update({
+          where: { id: formKSubmission.id },
+          data: { emailSent: true }
+        });
+
+        logger.info('Form K completion notification email sent', { 
+          submissionId: formKSubmission.id,
+          unitNumber,
+          tenant1Name,
+          allSignaturesComplete: true
+        });
+      } catch (emailError) {
+        logger.error('Failed to send Form K completion notification email', emailError);
+        // Continue with success response even if email fails
+      }
+    } else {
+      logger.info('Form K submitted but pending tenant signatures', { 
         submissionId: formKSubmission.id,
         unitNumber,
-        tenant1Name 
+        tenant1Name,
+        requiresTenantSignatures: tenantSigningMethod === 'email'
       });
-    } catch (emailError) {
-      logger.error('Failed to send Form K notification email', emailError);
-      // Continue with success response even if email fails
+    }
+
+    // Send tenant signature request emails if needed
+    if (tenantSigningMethod === 'email') {
+      try {
+        const { sendTenantSignatureRequest } = require('./utils/tenantSignatureService');
+        
+        // Send to primary tenant
+        if (tenant1Email && tenant1Token) {
+          await sendTenantSignatureRequest({
+            tenantName: tenant1Name,
+            tenantEmail: tenant1Email,
+            submissionId: formKSubmission.id,
+            signatureToken: tenant1Token,
+            unitNumber,
+            landlordName,
+            tenantType: 'primary'
+          });
+          
+          logger.info('Tenant 1 signature request sent', { 
+            submissionId: formKSubmission.id,
+            tenantEmail: tenant1Email 
+          });
+        }
+        
+        // Send to second tenant if applicable
+        if (tenant2Name && tenant2Email && tenant2Token) {
+          await sendTenantSignatureRequest({
+            tenantName: tenant2Name,
+            tenantEmail: tenant2Email,
+            submissionId: formKSubmission.id,
+            signatureToken: tenant2Token,
+            unitNumber,
+            landlordName,
+            tenantType: 'secondary'
+          });
+          
+          logger.info('Tenant 2 signature request sent', { 
+            submissionId: formKSubmission.id,
+            tenantEmail: tenant2Email 
+          });
+        }
+      } catch (tenantEmailError) {
+        logger.error('Failed to send tenant signature request emails', tenantEmailError);
+        // Continue with success response even if tenant emails fail
+      }
     }
 
     // Send success response
@@ -2762,6 +2863,195 @@ app.get('/api/form-k-submissions/:id', async (req, res) => {
     res.json(formKSubmission);
   } catch (error) {
     logger.error('Error fetching Form K submission', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get tenant signature form data
+app.get('/api/tenant-signature/:submissionId/:token', async (req, res) => {
+  try {
+    const { submissionId, token } = req.params;
+
+    // Find the submission with the matching token
+    const submission = await prisma.formKSubmission.findFirst({
+      where: {
+        id: submissionId,
+        OR: [
+          { tenant1SignatureToken: token },
+          { tenant2SignatureToken: token }
+        ]
+      }
+    });
+
+    if (!submission) {
+      return res.status(404).json({ error: 'Invalid signature link or form not found' });
+    }
+
+    // Check if token has expired
+    const now = new Date();
+    const isTenant1 = submission.tenant1SignatureToken === token;
+    const isTenant2 = submission.tenant2SignatureToken === token;
+    
+    const tokenExpiry = isTenant1 ? submission.tenant1TokenExpiry : submission.tenant2TokenExpiry;
+    
+    if (!tokenExpiry || now > tokenExpiry) {
+      return res.status(404).json({ error: 'Signature link has expired' });
+    }
+
+    // Check if already signed
+    if ((isTenant1 && submission.tenant1SignatureCompleted) || 
+        (isTenant2 && submission.tenant2SignatureCompleted)) {
+      return res.status(410).json({ error: 'Form has already been signed' });
+    }
+
+    // Return submission data and tenant info
+    const tenantInfo = {
+      name: isTenant1 ? submission.tenant1Name : submission.tenant2Name,
+      email: isTenant1 ? submission.tenant1Email : submission.tenant2Email,
+      type: isTenant1 ? 'primary' : 'secondary'
+    };
+
+    res.json({
+      submission: {
+        id: submission.id,
+        strataPlan: submission.strataPlan,
+        address: submission.address,
+        unitNumber: submission.unitNumber,
+        landlordName: submission.landlordName,
+        tenancyCommencingDay: submission.tenancyCommencingDay,
+        tenancyCommencingDate: submission.tenancyCommencingDate,
+        tenancyCommencingYear: submission.tenancyCommencingYear
+      },
+      tenantInfo
+    });
+
+  } catch (error) {
+    logger.error('Error fetching tenant signature data', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Submit tenant signature
+app.post('/api/tenant-signature/:submissionId/:token', async (req, res) => {
+  try {
+    const { submissionId, token } = req.params;
+    const { signatureName, signatureDate, acknowledgment } = req.body;
+
+    // Validate required fields
+    if (!signatureName || !signatureDate || !acknowledgment) {
+      return res.status(400).json({ error: 'All signature fields are required' });
+    }
+
+    // Find the submission with the matching token
+    const submission = await prisma.formKSubmission.findFirst({
+      where: {
+        id: submissionId,
+        OR: [
+          { tenant1SignatureToken: token },
+          { tenant2SignatureToken: token }
+        ]
+      }
+    });
+
+    if (!submission) {
+      return res.status(404).json({ error: 'Invalid signature link or form not found' });
+    }
+
+    // Check if token has expired
+    const now = new Date();
+    const isTenant1 = submission.tenant1SignatureToken === token;
+    const isTenant2 = submission.tenant2SignatureToken === token;
+    
+    const tokenExpiry = isTenant1 ? submission.tenant1TokenExpiry : submission.tenant2TokenExpiry;
+    
+    if (!tokenExpiry || now > tokenExpiry) {
+      return res.status(404).json({ error: 'Signature link has expired' });
+    }
+
+    // Check if already signed
+    if ((isTenant1 && submission.tenant1SignatureCompleted) || 
+        (isTenant2 && submission.tenant2SignatureCompleted)) {
+      return res.status(410).json({ error: 'Form has already been signed' });
+    }
+
+    // Update the appropriate tenant signature
+    const updateData = {};
+    if (isTenant1) {
+      updateData.tenant1SignatureName = signatureName;
+      updateData.tenant1SignatureDate = signatureDate;
+      updateData.tenant1SignatureCompleted = true;
+      updateData.tenant1SignatureToken = null; // Invalidate token after use
+      updateData.tenant1TokenExpiry = null;
+    } else {
+      updateData.tenant2SignatureName = signatureName;
+      updateData.tenant2SignatureDate = signatureDate;
+      updateData.tenant2SignatureCompleted = true;
+      updateData.tenant2SignatureToken = null; // Invalidate token after use
+      updateData.tenant2TokenExpiry = null;
+    }
+
+    const updatedSubmission = await prisma.formKSubmission.update({
+      where: { id: submissionId },
+      data: updateData
+    });
+
+    logger.info('Tenant signature completed', {
+      submissionId,
+      tenantType: isTenant1 ? 'primary' : 'secondary',
+      tenantName: signatureName
+    });
+
+    // Check if form is now complete and send completion notification
+    const isNowComplete = updatedSubmission.landlordSignatureCompleted && 
+                         updatedSubmission.tenant1SignatureCompleted && 
+                         (!updatedSubmission.tenant2Name || updatedSubmission.tenant2SignatureCompleted);
+
+    if (isNowComplete && !updatedSubmission.emailSent) {
+      try {
+        const emailData = {
+          strataPlan: updatedSubmission.strataPlan,
+          address: updatedSubmission.address,
+          unitNumber: updatedSubmission.unitNumber,
+          strataLotNumber: updatedSubmission.strataLotNumber,
+          tenant1Name: updatedSubmission.tenant1Name,
+          tenant2Name: updatedSubmission.tenant2Name || 'N/A',
+          tenancyCommencingDay: updatedSubmission.tenancyCommencingDay,
+          tenancyCommencingDate: updatedSubmission.tenancyCommencingDate,
+          tenancyCommencingYear: updatedSubmission.tenancyCommencingYear,
+          landlordName: updatedSubmission.landlordName,
+          landlordAddress: updatedSubmission.landlordAddress,
+          ownerMailingAddress: updatedSubmission.ownerMailingAddress,
+          submissionDate: updatedSubmission.submissionDate,
+          submissionId: updatedSubmission.id,
+          formStatus: 'COMPLETE_ALL_SIGNATURES'
+        };
+
+        const { sendDynamicFormEmail } = require('./utils/dynamicEmailService');
+        await sendDynamicFormEmail('form-k', emailData);
+        
+        // Update email sent status
+        await prisma.formKSubmission.update({
+          where: { id: submissionId },
+          data: { emailSent: true }
+        });
+
+        logger.info('Form K completion notification sent after final signature', {
+          submissionId,
+          unitNumber: updatedSubmission.unitNumber
+        });
+      } catch (emailError) {
+        logger.error('Failed to send Form K completion notification', emailError);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Signature submitted successfully',
+      formComplete: isNowComplete
+    });
+
+  } catch (error) {
+    logger.error('Error processing tenant signature', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

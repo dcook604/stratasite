@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Form,
   FormControl,
@@ -22,8 +23,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { Turnstile } from '@marsidev/react-turnstile';
-import { FileText, AlertTriangle, Loader2, UserCheck } from 'lucide-react';
-import SignatureCanvas from 'react-signature-canvas';
+import { FileText, AlertTriangle, Loader2, UserCheck, Mail, Clock } from 'lucide-react';
 
 const formSchema = z.object({
   // Property Information
@@ -65,6 +65,21 @@ const formSchema = z.object({
   ownerCellular: z.string().optional(),
   ownerEmail: z.string().email({ message: 'Please enter a valid email address' }).optional().or(z.literal('')),
   
+  // Signature Information (Typed Signatures)
+  landlordSignatureName: z.string().min(2, { message: 'Landlord/agent signature name is required' }),
+  landlordSignatureDate: z.string().min(1, { message: 'Signature date is required' }),
+  
+  // Tenant Signing Options
+  tenantSigningMethod: z.enum(['present', 'email'], { 
+    required_error: 'Please select how tenants will sign' 
+  }),
+  
+  // If tenants are present
+  tenant1SignatureName: z.string().optional(),
+  tenant1SignatureDate: z.string().optional(),
+  tenant2SignatureName: z.string().optional(),
+  tenant2SignatureDate: z.string().optional(),
+  
   // Form metadata
   submissionDate: z.string().min(1, { message: 'Date is required' }),
 });
@@ -75,13 +90,9 @@ const FormK = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // Signature canvas refs
-  const landlordSigRef = useRef<SignatureCanvas>(null);
-  const tenant1SigRef = useRef<SignatureCanvas>(null);
-  const tenant2SigRef = useRef<SignatureCanvas>(null);
-  
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [captchaToken, setCaptchaToken] = React.useState<string | null>(null);
+  const [tenantSigningMethod, setTenantSigningMethod] = React.useState<'present' | 'email'>('present');
 
   const form = useForm<FormKValues>({
     resolver: zodResolver(formSchema),
@@ -113,15 +124,26 @@ const FormK = () => {
       ownerFax: '',
       ownerCellular: '',
       ownerEmail: '',
+      landlordSignatureName: '',
+      landlordSignatureDate: new Date().toLocaleDateString(),
+      tenantSigningMethod: 'present',
+      tenant1SignatureName: '',
+      tenant1SignatureDate: '',
+      tenant2SignatureName: '',
+      tenant2SignatureDate: '',
       submissionDate: new Date().toLocaleDateString(),
     }
   });
 
-  const clearSignature = useCallback((canvasRef: React.RefObject<SignatureCanvas>) => {
-    if (canvasRef.current) {
-      canvasRef.current.clear();
-    }
-  }, []);
+  // Watch tenant signing method to conditionally validate signatures
+  React.useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'tenantSigningMethod') {
+        setTenantSigningMethod(value.tenantSigningMethod as 'present' | 'email');
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   const onSubmit = async (data: FormKValues) => {
     if (!captchaToken) {
@@ -133,26 +155,36 @@ const FormK = () => {
       return;
     }
 
-    // Check if required signatures are present
-    const landlordSignature = landlordSigRef.current?.toDataURL();
-    const tenant1Signature = tenant1SigRef.current?.toDataURL();
-    
-    if (!landlordSignature || landlordSigRef.current?.isEmpty()) {
+    // Validate landlord signature
+    if (!data.landlordSignatureName.trim()) {
       toast({
         title: "Landlord/Agent Signature Required",
-        description: "Please provide the landlord/agent signature.",
+        description: "Please provide the landlord/agent signature name.",
         variant: "destructive",
       });
       return;
     }
 
-    if (!tenant1Signature || tenant1SigRef.current?.isEmpty()) {
-      toast({
-        title: "Tenant Signature Required",
-        description: "Please provide at least one tenant signature.",
-        variant: "destructive",
-      });
-      return;
+    // Validate tenant signatures based on method
+    if (data.tenantSigningMethod === 'present') {
+      if (!data.tenant1SignatureName?.trim()) {
+        toast({
+          title: "Tenant Signature Required",
+          description: "Please provide at least one tenant signature name.",
+          variant: "destructive",
+        });
+        return;
+      }
+    } else {
+      // For email method, validate tenant email addresses
+      if (!data.tenant1Email?.trim()) {
+        toast({
+          title: "Tenant Email Required",
+          description: "Please provide tenant email address for signature request.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -160,10 +192,12 @@ const FormK = () => {
     try {
       const formData = {
         ...data,
-        landlordSignature,
-        tenant1Signature,
-        tenant2Signature: tenant2SigRef.current?.isEmpty() ? null : tenant2SigRef.current?.toDataURL(),
         captchaToken,
+        // Include signature status for tracking
+        requiresTenantSignatures: data.tenantSigningMethod === 'email',
+        landlordSignatureCompleted: true,
+        tenant1SignatureCompleted: data.tenantSigningMethod === 'present',
+        tenant2SignatureCompleted: data.tenantSigningMethod === 'present' && !!data.tenant2SignatureName?.trim(),
       };
 
       const response = await fetch('/api/form-k-submission', {
@@ -178,16 +212,17 @@ const FormK = () => {
         throw new Error('Failed to submit form');
       }
 
+      const successMessage = data.tenantSigningMethod === 'email' 
+        ? "Form K submitted successfully! Signature request emails will be sent to the tenants."
+        : "Form K submitted successfully! All signatures have been collected.";
+      
       toast({
         title: "Form K Submitted Successfully",
-        description: "Your Notice of Tenant's Responsibilities has been submitted and will be processed.",
+        description: successMessage,
       });
 
-      // Clear form and signatures
+      // Clear form
       form.reset();
-      clearSignature(landlordSigRef);
-      clearSignature(tenant1SigRef);
-      clearSignature(tenant2SigRef);
       setCaptchaToken(null);
 
       // Navigate to a confirmation page or home
@@ -690,98 +725,239 @@ const FormK = () => {
               </CardContent>
             </Card>
 
-            {/* Signatures */}
+            {/* Tenant Signing Method */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <UserCheck className="h-5 w-5" />
-                  Electronic Signatures
+                  Tenant Signing Process
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <Alert>
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>
-                    Please sign in the boxes below using your mouse, finger, or stylus. All signatures are required.
+                    Choose how tenants will provide their signatures. If tenants are not present, you can send them signature requests via email.
                   </AlertDescription>
                 </Alert>
 
-                {/* Landlord/Agent Signature */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Signature of Landlord, or Agent of Landlord *</label>
-                  <div className="border-2 border-gray-300 rounded-lg p-2 bg-white">
-                    <SignatureCanvas
-                      ref={landlordSigRef}
-                      canvasProps={{
-                        width: 400,
-                        height: 150,
-                        className: 'signature-canvas w-full',
-                        style: { border: '1px solid #e5e7eb', borderRadius: '4px' }
-                      }}
-                      backgroundColor="rgb(255,255,255)"
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => clearSignature(landlordSigRef)}
-                  >
-                    Clear Signature
-                  </Button>
-                </div>
+                <FormField
+                  control={form.control}
+                  name="tenantSigningMethod"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>How will tenants sign this form?</FormLabel>
+                      <FormControl>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              checked={field.value === 'present'} 
+                              onCheckedChange={() => field.onChange('present')}
+                            />
+                            <div className="grid gap-1.5 leading-none">
+                              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                Tenants are present now
+                              </label>
+                              <p className="text-xs text-muted-foreground">
+                                Tenants will type their names as signatures right now
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              checked={field.value === 'email'} 
+                              onCheckedChange={() => field.onChange('email')}
+                            />
+                            <div className="grid gap-1.5 leading-none">
+                              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                <Mail className="h-4 w-4 inline mr-1" />
+                                Send signature requests via email
+                              </label>
+                              <p className="text-xs text-muted-foreground">
+                                Tenants will receive secure links to sign separately
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
 
-                {/* Tenant 1 Signature */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Signature of Tenant *</label>
-                  <div className="border-2 border-gray-300 rounded-lg p-2 bg-white">
-                    <SignatureCanvas
-                      ref={tenant1SigRef}
-                      canvasProps={{
-                        width: 400,
-                        height: 150,
-                        className: 'signature-canvas w-full',
-                        style: { border: '1px solid #e5e7eb', borderRadius: '4px' }
-                      }}
-                      backgroundColor="rgb(255,255,255)"
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => clearSignature(tenant1SigRef)}
-                  >
-                    Clear Signature
-                  </Button>
+            {/* Landlord/Agent Signature */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Landlord/Agent Signature</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="landlordSignatureName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Signature Name *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Type your full name as signature" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          By typing your name, you are electronically signing this document
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="landlordSignatureDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Signature Date</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Date of signature" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
+              </CardContent>
+            </Card>
 
-                {/* Tenant 2 Signature (Optional) */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Signature of Second Tenant (if applicable)</label>
-                  <div className="border-2 border-gray-300 rounded-lg p-2 bg-white">
-                    <SignatureCanvas
-                      ref={tenant2SigRef}
-                      canvasProps={{
-                        width: 400,
-                        height: 150,
-                        className: 'signature-canvas w-full',
-                        style: { border: '1px solid #e5e7eb', borderRadius: '4px' }
-                      }}
-                      backgroundColor="rgb(255,255,255)"
-                    />
+            {/* Tenant Signatures - Conditional based on method */}
+            {tenantSigningMethod === 'present' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tenant Signatures</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <Alert>
+                    <UserCheck className="h-4 w-4" />
+                    <AlertDescription>
+                      Tenants should type their full names in the fields below to provide their electronic signatures.
+                    </AlertDescription>
+                  </Alert>
+
+                  {/* Tenant 1 Signature */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Primary Tenant Signature</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="tenant1SignatureName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Signature Name *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Type your full name as signature" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              By typing your name, you are electronically signing this document
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="tenant1SignatureDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Signature Date</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Date of signature" {...field} value={field.value || new Date().toLocaleDateString()} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => clearSignature(tenant2SigRef)}
-                  >
-                    Clear Signature
-                  </Button>
-                </div>
 
-                {/* Submission Date */}
+                  {/* Tenant 2 Signature (Optional) */}
+                  {form.watch('tenant2Name') && (
+                    <div className="space-y-4 border-t pt-6">
+                      <h3 className="text-lg font-semibold">Second Tenant Signature (Optional)</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="tenant2SignatureName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Signature Name</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Type your full name as signature" {...field} />
+                              </FormControl>
+                              <FormDescription>
+                                By typing your name, you are electronically signing this document
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="tenant2SignatureDate"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Signature Date</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Date of signature" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Email Method Information */}
+            {tenantSigningMethod === 'email' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Mail className="h-5 w-5" />
+                    Tenant Email Signature Process
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Alert>
+                    <Clock className="h-4 w-4" />
+                    <AlertDescription>
+                      <strong>Email Signature Process:</strong> After you submit this form, secure signature request emails will be automatically sent to the tenant(s). They will receive unique links to sign the form electronically. You will be notified once all signatures are collected.
+                    </AlertDescription>
+                  </Alert>
+                  
+                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <h4 className="font-semibold text-blue-900 mb-2">What happens next:</h4>
+                    <ol className="list-decimal list-inside space-y-1 text-sm text-blue-800">
+                      <li>Form is submitted with landlord/agent signature</li>
+                      <li>Secure signature links are emailed to tenants</li>
+                      <li>Tenants click links to sign electronically</li>
+                      <li>You receive notification when all signatures are complete</li>
+                      <li>Completed form is sent to property management</li>
+                    </ol>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Form Submission Date */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Form Completion</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <FormField
                   control={form.control}
                   name="submissionDate"

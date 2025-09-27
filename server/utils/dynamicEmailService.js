@@ -267,16 +267,20 @@ const emailTemplates = {
     const {
       strataPlan, address, unitNumber, strataLotNumber, 
       tenant1Name, tenant2Name, tenancyCommencingDay, tenancyCommencingDate, tenancyCommencingYear,
-      landlordName, landlordAddress, ownerMailingAddress, submissionDate, submissionId
+      landlordName, landlordAddress, ownerMailingAddress, submissionDate, submissionId, formStatus
     } = data;
 
     const tenant2Display = tenant2Name && tenant2Name !== 'N/A' ? tenant2Name : 'Not provided';
     const tenancyDate = `${tenancyCommencingDay} day of ${tenancyCommencingDate}, ${tenancyCommencingYear}`;
+    const isComplete = formStatus && (formStatus === 'COMPLETE' || formStatus === 'COMPLETE_ALL_SIGNATURES');
 
     return {
-      subject: `New Form K Submission - Unit ${unitNumber} - Notice of Tenant's Responsibilities`,
+      subject: `✅ COMPLETE Form K - Unit ${unitNumber} - ALL SIGNATURES COLLECTED`,
       html: `
-        <h2>Form K - Notice of Tenant's Responsibilities Submitted</h2>
+        <div style="background-color: #d4edda; border: 2px solid #c3e6cb; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+          <h2 style="color: #155724; margin-top: 0;">✅ Form K COMPLETED - Notice of Tenant's Responsibilities</h2>
+          <p style="color: #155724; font-size: 16px; margin-bottom: 0;"><strong>ALL SIGNATURES HAVE BEEN COLLECTED - READY FOR PROCESSING</strong></p>
+        </div>
         
         <h3>Property Information:</h3>
         <ul>
@@ -315,22 +319,30 @@ const emailTemplates = {
           </ol>
         </div>
         
-        <h3>Electronic Signatures Captured:</h3>
-        <ul>
-          <li>✓ Landlord/Agent signature captured</li>
-          <li>✓ Primary tenant signature captured</li>
-          <li>${tenant2Name && tenant2Name !== 'N/A' ? '✓ Second tenant signature captured' : 'Second tenant signature not required'}</li>
-        </ul>
+        <div style="background-color: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; margin: 20px 0; border-radius: 5px;">
+          <h3 style="color: #0c5460; margin-top: 0;">✅ All Electronic Signatures Completed</h3>
+          <ul style="color: #0c5460;">
+            <li><strong>✓ Landlord/Agent signature:</strong> COMPLETED</li>
+            <li><strong>✓ Primary tenant signature:</strong> COMPLETED</li>
+            ${tenant2Name && tenant2Name !== 'N/A' ? '<li><strong>✓ Second tenant signature:</strong> COMPLETED</li>' : '<li><strong>-</strong> Second tenant signature not required</li>'}
+          </ul>
+          <p style="color: #0c5460; margin-bottom: 0;"><strong>This form is now legally complete and ready for processing.</strong></p>
+        </div>
         
         <hr>
         <p><strong>Form Completion Date:</strong> ${submissionDate}</p>
-        <p><strong>Original to be remitted to:</strong><br/>
-        ASCENT REAL ESTATE MANAGEMENT CORPORATION<br/>
-        2176 WILLINGDON AVENUE<br/>
-        BURNABY, BC V5C 5Z9<br/>
-        FAX: (604) 431-1818</p>
+        <p><strong>Status:</strong> <span style="background-color: #28a745; color: white; padding: 4px 8px; border-radius: 3px; font-weight: bold;">COMPLETE</span></p>
         
-        <p><em>Submitted electronically on ${new Date().toLocaleString()}</em></p>
+        <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; margin: 20px 0; border-radius: 5px;">
+          <h4 style="color: #856404; margin-top: 0;">Next Steps:</h4>
+          <p style="color: #856404; margin-bottom: 0;">Please process this completed Form K and remit the original to:<br/>
+          <strong>ASCENT REAL ESTATE MANAGEMENT CORPORATION</strong><br/>
+          2176 WILLINGDON AVENUE<br/>
+          BURNABY, BC V5C 5Z9<br/>
+          FAX: (604) 431-1818</p>
+        </div>
+        
+        <p><em>Form completed electronically on ${new Date().toLocaleString()}</em></p>
       `
     };
   }

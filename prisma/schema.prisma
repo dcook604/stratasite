@@ -378,11 +378,29 @@ model FormKSubmission {
   // Landlord/Agent Information
   landlordName          String   @map("landlord_name")
   landlordAddress       String   @map("landlord_address")
-  landlordSignature     String?  @map("landlord_signature") // Base64 encoded signature
+  landlordSignatureName String   @map("landlord_signature_name") // Typed signature
+  landlordSignatureDate String   @map("landlord_signature_date")
   
-  // Tenant Signatures
-  tenant1Signature      String?  @map("tenant1_signature") // Base64 encoded signature
-  tenant2Signature      String?  @map("tenant2_signature") // Base64 encoded signature
+  // Tenant Signing Information
+  tenantSigningMethod   String   @map("tenant_signing_method") // 'present' or 'email'
+  
+  // Tenant Signatures (when present)
+  tenant1SignatureName  String?  @map("tenant1_signature_name")
+  tenant1SignatureDate String?  @map("tenant1_signature_date")
+  tenant2SignatureName String?  @map("tenant2_signature_name")
+  tenant2SignatureDate String?  @map("tenant2_signature_date")
+  
+  // Signature Status Tracking
+  landlordSignatureCompleted Boolean @default(false) @map("landlord_signature_completed")
+  tenant1SignatureCompleted  Boolean @default(false) @map("tenant1_signature_completed")
+  tenant2SignatureCompleted  Boolean @default(false) @map("tenant2_signature_completed")
+  requiresTenantSignatures    Boolean @default(false) @map("requires_tenant_signatures")
+  
+  // Signature tokens for email workflow
+  tenant1SignatureToken String? @map("tenant1_signature_token")
+  tenant2SignatureToken String? @map("tenant2_signature_token")
+  tenant1TokenExpiry    DateTime? @map("tenant1_token_expiry")
+  tenant2TokenExpiry    DateTime? @map("tenant2_token_expiry")
   
   // Owner Information
   ownerMailingAddress   String   @map("owner_mailing_address")
