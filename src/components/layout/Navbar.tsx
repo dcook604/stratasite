@@ -46,7 +46,7 @@ export const Navbar = () => {
     { name: 'AC Inquiry', path: '/ac-inquiry' },
     { name: 'Storage Rental', path: '/storage-rental' },
     { name: 'Pet Registration', path: '/pet-registration' },
-    { name: 'Form K - Notice of Tenant\'s Responsibilities', path: '/form-k' },
+        { name: 'Form K', path: '/form-k' },
   ];
 
   const mainNavItems = [
