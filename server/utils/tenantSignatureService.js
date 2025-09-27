@@ -1,5 +1,5 @@
-const nodemailer = require('nodemailer');
-const { PrismaClient } = require('@prisma/client');
+import nodemailer from 'nodemailer';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -166,7 +166,7 @@ const generateTenantSignatureEmail = ({
   `;
 };
 
-module.exports = {
+export {
   sendTenantSignatureRequest,
   generateTenantSignatureEmail
 };

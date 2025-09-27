@@ -9,6 +9,7 @@ import sharp from 'sharp';
 import fs from 'fs';
 import cookieParser from 'cookie-parser';
 import nodemailer from 'nodemailer';
+import crypto from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1575,8 +1576,6 @@ app.post('/api/admin/cleanup', async (req, res) => {
 
         // Delete associated images from filesystem
         if (deleteOrphanedImages && imagesToDelete.length > 0) {
-          const fs = require('fs').promises;
-          const path = require('path');
           
           for (const imageUrl of imagesToDelete) {
             try {
@@ -1596,8 +1595,6 @@ app.post('/api/admin/cleanup', async (req, res) => {
     // Handle orphaned images cleanup
     if (deleteOrphanedImages && !dryRun) {
       try {
-        const fs = require('fs').promises;
-        const path = require('path');
         
         const uploadsDir = path.join(process.cwd(), 'data', 'uploads', 'marketplace');
         if (!fs.existsSync(uploadsDir)) {
@@ -2646,7 +2643,6 @@ app.post('/api/form-k-submission', async (req, res) => {
     let tenant2Expiry = null;
 
     if (tenantSigningMethod === 'email') {
-      const crypto = require('crypto');
       tenant1Token = crypto.randomBytes(32).toString('hex');
       tenant1Expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
       
@@ -2738,7 +2734,7 @@ app.post('/api/form-k-submission', async (req, res) => {
           formStatus: 'COMPLETE'
         };
 
-        const { sendDynamicFormEmail } = require('./utils/dynamicEmailService');
+        const { sendDynamicFormEmail } = await import('./utils/dynamicEmailService.js');
         await sendDynamicFormEmail('form-k', emailData);
         
         // Update email sent status
@@ -2769,7 +2765,7 @@ app.post('/api/form-k-submission', async (req, res) => {
     // Send tenant signature request emails if needed
     if (tenantSigningMethod === 'email') {
       try {
-        const { sendTenantSignatureRequest } = require('./utils/tenantSignatureService');
+        const { sendTenantSignatureRequest } = await import('./utils/tenantSignatureService.js');
         
         // Send to primary tenant
         if (tenant1Email && tenant1Token) {
@@ -3026,7 +3022,7 @@ app.post('/api/tenant-signature/:submissionId/:token', async (req, res) => {
           formStatus: 'COMPLETE_ALL_SIGNATURES'
         };
 
-        const { sendDynamicFormEmail } = require('./utils/dynamicEmailService');
+        const { sendDynamicFormEmail } = await import('./utils/dynamicEmailService.js');
         await sendDynamicFormEmail('form-k', emailData);
         
         // Update email sent status
