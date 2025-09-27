@@ -77,7 +77,6 @@ run_migrations() {
   case $(check_migration_status; echo $?) in
     0)
       echo "✅ All migrations already applied"
-      return 0
       ;;
     1)
       echo "🔧 Resolving failed migrations first..."
@@ -91,11 +90,20 @@ run_migrations() {
   # Now try to apply migrations
   if npx prisma migrate deploy; then
     echo "✅ Migrations completed successfully"
-    return 0
   else
     echo "❌ Migration deployment failed"
     # Try to resolve any new failures
     resolve_failed_migrations
+    return 1
+  fi
+  
+  # Always generate Prisma client after migrations
+  echo "🔄 Generating Prisma client..."
+  if npx prisma generate; then
+    echo "✅ Prisma client generated successfully"
+    return 0
+  else
+    echo "❌ Prisma client generation failed"
     return 1
   fi
 }
@@ -105,9 +113,18 @@ push_schema() {
   echo "🔄 Pushing schema to database..."
   if npx prisma db push; then
     echo "✅ Schema push completed successfully"
-    return 0
   else
     echo "❌ Schema push failed"
+    return 1
+  fi
+  
+  # Always generate Prisma client after schema push
+  echo "🔄 Generating Prisma client..."
+  if npx prisma generate; then
+    echo "✅ Prisma client generated successfully"
+    return 0
+  else
+    echo "❌ Prisma client generation failed"
     return 1
   fi
 }
