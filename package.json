@@ -14,6 +14,8 @@
     "db:seed": "node scripts/seed.js",
     "db:studio": "prisma studio",
     "setup:forms": "node scripts/setup-form-management.js",
+    "validate:migration": "node scripts/validate-migration.js",
+    "predeploy": "npm run validate:migration",
     "postdeploy": "node scripts/coolify-post-deploy.js",
     "start": "node server.js"
   },
