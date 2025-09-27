@@ -4,19 +4,24 @@ import { generateFormKPdf } from './formKPdfGenerator.js';
 
 const prisma = new PrismaClient();
 
-// Create transporter (reuse existing configuration)
+// Create transporter (fully environment-based)
 const createTransporter = () => {
-  // Use proper hostname for certificate validation (same as server.js)
-  const smtpHost = process.env.SMTP_HOST || 'mail.spectrum4.ca';
-  const smtpPort = parseInt(process.env.SMTP_PORT) || 587;
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpPort = parseInt(process.env.SMTP_PORT);
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+  
+  if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
+    throw new Error('Missing required SMTP environment variables in dynamic email service.');
+  }
   
   return nodemailer.createTransport({
     host: smtpHost,
     port: smtpPort,
     secure: false, // true for 465, false for other ports like 587
     auth: {
-      user: process.env.SMTP_USER || 'superbase',
-      pass: process.env.SMTP_PASS || 'superbase'
+      user: smtpUser,
+      pass: smtpPass
     },
     tls: {
       // Only reject unauthorized if using a proper hostname
