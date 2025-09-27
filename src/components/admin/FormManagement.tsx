@@ -73,6 +73,7 @@ const FormManagement = () => {
     { formName: 'storage-rental', displayName: 'Storage Rental Interest', description: 'Interest form for storage rental inquiries', path: '/storage-rental' },
     { formName: 'emergency-contact', displayName: 'Emergency Contact Information', description: 'Emergency contact information form for residents', path: '/emergency-contact' },
     { formName: 'pet-registration', displayName: 'Pet Registration', description: 'Pet registration form for residents', path: '/pet-registration' },
+    { formName: 'form-k', displayName: 'Form K - Notice of Tenant\'s Responsibilities', description: 'Strata Property Act Form K for tenant notification', path: '/form-k' },
     { formName: 'contact', displayName: 'Contact Form', description: 'General contact form for inquiries', path: '/contact' },
     { formName: 'marketplace', displayName: 'Marketplace Post', description: 'Marketplace item posting form', path: '/marketplace' },
     { formName: 'event-request', displayName: 'Event Request', description: 'Request form for community events', path: '/calendar' }

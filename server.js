@@ -2596,6 +2596,176 @@ app.get('/api/storage-rentals', async (req, res) => {
   }
 });
 
+// Submit Form K - Notice of Tenant's Responsibilities
+app.post('/api/form-k-submission', async (req, res) => {
+  try {
+    const {
+      strataPlan, address, unitNumber, strataLotNumber, lockerNumber, parkingStallNumbers,
+      tenant1Name, tenant1HomePhone, tenant1OfficePhone, tenant1CellPhone, tenant1Email,
+      tenant2Name, tenant2HomePhone, tenant2OfficePhone, tenant2CellPhone, tenant2Email,
+      tenancyCommencingDay, tenancyCommencingDate, tenancyCommencingYear,
+      landlordName, landlordAddress, landlordSignature,
+      tenant1Signature, tenant2Signature,
+      ownerMailingAddress, ownerHomePhone, ownerWorkPhone, ownerFax, ownerCellular, ownerEmail,
+      submissionDate, captchaToken
+    } = req.body;
+
+    // Verify Turnstile CAPTCHA
+    const isTurnstileValid = await verifyTurnstile(captchaToken);
+    if (!isTurnstileValid) {
+      return res.status(400).json({ error: 'Invalid CAPTCHA. Please try again.' });
+    }
+
+    // Validate required fields
+    if (!strataPlan || !address || !unitNumber || !strataLotNumber || !tenant1Name || 
+        !tenancyCommencingDay || !tenancyCommencingDate || !tenancyCommencingYear ||
+        !landlordName || !landlordAddress || !ownerMailingAddress || !submissionDate) {
+      return res.status(400).json({ error: 'Required fields are missing' });
+    }
+
+    // Validate required signatures
+    if (!landlordSignature || !tenant1Signature) {
+      return res.status(400).json({ error: 'Required signatures are missing' });
+    }
+
+    // Create Form K submission record
+    const formKSubmission = await prisma.formKSubmission.create({
+      data: {
+        strataPlan,
+        address,
+        unitNumber,
+        strataLotNumber,
+        lockerNumber: lockerNumber || null,
+        parkingStallNumbers: parkingStallNumbers || null,
+        tenant1Name,
+        tenant1HomePhone: tenant1HomePhone || null,
+        tenant1OfficePhone: tenant1OfficePhone || null,
+        tenant1CellPhone: tenant1CellPhone || null,
+        tenant1Email: tenant1Email || null,
+        tenant2Name: tenant2Name || null,
+        tenant2HomePhone: tenant2HomePhone || null,
+        tenant2OfficePhone: tenant2OfficePhone || null,
+        tenant2CellPhone: tenant2CellPhone || null,
+        tenant2Email: tenant2Email || null,
+        tenancyCommencingDay,
+        tenancyCommencingDate,
+        tenancyCommencingYear,
+        landlordName,
+        landlordAddress,
+        landlordSignature,
+        tenant1Signature,
+        tenant2Signature: tenant2Signature || null,
+        ownerMailingAddress,
+        ownerHomePhone: ownerHomePhone || null,
+        ownerWorkPhone: ownerWorkPhone || null,
+        ownerFax: ownerFax || null,
+        ownerCellular: ownerCellular || null,
+        ownerEmail: ownerEmail || null,
+        submissionDate,
+        isSubmitted: true
+      }
+    });
+
+    logger.info('Form K submission created', { 
+      id: formKSubmission.id,
+      unitNumber,
+      tenant1Name,
+      strataPlan
+    });
+
+    // Try to send email via dynamic service
+    try {
+      const emailData = {
+        strataPlan,
+        address,
+        unitNumber,
+        strataLotNumber,
+        tenant1Name,
+        tenant2Name: tenant2Name || 'N/A',
+        tenancyCommencingDay,
+        tenancyCommencingDate,
+        tenancyCommencingYear,
+        landlordName,
+        landlordAddress,
+        ownerMailingAddress,
+        submissionDate,
+        submissionId: formKSubmission.id
+      };
+
+      const { sendDynamicFormEmail } = require('./utils/dynamicEmailService');
+      await sendDynamicFormEmail('form-k', emailData);
+      
+      // Update email sent status
+      await prisma.formKSubmission.update({
+        where: { id: formKSubmission.id },
+        data: { emailSent: true }
+      });
+
+      logger.info('Form K notification email sent', { 
+        submissionId: formKSubmission.id,
+        unitNumber,
+        tenant1Name 
+      });
+    } catch (emailError) {
+      logger.error('Failed to send Form K notification email', emailError);
+      // Continue with success response even if email fails
+    }
+
+    // Send success response
+    res.status(201).json({
+      success: true,
+      message: 'Form K submitted successfully',
+      submissionId: formKSubmission.id
+    });
+
+  } catch (error) {
+    logger.error('Error processing Form K submission', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get all Form K submissions (admin only)
+app.get('/api/form-k-submissions', async (req, res) => {
+  try {
+    const formKSubmissions = await prisma.formKSubmission.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Remove signature data from the list view for performance
+    const submissionsWithoutSignatures = formKSubmissions.map(submission => ({
+      ...submission,
+      landlordSignature: submission.landlordSignature ? '[Signature Present]' : null,
+      tenant1Signature: submission.tenant1Signature ? '[Signature Present]' : null,
+      tenant2Signature: submission.tenant2Signature ? '[Signature Present]' : null
+    }));
+
+    res.json(submissionsWithoutSignatures);
+  } catch (error) {
+    logger.error('Error fetching Form K submissions', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get single Form K submission with signatures (admin only)
+app.get('/api/form-k-submissions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const formKSubmission = await prisma.formKSubmission.findUnique({
+      where: { id }
+    });
+
+    if (!formKSubmission) {
+      return res.status(404).json({ error: 'Form K submission not found' });
+    }
+
+    res.json(formKSubmission);
+  } catch (error) {
+    logger.error('Error fetching Form K submission', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // --- Form Configuration API Routes ---
 // Get all form configurations
 app.get('/api/form-configurations', async (req, res) => {

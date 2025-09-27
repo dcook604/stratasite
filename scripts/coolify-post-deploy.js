@@ -83,6 +83,23 @@ const formConfigurations = [
       { email: 'jennifer.danczak@spectrum4.ca', name: 'Jennifer Danczak', isPrimary: false, isActive: true },
       { email: 'hercules@spectrum4.ca', name: 'Hercules', isPrimary: false, isActive: true }
     ]
+  },
+  {
+    formName: 'form-k',
+    displayName: 'Form K - Notice of Tenant\'s Responsibilities',
+    description: 'Strata Property Act Form K for tenant notification',
+    isActive: true,
+    emailConfig: {
+      subject: 'New Form K Submission - Unit {{unitNumber}} - Notice of Tenant\'s Responsibilities',
+      fromName: 'Spectrum 4 Form K',
+      template: 'form-k'
+    },
+    recipients: [
+      { email: 'dcook@spectrum4.ca', name: 'David Cook', isPrimary: true, isActive: true },
+      { email: 'abrajlovic@ascentpm.com', name: 'Ascent PM', isPrimary: false, isActive: true },
+      { email: 'jennifer.danczak@spectrum4.ca', name: 'Jennifer Danczak', isPrimary: false, isActive: true },
+      { email: 'hercules@spectrum4.ca', name: 'Hercules', isPrimary: false, isActive: true }
+    ]
   }
 ];
 
