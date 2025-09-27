@@ -2734,7 +2734,7 @@ app.post('/api/form-k-submission', async (req, res) => {
           formStatus: 'COMPLETE'
         };
 
-        const { sendDynamicFormEmail } = await import('./utils/dynamicEmailService.js');
+        const { sendDynamicFormEmail } = await import('./server/utils/dynamicEmailService.js');
         await sendDynamicFormEmail('form-k', emailData);
         
         // Update email sent status
@@ -2765,7 +2765,7 @@ app.post('/api/form-k-submission', async (req, res) => {
     // Send tenant signature request emails if needed
     if (tenantSigningMethod === 'email') {
       try {
-        const { sendTenantSignatureRequest } = await import('./utils/tenantSignatureService.js');
+        const { sendTenantSignatureRequest } = await import('./server/utils/tenantSignatureService.js');
         
         // Send to primary tenant
         if (tenant1Email && tenant1Token) {
@@ -3022,7 +3022,7 @@ app.post('/api/tenant-signature/:submissionId/:token', async (req, res) => {
           formStatus: 'COMPLETE_ALL_SIGNATURES'
         };
 
-        const { sendDynamicFormEmail } = await import('./utils/dynamicEmailService.js');
+        const { sendDynamicFormEmail } = await import('./server/utils/dynamicEmailService.js');
         await sendDynamicFormEmail('form-k', emailData);
         
         // Update email sent status
