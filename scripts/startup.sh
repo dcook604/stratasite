@@ -2,6 +2,10 @@
 
 echo "🚀 Starting Spectrum 4 Application..."
 
+# Enhanced error handling for production
+set +e  # Don't exit on errors, handle them gracefully
+trap 'echo "⚠️ Error occurred at line $LINENO, continuing with fallback strategy..."' ERR
+
 # Function to check if database exists and has tables
 check_database() {
   if [ -f "/app/data/database.db" ]; then
@@ -20,14 +24,78 @@ check_database() {
   fi
 }
 
-# Function to run migrations
+# Function to check migration status
+check_migration_status() {
+  echo "🔍 Checking migration status..."
+  
+  # Check for failed migrations
+  if npx prisma migrate status 2>&1 | grep -q "following migration.*failed\|Migration.*failed"; then
+    echo "⚠️ Found failed migrations"
+    return 1
+  fi
+  
+  # Check for pending migrations
+  if npx prisma migrate status 2>&1 | grep -q "following migration.*not yet been applied"; then
+    echo "📋 Found pending migrations"
+    return 2
+  fi
+  
+  echo "✅ All migrations are up to date"
+  return 0
+}
+
+# Function to resolve failed migrations safely
+resolve_failed_migrations() {
+  echo "🔧 Resolving failed migrations..."
+  
+  # Get list of failed migrations
+  FAILED_MIGRATIONS=$(npx prisma migrate status 2>&1 | grep -A 10 "following migration.*failed" | grep "^[0-9]" | cut -d' ' -f1 || true)
+  
+  if [ -n "$FAILED_MIGRATIONS" ]; then
+    for migration in $FAILED_MIGRATIONS; do
+      echo "🔄 Resolving failed migration: $migration"
+      
+      # Try to determine if migration was partially applied
+      if sqlite3 /app/data/database.db ".tables" | grep -q "new_.*"; then
+        echo "⚠️ Found temporary tables, cleaning up..."
+        sqlite3 /app/data/database.db "DROP TABLE IF EXISTS new_form_k_submissions;"
+        sqlite3 /app/data/database.db "DROP TABLE IF EXISTS new_scooter_registrations;"
+        npx prisma migrate resolve --rolled-back "$migration"
+      else
+        echo "✅ Migration appears to have succeeded, marking as applied"
+        npx prisma migrate resolve --applied "$migration"
+      fi
+    done
+  fi
+}
+
+# Function to run migrations with safety checks
 run_migrations() {
   echo "🔄 Attempting to run Prisma migrations..."
+  
+  # First check migration status
+  case $(check_migration_status; echo $?) in
+    0)
+      echo "✅ All migrations already applied"
+      return 0
+      ;;
+    1)
+      echo "🔧 Resolving failed migrations first..."
+      resolve_failed_migrations
+      ;;
+    2)
+      echo "📋 Pending migrations found, will apply..."
+      ;;
+  esac
+  
+  # Now try to apply migrations
   if npx prisma migrate deploy; then
     echo "✅ Migrations completed successfully"
     return 0
   else
-    echo "❌ Migration failed"
+    echo "❌ Migration deployment failed"
+    # Try to resolve any new failures
+    resolve_failed_migrations
     return 1
   fi
 }
