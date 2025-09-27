@@ -52,7 +52,7 @@ export const healthChecks = {
   // SMTP server connectivity check
   smtp: async () => {
     try {
-      const transporter = nodemailer.createTransporter({
+      const transporter = nodemailer.createTransport({
         host: config.smtp.host,
         port: config.smtp.port,
         secure: config.smtp.secure,

@@ -9,17 +9,23 @@ const testSMTP = async () => {
   console.log('SMTP_USER:', process.env.SMTP_USER || 'not set');
   console.log('SMTP_PASS:', process.env.SMTP_PASS ? '***set***' : 'not set');
 
-  // Use proper hostname for certificate validation
-  const smtpHost = process.env.SMTP_HOST || 'mail.spectrum4.ca';
-  const smtpPort = parseInt(process.env.SMTP_PORT) || 587;
+  // Use environment variables only
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpPort = parseInt(process.env.SMTP_PORT);
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+  
+  if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
+    throw new Error('Missing required SMTP environment variables for test');
+  }
   
   const transporter = nodemailer.createTransport({
     host: smtpHost,
     port: smtpPort,
     secure: false, // true for 465, false for other ports like 587
     auth: {
-      user: process.env.SMTP_USER || 'superbase',
-      pass: process.env.SMTP_PASS || 'n2hm13i'
+      user: smtpUser,
+      pass: smtpPass
     },
     tls: {
       // Only reject unauthorized if using a proper hostname
@@ -42,7 +48,7 @@ const testSMTP = async () => {
     // Send test email
     console.log('\nSending test email...');
     const mailOptions = {
-      from: `"Spectrum 4 Test" <${process.env.SMTP_USER || 'superbase'}@spectrum4.ca>`,
+      from: `"Spectrum 4 Test" <${smtpUser}@spectrum4.ca>`,
       to: 'dcook@spectrum4.ca',
       subject: 'SMTP Test - Emergency Contact and Pet Registration Forms',
       html: `
@@ -54,9 +60,9 @@ const testSMTP = async () => {
         </ul>
         <p><strong>SMTP Settings:</strong></p>
         <ul>
-          <li>Host: ${process.env.SMTP_HOST || '10.0.0.1'}</li>
-          <li>Port: ${process.env.SMTP_PORT || '587'}</li>
-          <li>User: ${process.env.SMTP_USER || 'superbase'}</li>
+          <li>Host: ${smtpHost}</li>
+          <li>Port: ${smtpPort}</li>
+          <li>User: ${smtpUser}</li>
         </ul>
         <p><em>Test sent on ${new Date().toLocaleString()}</em></p>
       `

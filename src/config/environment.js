@@ -37,12 +37,12 @@ export const database = {
   connectionTimeout: parseInt(process.env.DB_CONNECTION_TIMEOUT) || 60000,
 };
 
-// SMTP configuration
+// SMTP configuration (fully environment-based)
 export const smtp = {
-  host: process.env.SMTP_HOST || 'mail.spectrum4.ca',
-  port: parseInt(process.env.SMTP_PORT) || 587,
-  user: process.env.SMTP_USER || 'superbase',
-  pass: process.env.SMTP_PASS || 'superbase',
+  host: process.env.SMTP_HOST,
+  port: parseInt(process.env.SMTP_PORT),
+  user: process.env.SMTP_USER,
+  pass: process.env.SMTP_PASS,
   secure: process.env.SMTP_SECURE === 'true' || false,
 };
 
