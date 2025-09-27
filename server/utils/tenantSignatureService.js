@@ -57,10 +57,19 @@ const sendTenantSignatureRequest = async ({
     });
     
     const mailOptions = {
-      from: `"Spectrum 4 Forms" <${process.env.SMTP_USER}@spectrum4.ca>`,
+      from: `"Spectrum 4 Strata Council" <noreply@spectrum4.ca>`,
+      replyTo: `"Spectrum 4 Management" <info@spectrum4.ca>`,
       to: tenantEmail,
-      subject: `ACTION REQUIRED: Sign Form K - Notice of Tenant's Responsibilities (Unit ${unitNumber})`,
-      html: emailContent
+      subject: `Form K Signature Required - Unit ${unitNumber} - Spectrum 4 Strata`,
+      html: emailContent,
+      headers: {
+        'X-Priority': '1',
+        'X-MSMail-Priority': 'High',
+        'Importance': 'high',
+        'List-Unsubscribe': '<mailto:info@spectrum4.ca>',
+        'X-Mailer': 'Spectrum 4 Strata Forms System',
+        'Organization': 'Spectrum 4 Strata Corporation'
+      }
     };
     
     const info = await transporter.sendMail(mailOptions);
@@ -119,17 +128,18 @@ const generateTenantSignatureEmail = ({
     <body>
       <div class="container">
         <div class="header">
-          <h1 style="margin: 0; color: #007bff;">Form K Signature Request</h1>
-          <p style="margin: 10px 0 0 0; font-size: 16px;">Notice of Tenant's Responsibilities - Unit ${unitNumber}</p>
+          <h1 style="margin: 0; color: #007bff;">Spectrum 4 Strata Corporation</h1>
+          <p style="margin: 10px 0 0 0; font-size: 16px;">Form K - Notice of Tenant's Responsibilities</p>
+          <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">Unit ${unitNumber}</p>
         </div>
         
         <div class="content">
           <p>Dear ${tenantName},</p>
           
-          <p>Your landlord/agent, <strong>${landlordName}</strong>, has submitted Form K (Notice of Tenant's Responsibilities) for Unit ${unitNumber} at Spectrum 4 Strata.</p>
+          <p>This is an official notification from Spectrum 4 Strata Corporation. Your landlord/agent, <strong>${landlordName}</strong>, has submitted Form K (Notice of Tenant's Responsibilities) for Unit ${unitNumber}.</p>
           
           <div class="important">
-            <strong>⚠️ ACTION REQUIRED:</strong> You must electronically sign this legal document to acknowledge your responsibilities as a tenant under the Strata Property Act.
+            <strong>Signature Required:</strong> As required by the Strata Property Act (Section 146), you must electronically sign this legal document to acknowledge your responsibilities as a tenant.
           </div>
           
           <p><strong>To complete your signature:</strong></p>
@@ -142,9 +152,13 @@ const generateTenantSignatureEmail = ({
           
           <div style="text-align: center; margin: 30px 0;">
             <a href="${signatureUrl}" class="signature-button">
-              🖊️ SIGN FORM K NOW
+              Complete Electronic Signature
             </a>
           </div>
+          
+          <p style="text-align: center; font-size: 12px; color: #666; margin-top: 10px;">
+            Secure Link - Valid for 7 days
+          </p>
           
           <div class="legal-text">
             <h3>Important Information About Form K:</h3>
@@ -156,12 +170,13 @@ const generateTenantSignatureEmail = ({
             </ul>
           </div>
           
-          <p><strong>Security Notice:</strong> This signature link is unique to you and expires in 7 days. Do not share this link with others.</p>
+          <p><strong>Security Notice:</strong> This signature link is unique to you and expires in 7 days. Please do not share this link with others.</p>
           
-          <p>If you have any questions about this form or your tenant responsibilities, please contact your landlord/agent or the property management company.</p>
+          <p>If you have questions about this form or your tenant responsibilities, please contact your landlord/agent or the property management company.</p>
           
-          <p>Best regards,<br/>
-          Spectrum 4 Strata Council</p>
+          <p>Sincerely,<br/>
+          <strong>Spectrum 4 Strata Council</strong><br/>
+          <em>Official Strata Corporation Communication</em></p>
         </div>
         
         <div class="footer">
