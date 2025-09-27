@@ -26,6 +26,7 @@ import {
   ACInquiry,
   StorageRental,
   FormK,
+  TenantSignature,
   Marketplace,
   Documents,
   WelcomePackage,
@@ -120,6 +121,12 @@ const App = () => (
                 <Route path="/form-k" element={
                   <Suspense fallback={<LazyLoadingFallback />}>
                     <FormK />
+                  </Suspense>
+                } />
+                {/* Tenant signature page */}
+                <Route path="/tenant-signature/:submissionId/:token" element={
+                  <Suspense fallback={<LazyLoadingFallback />}>
+                    <TenantSignature />
                   </Suspense>
                 } />
                 {/* Form Acknowledgment page */}
