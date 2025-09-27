@@ -344,3 +344,61 @@ model FormEmailRecipient {
   
   @@map("form_email_recipients")
 }
+
+model FormKSubmission {
+  id                    String   @id @default(cuid())
+  
+  // Property Information
+  strataPlan            String   @map("strata_plan")
+  address               String
+  unitNumber            String   @map("unit_number")
+  strataLotNumber       String   @map("strata_lot_number")
+  lockerNumber          String?  @map("locker_number")
+  parkingStallNumbers   String?  @map("parking_stall_numbers")
+  
+  // Tenant 1 Information
+  tenant1Name           String   @map("tenant1_name")
+  tenant1HomePhone     String?  @map("tenant1_home_phone")
+  tenant1OfficePhone   String?  @map("tenant1_office_phone")
+  tenant1CellPhone     String?  @map("tenant1_cell_phone")
+  tenant1Email         String?  @map("tenant1_email")
+  
+  // Tenant 2 Information (Optional)
+  tenant2Name           String?  @map("tenant2_name")
+  tenant2HomePhone     String?  @map("tenant2_home_phone")
+  tenant2OfficePhone   String?  @map("tenant2_office_phone")
+  tenant2CellPhone     String?  @map("tenant2_cell_phone")
+  tenant2Email         String?  @map("tenant2_email")
+  
+  // Tenancy Information
+  tenancyCommencingDay  String   @map("tenancy_commencing_day")
+  tenancyCommencingDate String   @map("tenancy_commencing_date")
+  tenancyCommencingYear String   @map("tenancy_commencing_year")
+  
+  // Landlord/Agent Information
+  landlordName          String   @map("landlord_name")
+  landlordAddress       String   @map("landlord_address")
+  landlordSignature     String?  @map("landlord_signature") // Base64 encoded signature
+  
+  // Tenant Signatures
+  tenant1Signature      String?  @map("tenant1_signature") // Base64 encoded signature
+  tenant2Signature      String?  @map("tenant2_signature") // Base64 encoded signature
+  
+  // Owner Information
+  ownerMailingAddress   String   @map("owner_mailing_address")
+  ownerHomePhone       String?  @map("owner_home_phone")
+  ownerWorkPhone       String?  @map("owner_work_phone")
+  ownerFax             String?  @map("owner_fax")
+  ownerCellular        String?  @map("owner_cellular")
+  ownerEmail           String?  @map("owner_email")
+  
+  // Form metadata
+  submissionDate        String   @map("submission_date")
+  isSubmitted          Boolean  @default(false) @map("is_submitted")
+  emailSent            Boolean  @default(false) @map("email_sent")
+  
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+  
+  @@map("form_k_submissions")
+}

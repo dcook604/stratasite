@@ -56,6 +56,12 @@ export const StorageRental = lazy(() =>
   }))
 );
 
+export const FormK = lazy(() => 
+  import('@/pages/information/FormK').then(module => ({
+    default: module.default
+  }))
+);
+
 // Marketplace - rich feature set, can be lazy loaded
 export const Marketplace = lazy(() => 
   import('@/pages/information/Marketplace').then(module => ({
@@ -103,6 +109,7 @@ export const preloadFormComponents = () => {
   EmergencyContact.preload?.();
   ACInquiry.preload?.();
   StorageRental.preload?.();
+  FormK.preload?.();
 };
 
 export const preloadContentComponents = () => {

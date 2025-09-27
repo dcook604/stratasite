@@ -25,6 +25,7 @@ import {
   EmergencyContact,
   ACInquiry,
   StorageRental,
+  FormK,
   Marketplace,
   Documents,
   WelcomePackage,
@@ -113,6 +114,12 @@ const App = () => (
                 <Route path="/pet-registration" element={
                   <Suspense fallback={<LazyLoadingFallback />}>
                     <PetRegistration />
+                  </Suspense>
+                } />
+                {/* Form K page */}
+                <Route path="/form-k" element={
+                  <Suspense fallback={<LazyLoadingFallback />}>
+                    <FormK />
                   </Suspense>
                 } />
                 {/* Form Acknowledgment page */}

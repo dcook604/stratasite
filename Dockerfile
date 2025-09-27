@@ -58,5 +58,5 @@ ENV DATABASE_URL="file:/app/data/database.db"
 # Expose the application port
 EXPOSE 3331
 
-# Start command with database setup
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node server.js"]
+# Start command with database setup using migrations
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run postdeploy && node server.js"]

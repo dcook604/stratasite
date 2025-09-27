@@ -261,6 +261,78 @@ const emailTemplates = {
         <p><em>Submitted on ${new Date().toLocaleString()}</em></p>
       `
     };
+  },
+
+  'form-k': (data) => {
+    const {
+      strataPlan, address, unitNumber, strataLotNumber, 
+      tenant1Name, tenant2Name, tenancyCommencingDay, tenancyCommencingDate, tenancyCommencingYear,
+      landlordName, landlordAddress, ownerMailingAddress, submissionDate, submissionId
+    } = data;
+
+    const tenant2Display = tenant2Name && tenant2Name !== 'N/A' ? tenant2Name : 'Not provided';
+    const tenancyDate = `${tenancyCommencingDay} day of ${tenancyCommencingDate}, ${tenancyCommencingYear}`;
+
+    return {
+      subject: `New Form K Submission - Unit ${unitNumber} - Notice of Tenant's Responsibilities`,
+      html: `
+        <h2>Form K - Notice of Tenant's Responsibilities Submitted</h2>
+        
+        <h3>Property Information:</h3>
+        <ul>
+          <li><strong>Submission ID:</strong> ${submissionId}</li>
+          <li><strong>Strata Plan:</strong> ${strataPlan}</li>
+          <li><strong>Address:</strong> ${address}</li>
+          <li><strong>Unit Number:</strong> ${unitNumber}</li>
+          <li><strong>Strata Lot #:</strong> ${strataLotNumber}</li>
+        </ul>
+        
+        <h3>Tenant Information:</h3>
+        <ul>
+          <li><strong>Primary Tenant:</strong> ${tenant1Name}</li>
+          <li><strong>Second Tenant:</strong> ${tenant2Display}</li>
+          <li><strong>Tenancy Commencing:</strong> ${tenancyDate}</li>
+        </ul>
+        
+        <h3>Landlord/Agent Information:</h3>
+        <ul>
+          <li><strong>Name:</strong> ${landlordName}</li>
+          <li><strong>Address:</strong> ${landlordAddress}</li>
+        </ul>
+        
+        <h3>Owner Information:</h3>
+        <ul>
+          <li><strong>Mailing Address:</strong> ${ownerMailingAddress}</li>
+        </ul>
+        
+        <div style="background-color: #f3f4f6; padding: 15px; margin: 20px 0; border-radius: 5px;">
+          <h3 style="margin-top: 0;">Important Legal Notice</h3>
+          <p>This Form K submission constitutes official notice that tenant(s) have been informed of their responsibilities under the Strata Property Act, including:</p>
+          <ol>
+            <li>Compliance with current strata bylaws and rules</li>
+            <li>Compliance with any future bylaw changes</li>
+            <li>Responsibility for violations by tenants, occupants, or visitors</li>
+          </ol>
+        </div>
+        
+        <h3>Electronic Signatures Captured:</h3>
+        <ul>
+          <li>✓ Landlord/Agent signature captured</li>
+          <li>✓ Primary tenant signature captured</li>
+          <li>${tenant2Name && tenant2Name !== 'N/A' ? '✓ Second tenant signature captured' : 'Second tenant signature not required'}</li>
+        </ul>
+        
+        <hr>
+        <p><strong>Form Completion Date:</strong> ${submissionDate}</p>
+        <p><strong>Original to be remitted to:</strong><br/>
+        ASCENT REAL ESTATE MANAGEMENT CORPORATION<br/>
+        2176 WILLINGDON AVENUE<br/>
+        BURNABY, BC V5C 5Z9<br/>
+        FAX: (604) 431-1818</p>
+        
+        <p><em>Submitted electronically on ${new Date().toLocaleString()}</em></p>
+      `
+    };
   }
 };
 
