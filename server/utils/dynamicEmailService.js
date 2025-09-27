@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { PrismaClient } from '@prisma/client';
+import { generateFormKPdf } from './formKPdfGenerator.js';
 
 const prisma = new PrismaClient();
 
@@ -333,6 +334,12 @@ const emailTemplates = {
         <p><strong>Form Completion Date:</strong> ${submissionDate}</p>
         <p><strong>Status:</strong> <span style="background-color: #28a745; color: white; padding: 4px 8px; border-radius: 3px; font-weight: bold;">COMPLETE</span></p>
         
+        <div style="background-color: #d4edda; border: 1px solid #c3e6cb; padding: 15px; margin: 20px 0; border-radius: 5px;">
+          <h4 style="color: #155724; margin-top: 0;">📎 PDF Attachment Included</h4>
+          <p style="color: #155724; margin-bottom: 10px;"><strong>A completed Form K PDF is attached to this email with all signatures.</strong></p>
+          <p style="color: #155724; margin-bottom: 0;">This PDF contains all collected data and signatures in the official Form K format, ready for processing and remittance.</p>
+        </div>
+        
         <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; margin: 20px 0; border-radius: 5px;">
           <h4 style="color: #856404; margin-top: 0;">Next Steps:</h4>
           <p style="color: #856404; margin-bottom: 0;">Please process this completed Form K and remit the original to:<br/>
@@ -402,6 +409,25 @@ const sendDynamicFormEmail = async (formName, formData) => {
       html: emailContent.html
     };
 
+    // Generate and attach PDF for Form K completions
+    if (formName === 'form-k' && (formData.formStatus === 'COMPLETE' || formData.formStatus === 'COMPLETE_ALL_SIGNATURES')) {
+      try {
+        console.log('Generating Form K PDF for completion notification...');
+        const pdfBuffer = await generateFormKPdf(formData);
+        
+        mailOptions.attachments = [{
+          filename: `Form_K_Unit_${formData.unitNumber}_${formData.submissionId}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf'
+        }];
+        
+        console.log('Form K PDF generated and attached successfully');
+      } catch (pdfError) {
+        console.error('Error generating Form K PDF:', pdfError);
+        // Continue without PDF attachment if generation fails
+      }
+    }
+
     // Send email
     const info = await transporter.sendMail(mailOptions);
     
@@ -414,7 +440,8 @@ const sendDynamicFormEmail = async (formName, formData) => {
     return { 
       success: true, 
       messageId: info.messageId,
-      recipients: recipients
+      recipients: recipients,
+      pdfAttached: formName === 'form-k' && mailOptions.attachments?.length > 0
     };
 
   } catch (error) {
