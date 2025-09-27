@@ -21,19 +21,25 @@ const PORT = process.env.PORT || 3331;
 // Configure SMTP transporter for email sending
 // Use proper hostname for certificate validation
 const getSmtpConfig = () => {
-  // Use hostname from environment or default to mail.spectrum4.ca
-  const smtpHost = process.env.SMTP_HOST || 'mail.spectrum4.ca';
-  const smtpPort = parseInt(process.env.SMTP_PORT) || 587;
+  // Use environment variables only - no hardcoded fallbacks
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpPort = parseInt(process.env.SMTP_PORT);
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
   
-  console.log(`[SMTP] Host: ${smtpHost}, Port: ${smtpPort}`);
+  if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
+    throw new Error('Missing required SMTP environment variables. Please check Coolify configuration.');
+  }
+  
+  console.log(`[SMTP] Host: ${smtpHost}, Port: ${smtpPort}, User: ${smtpUser}`);
   
   return {
     host: smtpHost,
     port: smtpPort,
     secure: false, // true for 465, false for other ports like 587
     auth: {
-      user: process.env.SMTP_USER || 'superbase',
-      pass: process.env.SMTP_PASS || 'n2hm13i'
+      user: smtpUser,
+      pass: smtpPass
     },
     tls: {
       // Only reject unauthorized if using a proper hostname
