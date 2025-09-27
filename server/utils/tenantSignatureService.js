@@ -3,16 +3,31 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Create reusable transporter object using SMTP transport
+// Create reusable transporter object using SMTP transport (fully environment-based)
 const createTransporter = () => {
-  return nodemailer.createTransporter({
-    host: process.env.SMTP_HOST || 'localhost',
-    port: process.env.SMTP_PORT || 587,
-    secure: false, // true for 465, false for other ports
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpPort = parseInt(process.env.SMTP_PORT);
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+  
+  if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
+    throw new Error('Missing required SMTP environment variables in tenant signature service.');
+  }
+  
+  return nodemailer.createTransport({
+    host: smtpHost,
+    port: smtpPort,
+    secure: false, // true for 465, false for other ports like 587
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: smtpUser,
+      pass: smtpPass
     },
+    tls: {
+      rejectUnauthorized: false // Accept self-signed certificates and IP addresses
+    },
+    connectionTimeout: 30000,   // 30 seconds
+    greetingTimeout: 30000,     // 30 seconds
+    socketTimeout: 60000        // 60 seconds
   });
 };
 
