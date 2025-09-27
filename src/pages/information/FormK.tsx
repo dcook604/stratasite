@@ -1011,13 +1011,6 @@ const FormK = () => {
               </Button>
             </div>
 
-            <div className="text-center text-sm text-gray-600">
-              <p>Please remit original to:</p>
-              <p className="font-semibold">ASCENT REAL ESTATE MANAGEMENT CORPORATION</p>
-              <p>2176 WILLINGDON AVENUE</p>
-              <p>BURNABY, BC V5C 5Z9</p>
-              <p>FAX: (604) 431-1818</p>
-            </div>
           </form>
         </Form>
       </div>
