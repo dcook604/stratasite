@@ -174,6 +174,15 @@ setup_database() {
 # Run database setup
 setup_database
 
+# Generate Prisma client after database setup
+echo "🔧 Generating Prisma client..."
+if npx prisma generate; then
+  echo "✅ Prisma client generated successfully"
+else
+  echo "❌ Failed to generate Prisma client"
+  exit 1
+fi
+
 # Run post-deploy setup
 echo "⚙️ Running post-deploy setup..."
 if npm run postdeploy; then
