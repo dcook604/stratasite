@@ -47,9 +47,8 @@ COPY --from=builder /app/prisma ./prisma/
 COPY --from=builder /app/scripts ./scripts/
 COPY --from=builder /app/server ./server/
 COPY --from=builder /app/server.js ./
-# Copy the generated Prisma client from builder stage
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma/
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma/
 
 # Create data directories for persistence
 RUN mkdir -p /app/data/uploads/documents /app/data/uploads/marketplace /app/public/uploads

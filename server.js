@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
-import { PrismaClient } from '@prisma/client';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
@@ -15,8 +14,17 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3331;
+
+// Lazy initialization of Prisma client
+let prisma = null;
+const getPrismaClient = async () => {
+  if (!prisma) {
+    const { PrismaClient } = await import('@prisma/client');
+    prisma = new PrismaClient();
+  }
+  return prisma;
+};
 
 // Configure SMTP transporter for email sending
 // Use proper hostname for certificate validation
