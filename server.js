@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
+import { PrismaClient } from '@prisma/client';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
@@ -16,12 +17,26 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3331;
 
-// Lazy initialization of Prisma client
+// Initialize Prisma client with error handling
 let prisma = null;
-const getPrismaClient = async () => {
+const initializePrisma = async () => {
   if (!prisma) {
-    const { PrismaClient } = await import('@prisma/client');
-    prisma = new PrismaClient();
+    try {
+      prisma = new PrismaClient();
+      await prisma.$connect();
+      console.log('✅ Prisma client initialized successfully');
+    } catch (error) {
+      console.error('❌ Failed to initialize Prisma client:', error);
+      throw error;
+    }
+  }
+  return prisma;
+};
+
+// Helper function to get Prisma client with error handling
+const getPrisma = async () => {
+  if (!prisma) {
+    await initializePrisma();
   }
   return prisma;
 };
@@ -540,7 +555,8 @@ app.post('/api/auth/register', async (req, res) => {
 // Announcements CRUD
 app.get('/api/announcements', async (req, res) => {
   try {
-    const announcements = await prisma.announcement.findMany({
+    const db = await getPrisma();
+    const announcements = await db.announcement.findMany({
       where: { isActive: true },
       orderBy: { createdAt: 'desc' }
     });
@@ -602,7 +618,8 @@ app.delete('/api/announcements/:id', async (req, res) => {
 // Events CRUD
 app.get('/api/events', async (req, res) => {
   try {
-    const events = await prisma.event.findMany({
+    const db = await getPrisma();
+    const events = await db.event.findMany({
       where: { isActive: true },
       orderBy: { startDate: 'asc' }
     });
@@ -688,7 +705,8 @@ app.get('/api/pages/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
     logger.debug('Fetching page by slug', { slug });
-    const page = await prisma.page.findUnique({
+    const db = await getPrisma();
+    const page = await db.page.findUnique({
       where: { slug, isActive: true }
     });
     if (!page) {
@@ -2667,7 +2685,8 @@ app.post('/api/form-k-submission', async (req, res) => {
     }
 
     // Create Form K submission record
-    const formKSubmission = await prisma.formKSubmission.create({
+    const db = await getPrisma();
+    const formKSubmission = await db.formKSubmission.create({
       data: {
         strataPlan,
         address,
@@ -3303,7 +3322,14 @@ app.get('*', (req, res) => {
 });
 
 // Start server
-const server = app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', async () => {
+  // Initialize Prisma client on server start
+  try {
+    await initializePrisma();
+  } catch (error) {
+    console.error('Failed to initialize Prisma on server start:', error);
+  }
+  
   logger.info('Server started successfully', {
     port: PORT,
     host: '0.0.0.0',
