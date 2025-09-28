@@ -231,6 +231,27 @@ else
   echo "⚠️ Post-deploy setup had issues (continuing anyway)"
 fi
 
+# Final Prisma client test before starting server
+echo "🧪 Testing Prisma client before server start..."
+if node -e "
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+prisma.\$connect()
+  .then(() => {
+    console.log('✅ Prisma client test successful');
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error('❌ Prisma client test failed:', error);
+    process.exit(1);
+  });
+"; then
+  echo "✅ Prisma client is ready"
+else
+  echo "❌ Prisma client test failed, attempting one more generation..."
+  npx prisma generate
+fi
+
 # Start the application
 echo "🌟 Starting the application server..."
 exec node server.js

@@ -480,13 +480,24 @@ logger.info('Server starting...', {
   timestamp: new Date().toISOString()
 });
 
+// Health check endpoint (no database required)
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    prismaStatus: prisma ? 'initialized' : 'not initialized'
+  });
+});
+
 // API Routes
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     logger.debug('Login attempt', { email });
 
-    const admin = await prisma.adminUser.findUnique({
+    const db = await getPrisma();
+    const admin = await db.adminUser.findUnique({
       where: { email }
     });
 
