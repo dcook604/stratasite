@@ -490,6 +490,67 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Form K Cleanup and Expiration Management
+app.get('/api/admin/form-k/statistics', async (req, res) => {
+  try {
+    const { getFormKStatistics } = await import('./server/utils/formKCleanupService.js');
+    const stats = await getFormKStatistics();
+    
+    res.json({
+      success: true,
+      statistics: stats
+    });
+  } catch (error) {
+    console.error('Error fetching Form K statistics:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to fetch Form K statistics' 
+    });
+  }
+});
+
+app.get('/api/admin/form-k/expired', async (req, res) => {
+  try {
+    const { findExpiredFormKSubmissions } = await import('./server/utils/formKCleanupService.js');
+    const expiredSubmissions = await findExpiredFormKSubmissions();
+    
+    res.json({
+      success: true,
+      expiredSubmissions,
+      count: expiredSubmissions.length
+    });
+  } catch (error) {
+    console.error('Error fetching expired Form K submissions:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to fetch expired submissions' 
+    });
+  }
+});
+
+app.post('/api/admin/form-k/cleanup', async (req, res) => {
+  try {
+    const { dryRun = false } = req.body;
+    const { purgeExpiredFormKSubmissions } = await import('./server/utils/formKCleanupService.js');
+    
+    const result = await purgeExpiredFormKSubmissions(dryRun);
+    
+    res.json({
+      success: result.success,
+      purgedCount: result.purgedCount,
+      expiredSubmissions: result.expiredSubmissions,
+      errors: result.errors || [],
+      dryRun: result.dryRun || false
+    });
+  } catch (error) {
+    console.error('Error during Form K cleanup:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to perform cleanup' 
+    });
+  }
+});
+
 // API Routes
 app.post('/api/auth/login', async (req, res) => {
   try {
@@ -2782,7 +2843,7 @@ app.post('/api/form-k-submission', async (req, res) => {
         await sendDynamicFormEmail('form-k', emailData);
         
         // Update email sent status
-        await prisma.formKSubmission.update({
+        await db.formKSubmission.update({
           where: { id: formKSubmission.id },
           data: { emailSent: true }
         });
@@ -2913,7 +2974,8 @@ app.get('/api/tenant-signature/:submissionId/:token', async (req, res) => {
     const { submissionId, token } = req.params;
 
     // Find the submission with the matching token
-    const submission = await prisma.formKSubmission.findFirst({
+    const db = await getPrisma();
+    const submission = await db.formKSubmission.findFirst({
       where: {
         id: submissionId,
         OR: [
@@ -2983,7 +3045,8 @@ app.post('/api/tenant-signature/:submissionId/:token', async (req, res) => {
     }
 
     // Find the submission with the matching token
-    const submission = await prisma.formKSubmission.findFirst({
+    const db = await getPrisma();
+    const submission = await db.formKSubmission.findFirst({
       where: {
         id: submissionId,
         OR: [
@@ -3030,7 +3093,7 @@ app.post('/api/tenant-signature/:submissionId/:token', async (req, res) => {
       updateData.tenant2TokenExpiry = null;
     }
 
-    const updatedSubmission = await prisma.formKSubmission.update({
+    const updatedSubmission = await db.formKSubmission.update({
       where: { id: submissionId },
       data: updateData
     });
@@ -3070,7 +3133,7 @@ app.post('/api/tenant-signature/:submissionId/:token', async (req, res) => {
         await sendDynamicFormEmail('form-k', emailData);
         
         // Update email sent status
-        await prisma.formKSubmission.update({
+        await db.formKSubmission.update({
           where: { id: submissionId },
           data: { emailSent: true }
         });
