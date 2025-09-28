@@ -1,7 +1,14 @@
 import nodemailer from 'nodemailer';
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+// Lazy initialization of Prisma client
+let prisma = null;
+const getPrismaClient = () => {
+  if (!prisma) {
+    prisma = new PrismaClient();
+  }
+  return prisma;
+};
 
 // Create reusable transporter object using SMTP transport (fully environment-based)
 const createTransporter = () => {

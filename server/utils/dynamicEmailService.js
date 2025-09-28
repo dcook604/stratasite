@@ -2,7 +2,14 @@ import nodemailer from 'nodemailer';
 import { PrismaClient } from '@prisma/client';
 import { generateFormKPdf } from './formKPdfGenerator.js';
 
-const prisma = new PrismaClient();
+// Lazy initialization of Prisma client
+let prisma = null;
+const getPrismaClient = () => {
+  if (!prisma) {
+    prisma = new PrismaClient();
+  }
+  return prisma;
+};
 
 // Create transporter (fully environment-based)
 const createTransporter = () => {
@@ -364,7 +371,8 @@ const emailTemplates = {
 const sendDynamicFormEmail = async (formName, formData) => {
   try {
     // Get form configuration from database
-    const formConfig = await prisma.formConfiguration.findUnique({
+    const db = getPrismaClient();
+    const formConfig = await db.formConfiguration.findUnique({
       where: { 
         formName,
         isActive: true

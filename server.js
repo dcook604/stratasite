@@ -2782,7 +2782,7 @@ app.post('/api/form-k-submission', async (req, res) => {
         await sendDynamicFormEmail('form-k', emailData);
         
         // Update email sent status
-        await prisma.formKSubmission.update({
+        await db.formKSubmission.update({
           where: { id: formKSubmission.id },
           data: { emailSent: true }
         });
@@ -2913,7 +2913,8 @@ app.get('/api/tenant-signature/:submissionId/:token', async (req, res) => {
     const { submissionId, token } = req.params;
 
     // Find the submission with the matching token
-    const submission = await prisma.formKSubmission.findFirst({
+    const db = await getPrisma();
+    const submission = await db.formKSubmission.findFirst({
       where: {
         id: submissionId,
         OR: [
@@ -2983,7 +2984,8 @@ app.post('/api/tenant-signature/:submissionId/:token', async (req, res) => {
     }
 
     // Find the submission with the matching token
-    const submission = await prisma.formKSubmission.findFirst({
+    const db = await getPrisma();
+    const submission = await db.formKSubmission.findFirst({
       where: {
         id: submissionId,
         OR: [
@@ -3030,7 +3032,7 @@ app.post('/api/tenant-signature/:submissionId/:token', async (req, res) => {
       updateData.tenant2TokenExpiry = null;
     }
 
-    const updatedSubmission = await prisma.formKSubmission.update({
+    const updatedSubmission = await db.formKSubmission.update({
       where: { id: submissionId },
       data: updateData
     });
@@ -3070,7 +3072,7 @@ app.post('/api/tenant-signature/:submissionId/:token', async (req, res) => {
         await sendDynamicFormEmail('form-k', emailData);
         
         // Update email sent status
-        await prisma.formKSubmission.update({
+        await db.formKSubmission.update({
           where: { id: submissionId },
           data: { emailSent: true }
         });
