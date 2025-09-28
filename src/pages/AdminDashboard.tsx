@@ -41,6 +41,11 @@ const AdminDashboard = () => {
   const [emergencyContacts, setEmergencyContacts] = useState([]);
   const [acInquiries, setACInquiries] = useState([]);
   const [storageRentals, setStorageRentals] = useState([]);
+  
+  // Form K cleanup states
+  const [formKStats, setFormKStats] = useState(null);
+  const [expiredFormKs, setExpiredFormKs] = useState([]);
+  const [formKCleanupLoading, setFormKCleanupLoading] = useState(false);
 
   // Form states
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' });
@@ -233,6 +238,69 @@ const AdminDashboard = () => {
       toast({ title: "Error", description: "Failed to fetch data", variant: "destructive" });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Form K Cleanup Functions
+  const fetchFormKStats = async () => {
+    try {
+      const response = await fetch('/api/admin/form-k/statistics');
+      const data = await response.json();
+      if (data.success) {
+        setFormKStats(data.statistics);
+      }
+    } catch (error) {
+      console.error('Error fetching Form K statistics:', error);
+    }
+  };
+
+  const fetchExpiredFormKs = async () => {
+    try {
+      const response = await fetch('/api/admin/form-k/expired');
+      const data = await response.json();
+      if (data.success) {
+        setExpiredFormKs(data.expiredSubmissions);
+      }
+    } catch (error) {
+      console.error('Error fetching expired Form K submissions:', error);
+    }
+  };
+
+  const performFormKCleanup = async (dryRun = false) => {
+    setFormKCleanupLoading(true);
+    try {
+      const response = await fetch('/api/admin/form-k/cleanup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dryRun })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        const message = dryRun 
+          ? `Dry run completed. Would purge ${data.expiredSubmissions.length} expired submissions.`
+          : `Successfully purged ${data.purgedCount} expired Form K submissions.`;
+        
+        toast({
+          title: "Form K Cleanup",
+          description: message,
+        });
+        
+        // Refresh data
+        await fetchFormKStats();
+        await fetchExpiredFormKs();
+      } else {
+        throw new Error(data.error || 'Cleanup failed');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setFormKCleanupLoading(false);
     }
   };
 
@@ -650,6 +718,11 @@ const AdminDashboard = () => {
                       <Settings className="w-4 h-4 flex-shrink-0" />
                       <span className="hidden sm:inline">Form Management</span>
                       <span className="sm:hidden">Forms</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="form-k-cleanup" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                      <Database className="w-4 h-4 flex-shrink-0" />
+                      <span className="hidden sm:inline">Form K Cleanup</span>
+                      <span className="sm:hidden">Cleanup</span>
                     </TabsTrigger>
                     <TabsTrigger value="scooter-registrations" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
                       <Zap className="w-4 h-4 flex-shrink-0" />
@@ -1185,6 +1258,141 @@ const AdminDashboard = () => {
 
               <TabsContent value="form-management" className="space-y-6">
                 <FormManagement />
+              </TabsContent>
+
+              <TabsContent value="form-k-cleanup" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Database className="h-5 w-5" />
+                      Form K Data Retention & Cleanup
+                    </CardTitle>
+                    <CardDescription>
+                      Manage Form K submissions with automatic 6-month expiration and data purging for compliance.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Statistics Section */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Total Submissions</p>
+                              <p className="text-2xl font-bold">{formKStats?.total || 0}</p>
+                            </div>
+                            <FileText className="h-8 w-8 text-blue-500" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Active (&lt; 6 months)</p>
+                              <p className="text-2xl font-bold text-green-600">{formKStats?.active || 0}</p>
+                            </div>
+                            <CheckCircle className="h-8 w-8 text-green-500" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">Expired (&gt; 6 months)</p>
+                              <p className="text-2xl font-bold text-red-600">{formKStats?.expired || 0}</p>
+                            </div>
+                            <AlertTriangle className="h-8 w-8 text-red-500" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Actions Section */}
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <Button 
+                        onClick={fetchFormKStats}
+                        variant="outline"
+                        className="flex items-center gap-2"
+                      >
+                        <Database className="h-4 w-4" />
+                        Refresh Statistics
+                      </Button>
+                      
+                      <Button 
+                        onClick={() => performFormKCleanup(true)}
+                        variant="outline"
+                        disabled={formKCleanupLoading}
+                        className="flex items-center gap-2"
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                        Preview Cleanup (Dry Run)
+                      </Button>
+                      
+                      <Button 
+                        onClick={() => performFormKCleanup(false)}
+                        variant="destructive"
+                        disabled={formKCleanupLoading || (formKStats?.expired || 0) === 0}
+                        className="flex items-center gap-2"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        {formKCleanupLoading ? 'Cleaning...' : 'Purge Expired Data'}
+                      </Button>
+                    </div>
+
+                    {/* Information Section */}
+                    <Alert>
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>
+                        <strong>Data Retention Policy:</strong> Form K submissions are automatically expired after 6 months 
+                        ({formKStats?.expirationMonths || 6} months) from creation date. 
+                        Expired submissions can be safely purged to comply with data retention requirements.
+                        {formKStats?.expirationCutoffDate && (
+                          <><br />Current cutoff date: <strong>{new Date(formKStats.expirationCutoffDate).toLocaleDateString()}</strong></>
+                        )}
+                      </AlertDescription>
+                    </Alert>
+
+                    {/* Expired Submissions List */}
+                    {expiredFormKs.length > 0 && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Expired Form K Submissions ({expiredFormKs.length})</CardTitle>
+                          <CardDescription>
+                            These submissions are older than 6 months and can be purged.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-2 max-h-60 overflow-y-auto">
+                            {expiredFormKs.map((submission) => {
+                              const age = Math.floor((new Date() - new Date(submission.createdAt)) / (1000 * 60 * 60 * 24));
+                              return (
+                                <div key={submission.id} className="flex items-center justify-between p-2 border rounded">
+                                  <div>
+                                    <p className="font-medium">Unit {submission.unitNumber}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {submission.tenant1Name}
+                                      {submission.tenant2Name && ` & ${submission.tenant2Name}`}
+                                    </p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-sm font-medium">{age} days old</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {new Date(submission.createdAt).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               <TabsContent value="scooter-registrations" className="space-y-6">
