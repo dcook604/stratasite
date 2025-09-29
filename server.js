@@ -23,7 +23,7 @@ const initializePrisma = async () => {
   if (!prisma) {
     try {
       prisma = new PrismaClient();
-      await prisma.$connect();
+      await db.$connect();
       console.log('✅ Prisma client initialized successfully');
     } catch (error) {
       console.error('❌ Failed to initialize Prisma client:', error);
@@ -593,7 +593,7 @@ app.post('/api/auth/register', async (req, res) => {
     logger.debug('Registration attempt', { email });
 
     // Check if admin already exists
-    const existingAdmin = await prisma.adminUser.findUnique({
+    const existingAdmin = await db.adminUser.findUnique({
       where: { email }
     });
 
@@ -604,7 +604,7 @@ app.post('/api/auth/register', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    const admin = await prisma.adminUser.create({
+    const admin = await db.adminUser.create({
       data: {
         email,
         password: hashedPassword
@@ -643,7 +643,7 @@ app.post('/api/announcements', async (req, res) => {
   try {
     const { title, content } = req.body;
     logger.debug('Creating announcement', { title });
-    const announcement = await prisma.announcement.create({
+    const announcement = await db.announcement.create({
       data: { title, content }
     });
     logger.info('Announcement created', { id: announcement.id, title });
@@ -659,7 +659,7 @@ app.put('/api/announcements/:id', async (req, res) => {
     const { id } = req.params;
     const { title, content, isActive } = req.body;
     logger.debug('Updating announcement', { id, title });
-    const announcement = await prisma.announcement.update({
+    const announcement = await db.announcement.update({
       where: { id },
       data: { title, content, isActive }
     });
@@ -675,7 +675,7 @@ app.delete('/api/announcements/:id', async (req, res) => {
   try {
     const { id } = req.params;
     logger.debug('Deleting announcement', { id });
-    await prisma.announcement.update({
+    await db.announcement.update({
       where: { id },
       data: { isActive: false }
     });
@@ -705,7 +705,7 @@ app.get('/api/events', async (req, res) => {
 app.post('/api/events', async (req, res) => {
   try {
     const { title, description, startDate, endDate, location } = req.body;
-    const event = await prisma.event.create({
+    const event = await db.event.create({
       data: { 
         title, 
         description, 
@@ -725,7 +725,7 @@ app.put('/api/events/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { title, description, startDate, endDate, location, isActive } = req.body;
-    const event = await prisma.event.update({
+    const event = await db.event.update({
       where: { id },
       data: { 
         title, 
@@ -746,7 +746,7 @@ app.put('/api/events/:id', async (req, res) => {
 app.delete('/api/events/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    await prisma.event.update({
+    await db.event.update({
       where: { id },
       data: { isActive: false }
     });
@@ -760,8 +760,9 @@ app.delete('/api/events/:id', async (req, res) => {
 // Pages CRUD
 app.get('/api/pages', async (req, res) => {
   try {
+    const db = await getPrisma();
     logger.debug('Fetching all active pages');
-    const pages = await prisma.page.findMany({
+    const pages = await db.page.findMany({
       where: { isActive: true },
       orderBy: { title: 'asc' }
     });
@@ -796,7 +797,7 @@ app.get('/api/pages/:slug', async (req, res) => {
 app.post('/api/pages', async (req, res) => {
   try {
     const { slug, title, content } = req.body;
-    const page = await prisma.page.create({
+    const page = await db.page.create({
       data: { slug, title, content }
     });
     res.json(page);
@@ -810,7 +811,7 @@ app.put('/api/pages/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { slug, title, content, isActive } = req.body;
-    const page = await prisma.page.update({
+    const page = await db.page.update({
       where: { id },
       data: { slug, title, content, isActive }
     });
@@ -824,7 +825,7 @@ app.put('/api/pages/:id', async (req, res) => {
 app.delete('/api/pages/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    await prisma.page.update({
+    await db.page.update({
       where: { id },
       data: { isActive: false }
     });
@@ -838,7 +839,8 @@ app.delete('/api/pages/:id', async (req, res) => {
 // Documents CRUD
 app.get('/api/documents', async (req, res) => {
   try {
-    const documents = await prisma.document.findMany({
+    const db = await getPrisma();
+    const documents = await db.document.findMany({
       where: { isActive: true },
       orderBy: { createdAt: 'desc' }
     });
@@ -852,7 +854,7 @@ app.get('/api/documents', async (req, res) => {
 app.get('/api/documents/:id/download', async (req, res) => {
   try {
     const { id } = req.params;
-    const document = await prisma.document.findUnique({
+    const document = await db.document.findUnique({
       where: { id, isActive: true }
     });
     
@@ -947,7 +949,7 @@ app.post('/api/documents', (req, res) => {
     }
     
     // Save document info to database
-    const document = await prisma.document.create({
+    const document = await db.document.create({
       data: {
         title,
         description,
@@ -972,7 +974,7 @@ app.put('/api/documents/:id', async (req, res) => {
     const { id } = req.params;
     const { title, description, isActive } = req.body;
     
-    const document = await prisma.document.update({
+    const document = await db.document.update({
       where: { id },
       data: { title, description, isActive }
     });
@@ -990,13 +992,13 @@ app.delete('/api/documents/:id', async (req, res) => {
     const { id } = req.params;
     
     // Get document info before deletion
-    const document = await prisma.document.findUnique({ where: { id } });
+    const document = await db.document.findUnique({ where: { id } });
     if (!document) {
       return res.status(404).json({ error: 'Document not found' });
     }
     
     // Soft delete in database
-    await prisma.document.update({
+    await db.document.update({
       where: { id },
       data: { isActive: false }
     });
@@ -1018,7 +1020,8 @@ app.delete('/api/documents/:id', async (req, res) => {
 // Admin user management
 app.get('/api/admin/users', async (req, res) => {
   try {
-    const users = await prisma.adminUser.findMany({
+    const db = await getPrisma();
+    const users = await db.adminUser.findMany({
       select: { id: true, email: true, createdAt: true }
     });
     res.json(users);
@@ -1041,7 +1044,7 @@ app.post('/api/admin/users', async (req, res) => {
     }
 
     // Check if admin already exists
-    const existingAdmin = await prisma.adminUser.findUnique({
+    const existingAdmin = await db.adminUser.findUnique({
       where: { email }
     });
 
@@ -1051,7 +1054,7 @@ app.post('/api/admin/users', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 12);
     
-    const admin = await prisma.adminUser.create({
+    const admin = await db.adminUser.create({
       data: {
         email,
         password: hashedPassword
@@ -1071,12 +1074,12 @@ app.delete('/api/admin/users/:id', async (req, res) => {
     const { id } = req.params;
     
     // Prevent deleting the last admin user
-    const adminCount = await prisma.adminUser.count();
+    const adminCount = await db.adminUser.count();
     if (adminCount <= 1) {
       return res.status(400).json({ error: 'Cannot delete the last admin user' });
     }
 
-    await prisma.adminUser.delete({
+    await db.adminUser.delete({
       where: { id }
     });
     
@@ -1093,7 +1096,7 @@ app.put('/api/admin/users/:id/password', async (req, res) => {
     const { currentPassword, newPassword } = req.body;
 
     // 1. Fetch the user
-    const admin = await prisma.adminUser.findUnique({ where: { id } });
+    const admin = await db.adminUser.findUnique({ where: { id } });
     if (!admin) {
       return res.status(404).json({ error: 'Admin user not found' });
     }
@@ -1116,7 +1119,7 @@ app.put('/api/admin/users/:id/password', async (req, res) => {
     const hashedPassword = await bcrypt.hash(newPassword, 12);
 
     // 5. Update the password in the database
-    await prisma.adminUser.update({
+    await db.adminUser.update({
       where: { id },
       data: { password: hashedPassword }
     });
@@ -1137,7 +1140,7 @@ app.put('/api/admin/users/:id/reset-password', async (req, res) => {
     const { newPassword } = req.body;
 
     // 1. Fetch the user
-    const admin = await prisma.adminUser.findUnique({ where: { id } });
+    const admin = await db.adminUser.findUnique({ where: { id } });
     if (!admin) {
       return res.status(404).json({ error: 'Admin user not found' });
     }
@@ -1154,7 +1157,7 @@ app.put('/api/admin/users/:id/reset-password', async (req, res) => {
     const hashedPassword = await bcrypt.hash(newPassword, 12);
 
     // 4. Update the password in the database
-    await prisma.adminUser.update({
+    await db.adminUser.update({
       where: { id },
       data: { password: hashedPassword }
     });
@@ -1352,7 +1355,8 @@ const sendPetRegistrationEmail = async (petData) => {
 // Marketplace CRUD
 app.get('/api/marketplace', async (req, res) => {
   try {
-    const posts = await prisma.marketplacePost.findMany({
+    const db = await getPrisma();
+    const posts = await db.marketplacePost.findMany({
       where: { isActive: true },
       include: {
         replies: {
@@ -1422,7 +1426,7 @@ app.post('/api/marketplace', async (req, res) => {
       }
     }
     
-    const post = await prisma.marketplacePost.create({
+    const post = await db.marketplacePost.create({
       data: {
         title,
         description,
@@ -1451,7 +1455,7 @@ app.put('/api/marketplace/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { title, description, category, type, price, isActive } = req.body;
-    const post = await prisma.marketplacePost.update({
+    const post = await db.marketplacePost.update({
       where: { id },
       data: { 
         title, 
@@ -1475,7 +1479,7 @@ app.put('/api/marketplace/:postId/sold', async (req, res) => {
   const { authorId } = req.cookies;
 
   try {
-    const post = await prisma.marketplacePost.findUnique({ where: { id: postId } });
+    const post = await db.marketplacePost.findUnique({ where: { id: postId } });
 
     if (!post) {
       return res.status(404).json({ error: 'Post not found' });
@@ -1487,7 +1491,7 @@ app.put('/api/marketplace/:postId/sold', async (req, res) => {
       return res.status(403).json({ error: 'You are not authorized to perform this action' });
     }
 
-    const updatedPost = await prisma.marketplacePost.update({
+    const updatedPost = await db.marketplacePost.update({
       where: { id: postId },
       data: { isSold: true },
     });
@@ -1501,7 +1505,7 @@ app.put('/api/marketplace/:postId/sold', async (req, res) => {
 app.delete('/api/marketplace/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    await prisma.marketplacePost.update({
+    await db.marketplacePost.update({
       where: { id },
       data: { isActive: false }
     });
@@ -1545,7 +1549,7 @@ app.post('/api/marketplace/:postId/replies', async (req, res) => {
     return res.status(400).json({ error: 'Invalid CAPTCHA. Please try again.' });
   }
   
-  const reply = await prisma.marketplaceReply.create({
+  const reply = await db.marketplaceReply.create({
     data: {
       content,
       authorId,
@@ -1566,7 +1570,7 @@ app.post('/api/marketplace/:postId/replies', async (req, res) => {
 app.delete('/api/marketplace/:postId/replies/:replyId', async (req, res) => {
   try {
     const { replyId } = req.params;
-    await prisma.marketplaceReply.delete({
+    await db.marketplaceReply.delete({
       where: { id: replyId }
     });
     res.json({ success: true });
@@ -1623,7 +1627,7 @@ app.post('/api/admin/cleanup', async (req, res) => {
     // Only proceed if we have conditions to avoid deleting everything
     if (postWhereConditions.AND.length > 0) {
       // Get posts to be deleted (for counting and image cleanup)
-      const postsToDelete = await prisma.marketplacePost.findMany({
+      const postsToDelete = await db.marketplacePost.findMany({
         where: postWhereConditions,
         include: {
           replies: {
@@ -1674,7 +1678,7 @@ app.post('/api/admin/cleanup', async (req, res) => {
 
       if (!dryRun) {
         // Delete the posts (replies will be deleted due to cascade)
-        await prisma.marketplacePost.deleteMany({
+        await db.marketplacePost.deleteMany({
           where: postWhereConditions
         });
 
@@ -1707,12 +1711,12 @@ app.post('/api/admin/cleanup', async (req, res) => {
             const files = await fs.readdir(uploadsDir);
             
             // Get all image URLs currently in use
-            const activePosts = await prisma.marketplacePost.findMany({
+            const activePosts = await db.marketplacePost.findMany({
               where: { isActive: true },
               select: { images: true }
             });
             
-            const activeReplies = await prisma.marketplaceReply.findMany({
+            const activeReplies = await db.marketplaceReply.findMany({
               select: { images: true }
             });
             
@@ -1864,7 +1868,7 @@ app.post('/api/event-requests', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const eventRequest = await prisma.eventRequest.create({
+    const eventRequest = await db.eventRequest.create({
       data: {
         firstName, lastName, unitNumber, email, phone,
         isOwner: Boolean(isOwner),
@@ -1883,7 +1887,8 @@ app.post('/api/event-requests', async (req, res) => {
 // Get all event requests (for admin)
 app.get('/api/event-requests', async (req, res) => {
   try {
-    const requests = await prisma.eventRequest.findMany({
+    const db = await getPrisma();
+    const requests = await db.eventRequest.findMany({
       orderBy: { createdAt: 'desc' },
     });
     res.json(requests);
@@ -1942,7 +1947,7 @@ app.post('/api/scooter-registration', async (req, res) => {
     const registrationId = `SR-${Date.now()}`;
 
     // Save to database
-    const scooterRegistration = await prisma.scooterRegistration.create({
+    const scooterRegistration = await db.scooterRegistration.create({
       data: {
         registrationId,
         registrationDate: date,
@@ -1986,7 +1991,7 @@ app.post('/api/scooter-registration', async (req, res) => {
     }
 
     // Update email sent status
-    await prisma.scooterRegistration.update({
+    await db.scooterRegistration.update({
       where: { id: scooterRegistration.id },
       data: { emailSent }
     });
@@ -2007,7 +2012,8 @@ app.post('/api/scooter-registration', async (req, res) => {
 // Get all scooter registrations (for admin)
 app.get('/api/scooter-registrations', async (req, res) => {
   try {
-    const registrations = await prisma.scooterRegistration.findMany({
+    const db = await getPrisma();
+    const registrations = await db.scooterRegistration.findMany({
       where: { isActive: true },
       orderBy: { createdAt: 'desc' }
     });
@@ -2024,7 +2030,7 @@ app.put('/api/scooter-registrations/:id', async (req, res) => {
     const { id } = req.params;
     const { status, keyNumber, depositPaid, depositAmount, notes } = req.body;
 
-    const updatedRegistration = await prisma.scooterRegistration.update({
+    const updatedRegistration = await db.scooterRegistration.update({
       where: { id },
       data: {
         status,
@@ -2048,7 +2054,7 @@ app.delete('/api/scooter-registrations/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    await prisma.scooterRegistration.update({
+    await db.scooterRegistration.update({
       where: { id },
       data: { isActive: false }
     });
@@ -2107,7 +2113,7 @@ app.post('/api/ac-inquiry', async (req, res) => {
     const inquiryId = `AC-${Date.now()}`;
 
     // Save to database
-    const acInquiry = await prisma.aCInquiry.create({
+    const acInquiry = await db.aCInquiry.create({
       data: {
         inquiryId,
         ownerName,
@@ -2138,7 +2144,8 @@ app.post('/api/ac-inquiry', async (req, res) => {
 // Get all AC inquiries (for admin)
 app.get('/api/ac-inquiries', async (req, res) => {
   try {
-    const inquiries = await prisma.aCInquiry.findMany({
+    const db = await getPrisma();
+    const inquiries = await db.aCInquiry.findMany({
       where: { isActive: true },
       orderBy: { createdAt: 'desc' }
     });
@@ -2200,7 +2207,7 @@ app.post('/api/storage-rental', async (req, res) => {
     const rentalId = `SR-${Date.now()}`;
 
     // Save to database
-    const storageRental = await prisma.storageRental.create({
+    const storageRental = await db.storageRental.create({
       data: {
         rentalId,
         firstName,
@@ -2231,7 +2238,8 @@ app.post('/api/storage-rental', async (req, res) => {
 // Get all storage rental interests (for admin)
 app.get('/api/storage-rentals', async (req, res) => {
   try {
-    const rentals = await prisma.storageRental.findMany({
+    const db = await getPrisma();
+    const rentals = await db.storageRental.findMany({
       where: { isActive: true },
       orderBy: { createdAt: 'desc' }
     });
@@ -2252,14 +2260,14 @@ app.put('/api/event-requests/:id', async (req, res) => {
   }
 
   try {
-    const updatedRequest = await prisma.eventRequest.update({
+    const updatedRequest = await db.eventRequest.update({
       where: { id },
       data: { status },
     });
 
     // If approved, create a new event in the main calendar
     if (status === 'APPROVED') {
-      await prisma.event.create({
+      await db.event.create({
         data: {
           title: updatedRequest.eventTitle,
           description: updatedRequest.eventDescription || `Event requested by ${updatedRequest.firstName} ${updatedRequest.lastName} (Unit ${updatedRequest.unitNumber}). Contact: ${updatedRequest.email}, ${updatedRequest.phone}.`,
@@ -2313,7 +2321,7 @@ app.post('/api/emergency-contact', async (req, res) => {
     const contactId = `EC-${Date.now()}`;
 
     // Save to database
-    const emergencyContact = await prisma.emergencyContact.create({
+    const emergencyContact = await db.emergencyContact.create({
       data: {
         contactId,
         unitNumber,
@@ -2475,7 +2483,7 @@ app.post('/api/pet-registration', (req, res) => {
     }
 
     // Save to database
-    const petRegistration = await prisma.petRegistration.create({
+    const petRegistration = await db.petRegistration.create({
       data: {
         registrationId,
         ownerName,
@@ -2522,7 +2530,7 @@ app.post('/api/pet-registration', (req, res) => {
       await sendPetRegistrationEmail(petData);
       
       // Update database to mark email as sent
-      await prisma.petRegistration.update({
+      await db.petRegistration.update({
         where: { id: petRegistration.id },
         data: { emailSent: true }
       });
@@ -2556,7 +2564,8 @@ app.post('/api/pet-registration', (req, res) => {
 // Get all pet registrations (admin only)
 app.get('/api/pet-registrations', async (req, res) => {
   try {
-    const petRegistrations = await prisma.petRegistration.findMany({
+    const db = await getPrisma();
+    const petRegistrations = await db.petRegistration.findMany({
       where: { isActive: true },
       orderBy: { createdAt: 'desc' }
     });
@@ -2584,7 +2593,7 @@ app.patch('/api/pet-registrations/:id', async (req, res) => {
       return res.status(400).json({ error: 'Invalid status' });
     }
 
-    const petRegistration = await prisma.petRegistration.update({
+    const petRegistration = await db.petRegistration.update({
       where: { id },
       data: {
         status,
@@ -2612,7 +2621,7 @@ app.delete('/api/pet-registrations/:id', async (req, res) => {
     const { id } = req.params;
 
     // Get the registration to access photos before deletion
-    const petRegistration = await prisma.petRegistration.findUnique({
+    const petRegistration = await db.petRegistration.findUnique({
       where: { id }
     });
 
@@ -2638,7 +2647,7 @@ app.delete('/api/pet-registrations/:id', async (req, res) => {
     }
 
     // Mark as inactive instead of hard delete
-    await prisma.petRegistration.update({
+    await db.petRegistration.update({
       where: { id },
       data: { isActive: false }
     });
@@ -2658,7 +2667,8 @@ app.delete('/api/pet-registrations/:id', async (req, res) => {
 // Get all emergency contacts (admin only)
 app.get('/api/emergency-contacts', async (req, res) => {
   try {
-    const emergencyContacts = await prisma.emergencyContact.findMany({
+    const db = await getPrisma();
+    const emergencyContacts = await db.emergencyContact.findMany({
       where: { isActive: true },
       orderBy: { createdAt: 'desc' }
     });
@@ -2672,7 +2682,8 @@ app.get('/api/emergency-contacts', async (req, res) => {
 // Get all AC inquiries (admin only)
 app.get('/api/ac-inquiries', async (req, res) => {
   try {
-    const acInquiries = await prisma.aCInquiry.findMany({
+    const db = await getPrisma();
+    const acInquiries = await db.aCInquiry.findMany({
       where: { isActive: true },
       orderBy: { createdAt: 'desc' }
     });
@@ -2686,7 +2697,8 @@ app.get('/api/ac-inquiries', async (req, res) => {
 // Get all storage rentals (admin only)
 app.get('/api/storage-rentals', async (req, res) => {
   try {
-    const storageRentals = await prisma.storageRental.findMany({
+    const db = await getPrisma();
+    const storageRentals = await db.storageRental.findMany({
       where: { isActive: true },
       orderBy: { createdAt: 'desc' }
     });
@@ -2929,7 +2941,8 @@ app.post('/api/form-k-submission', async (req, res) => {
 // Get all Form K submissions (admin only)
 app.get('/api/form-k-submissions', async (req, res) => {
   try {
-    const formKSubmissions = await prisma.formKSubmission.findMany({
+    const db = await getPrisma();
+    const formKSubmissions = await db.formKSubmission.findMany({
       orderBy: { createdAt: 'desc' }
     });
 
@@ -2953,7 +2966,7 @@ app.get('/api/form-k-submissions/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    const formKSubmission = await prisma.formKSubmission.findUnique({
+    const formKSubmission = await db.formKSubmission.findUnique({
       where: { id }
     });
 
@@ -3163,7 +3176,8 @@ app.post('/api/tenant-signature/:submissionId/:token', async (req, res) => {
 // Get all form configurations
 app.get('/api/form-configurations', async (req, res) => {
   try {
-    const formConfigs = await prisma.formConfiguration.findMany({
+    const db = await getPrisma();
+    const formConfigs = await db.formConfiguration.findMany({
       include: {
         recipients: {
           where: { isActive: true },
@@ -3183,7 +3197,7 @@ app.get('/api/form-configurations', async (req, res) => {
 app.get('/api/form-configurations/:formName', async (req, res) => {
   try {
     const { formName } = req.params;
-    const formConfig = await prisma.formConfiguration.findUnique({
+    const formConfig = await db.formConfiguration.findUnique({
       where: { formName },
       include: {
         recipients: {
@@ -3211,7 +3225,7 @@ app.put('/api/form-configurations/:id', async (req, res) => {
     const { displayName, description, isActive, emailConfig, recipients } = req.body;
     
     // Update form configuration
-    const updatedConfig = await prisma.formConfiguration.update({
+    const updatedConfig = await db.formConfiguration.update({
       where: { id },
       data: {
         displayName,
@@ -3224,12 +3238,12 @@ app.put('/api/form-configurations/:id', async (req, res) => {
     // Update recipients if provided
     if (recipients) {
       // Delete existing recipients
-      await prisma.formEmailRecipient.deleteMany({
+      await db.formEmailRecipient.deleteMany({
         where: { formConfigId: id }
       });
       
       // Create new recipients
-      await prisma.formEmailRecipient.createMany({
+      await db.formEmailRecipient.createMany({
         data: recipients.map(recipient => ({
           ...recipient,
           formConfigId: id
@@ -3238,7 +3252,7 @@ app.put('/api/form-configurations/:id', async (req, res) => {
     }
     
     // Return updated configuration with recipients
-    const result = await prisma.formConfiguration.findUnique({
+    const result = await db.formConfiguration.findUnique({
       where: { id },
       include: {
         recipients: {
@@ -3267,7 +3281,7 @@ app.post('/api/form-configurations', async (req, res) => {
     }
     
     // Check if form name already exists
-    const existingConfig = await prisma.formConfiguration.findUnique({
+    const existingConfig = await db.formConfiguration.findUnique({
       where: { formName }
     });
     
@@ -3276,7 +3290,7 @@ app.post('/api/form-configurations', async (req, res) => {
     }
     
     // Create form configuration
-    const newConfig = await prisma.formConfiguration.create({
+    const newConfig = await db.formConfiguration.create({
       data: {
         formName,
         displayName,
@@ -3288,7 +3302,7 @@ app.post('/api/form-configurations', async (req, res) => {
     
     // Create recipients if provided
     if (recipients && recipients.length > 0) {
-      await prisma.formEmailRecipient.createMany({
+      await db.formEmailRecipient.createMany({
         data: recipients.map(recipient => ({
           ...recipient,
           formConfigId: newConfig.id
@@ -3297,7 +3311,7 @@ app.post('/api/form-configurations', async (req, res) => {
     }
     
     // Return created configuration with recipients
-    const result = await prisma.formConfiguration.findUnique({
+    const result = await db.formConfiguration.findUnique({
       where: { id: newConfig.id },
       include: {
         recipients: {
@@ -3321,12 +3335,12 @@ app.delete('/api/form-configurations/:id', async (req, res) => {
     const { id } = req.params;
     
     // Delete recipients first (cascade should handle this, but being explicit)
-    await prisma.formEmailRecipient.deleteMany({
+    await db.formEmailRecipient.deleteMany({
       where: { formConfigId: id }
     });
     
     // Delete form configuration
-    await prisma.formConfiguration.delete({
+    await db.formConfiguration.delete({
       where: { id }
     });
     
@@ -3342,7 +3356,7 @@ app.delete('/api/form-configurations/:id', async (req, res) => {
 app.get('/api/form-configurations/by-name/:formName', async (req, res) => {
   try {
     const { formName } = req.params;
-    const formConfig = await prisma.formConfiguration.findUnique({
+    const formConfig = await db.formConfiguration.findUnique({
       where: { 
         formName,
         isActive: true
@@ -3417,7 +3431,7 @@ process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, shutting down gracefully');
   server.close(async () => {
     logger.info('Server closed');
-    await prisma.$disconnect();
+    await db.$disconnect();
     logger.info('Database connection closed');
     process.exit(0);
   });
@@ -3427,7 +3441,7 @@ process.on('SIGINT', async () => {
   logger.info('SIGINT received, shutting down gracefully');
   server.close(async () => {
     logger.info('Server closed');
-    await prisma.$disconnect();
+    await db.$disconnect();
     logger.info('Database connection closed');
     process.exit(0);
   });
