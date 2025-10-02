@@ -129,8 +129,8 @@ const TenantSignature = () => {
         description: "Your signature has been recorded. Thank you for completing Form K.",
       });
 
-      // Redirect to success page
-      navigate('/tenant-signature-success');
+      // Redirect to home page with correct domain
+      window.location.href = 'https://www.spectrum4.ca/';
 
     } catch (error) {
       console.error('Signature submission error:', error);
