@@ -3196,9 +3196,37 @@ app.get('/api/form-configurations', async (req, res) => {
 // Get specific form configuration
 app.get('/api/form-configurations/:formName', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { formName } = req.params;
     const formConfig = await db.formConfiguration.findUnique({
       where: { formName },
+      include: {
+        recipients: {
+          where: { isActive: true },
+          orderBy: { isPrimary: 'desc' }
+        }
+      }
+    });
+    
+    if (!formConfig) {
+      return res.status(404).json({ error: 'Form configuration not found' });
+    }
+    
+    res.json(formConfig);
+  } catch (error) {
+    logger.error('Error fetching form configuration:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get form configuration by ID
+app.get('/api/form-configurations/:id', async (req, res) => {
+  try {
+    const db = await getPrisma();
+    const { id } = req.params;
+    
+    const formConfig = await db.formConfiguration.findUnique({
+      where: { id },
       include: {
         recipients: {
           where: { isActive: true },
@@ -3274,6 +3302,7 @@ app.put('/api/form-configurations/:id', async (req, res) => {
 // Create new form configuration
 app.post('/api/form-configurations', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { formName, displayName, description, isActive, emailConfig, recipients } = req.body;
     
     // Validate required fields
@@ -3333,6 +3362,7 @@ app.post('/api/form-configurations', async (req, res) => {
 // Delete form configuration
 app.delete('/api/form-configurations/:id', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { id } = req.params;
     
     // Delete recipients first (cascade should handle this, but being explicit)
@@ -3356,6 +3386,7 @@ app.delete('/api/form-configurations/:id', async (req, res) => {
 // Get form configuration by form name (for dynamic email sending)
 app.get('/api/form-configurations/by-name/:formName', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { formName } = req.params;
     const formConfig = await db.formConfiguration.findUnique({
       where: { 
