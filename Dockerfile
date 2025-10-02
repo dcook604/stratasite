@@ -31,8 +31,20 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apk add --no-cache sqlite
+# Install system dependencies including Puppeteer requirements
+RUN apk add --no-cache \
+    sqlite \
+    chromium \
+    nss \
+    freetype \
+    freetype-dev \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    && rm -rf /var/cache/apk/*
+
+# Tell Puppeteer to use the installed Chromium
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 # Copy package files for production install
 COPY package*.json ./
