@@ -3221,6 +3221,7 @@ app.get('/api/form-configurations/:formName', async (req, res) => {
 // Update form configuration
 app.put('/api/form-configurations/:id', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { id } = req.params;
     const { displayName, description, isActive, emailConfig, recipients } = req.body;
     
