@@ -52,7 +52,7 @@ const sendTenantSignatureRequest = async ({
     const transporter = createTransporter();
     
     // Create signature URL
-    const signatureUrl = `${process.env.BASE_URL || 'https://spectrum4.ca'}/tenant-signature/${submissionId}/${signatureToken}`;
+    const signatureUrl = `${process.env.BASE_URL || 'https://www.spectrum4.ca'}/tenant-signature/${submissionId}/${signatureToken}`;
     
     const emailContent = generateTenantSignatureEmail({
       tenantName,
