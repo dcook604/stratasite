@@ -2834,19 +2834,7 @@ app.post('/api/form-k-submission', async (req, res) => {
     if (isFormComplete) {
       try {
         const emailData = {
-          strataPlan,
-          address,
-          unitNumber,
-          strataLotNumber,
-          tenant1Name,
-          tenant2Name: tenant2Name || 'N/A',
-          tenancyCommencingDay,
-          tenancyCommencingDate,
-          tenancyCommencingYear,
-          landlordName,
-          landlordAddress,
-          ownerMailingAddress,
-          submissionDate,
+          ...formKSubmission,
           submissionId: formKSubmission.id,
           formStatus: 'COMPLETE'
         };
@@ -3125,19 +3113,7 @@ app.post('/api/tenant-signature/:submissionId/:token', async (req, res) => {
     if (isNowComplete && !updatedSubmission.emailSent) {
       try {
         const emailData = {
-          strataPlan: updatedSubmission.strataPlan,
-          address: updatedSubmission.address,
-          unitNumber: updatedSubmission.unitNumber,
-          strataLotNumber: updatedSubmission.strataLotNumber,
-          tenant1Name: updatedSubmission.tenant1Name,
-          tenant2Name: updatedSubmission.tenant2Name || 'N/A',
-          tenancyCommencingDay: updatedSubmission.tenancyCommencingDay,
-          tenancyCommencingDate: updatedSubmission.tenancyCommencingDate,
-          tenancyCommencingYear: updatedSubmission.tenancyCommencingYear,
-          landlordName: updatedSubmission.landlordName,
-          landlordAddress: updatedSubmission.landlordAddress,
-          ownerMailingAddress: updatedSubmission.ownerMailingAddress,
-          submissionDate: updatedSubmission.submissionDate,
+          ...updatedSubmission,
           submissionId: updatedSubmission.id,
           formStatus: 'COMPLETE_ALL_SIGNATURES'
         };
