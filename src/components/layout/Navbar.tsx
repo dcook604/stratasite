@@ -122,9 +122,9 @@ export const Navbar = () => {
                 {/* Forms Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="text-gray-700 hover:text-primary flex items-center">
+                    <Button variant="ghost" aria-label="Forms menu" className="text-gray-700 hover:text-primary flex items-center">
                       Forms
-                      <ChevronDown className="h-4 w-4 ml-1" />
+                      <ChevronDown className="h-4 w-4 ml-1" aria-hidden="true" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="bg-white">
@@ -141,9 +141,9 @@ export const Navbar = () => {
                 {/* Information Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="text-gray-700 hover:text-primary flex items-center">
+                    <Button variant="ghost" aria-label="Information menu" className="text-gray-700 hover:text-primary flex items-center">
                       Information
-                      <ChevronDown className="h-4 w-4 ml-1" />
+                      <ChevronDown className="h-4 w-4 ml-1" aria-hidden="true" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="bg-white">
@@ -202,9 +202,12 @@ export const Navbar = () => {
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
+                aria-expanded={isMenuOpen}
+                aria-controls="mobile-menu"
+                aria-label={isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
                 className="text-gray-700"
               >
-                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                {isMenuOpen ? <X className="h-6 w-6" aria-hidden="true" /> : <Menu className="h-6 w-6" aria-hidden="true" />}
               </Button>
             </div>
           )}
@@ -213,10 +216,13 @@ export const Navbar = () => {
 
       {/* Mobile menu */}
       <div
+        id="mobile-menu"
         className={cn(
           "sm:hidden",
           isMenuOpen ? "block" : "hidden"
         )}
+        role="navigation"
+        aria-label="Mobile navigation"
       >
         <div className="px-2 pt-2 pb-3 space-y-1">
           {/* Home */}

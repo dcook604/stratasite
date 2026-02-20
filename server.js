@@ -23,7 +23,7 @@ const initializePrisma = async () => {
   if (!prisma) {
     try {
       prisma = new PrismaClient();
-      await db.$connect();
+      await prisma.$connect();
       console.log('✅ Prisma client initialized successfully');
     } catch (error) {
       console.error('❌ Failed to initialize Prisma client:', error);
@@ -3463,7 +3463,7 @@ process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, shutting down gracefully');
   server.close(async () => {
     logger.info('Server closed');
-    await db.$disconnect();
+    if (prisma) await prisma.$disconnect();
     logger.info('Database connection closed');
     process.exit(0);
   });
@@ -3473,7 +3473,7 @@ process.on('SIGINT', async () => {
   logger.info('SIGINT received, shutting down gracefully');
   server.close(async () => {
     logger.info('Server closed');
-    await db.$disconnect();
+    if (prisma) await prisma.$disconnect();
     logger.info('Database connection closed');
     process.exit(0);
   });

@@ -157,3 +157,11 @@
 .homepage-content li {
   @apply ml-4 text-gray-600;
 }
+
+.homepage-content a {
+  @apply text-blue-600 underline underline-offset-2 hover:text-blue-800;
+}
+
+.homepage-content a[href^="http"] {
+  /* External links from the WYSIWYG editor open in a new tab via the ql-editor */
+}

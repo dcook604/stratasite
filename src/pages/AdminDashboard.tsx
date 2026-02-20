@@ -63,6 +63,17 @@ const AdminDashboard = () => {
   const [scooterEdits, setScooterEdits] = useState({});
   const [savingScooter, setSavingScooter] = useState({});
 
+  // Confirm-delete dialog state
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    open: boolean;
+    message: string;
+    onConfirm: () => void;
+  }>({ open: false, message: '', onConfirm: () => {} });
+
+  const confirmAction = (message: string, onConfirm: () => void) => {
+    setDeleteConfirm({ open: true, message, onConfirm });
+  };
+
   // Cleanup state
   const [cleanupOptions, setCleanupOptions] = useState<CleanupOptions>({
     deleteOlderThanDays: 90,
@@ -636,24 +647,22 @@ const AdminDashboard = () => {
     });
   };
 
-  const deleteScooterRegistration = async (id) => {
-    if (!confirm('Are you sure you want to delete this scooter registration?')) {
-      return;
-    }
-    
-    try {
-      const response = await fetch(`/api/scooter-registrations/${id}`, {
-        method: 'DELETE'
-      });
-      if (response.ok) {
-        toast({ title: "Success", description: "Scooter registration deleted successfully." });
-        fetchData(); // Refresh all data
-      } else {
-        throw new Error('Failed to delete scooter registration');
+  const deleteScooterRegistration = (id) => {
+    confirmAction('Are you sure you want to delete this scooter registration? This action cannot be undone.', async () => {
+      try {
+        const response = await fetch(`/api/scooter-registrations/${id}`, {
+          method: 'DELETE'
+        });
+        if (response.ok) {
+          toast({ title: "Success", description: "Scooter registration deleted successfully." });
+          fetchData();
+        } else {
+          throw new Error('Failed to delete scooter registration');
+        }
+      } catch (error) {
+        toast({ title: "Error", description: error.message, variant: "destructive" });
       }
-    } catch (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    }
+    });
   };
 
   return (
@@ -1781,29 +1790,29 @@ const AdminDashboard = () => {
                               <Button
                                 variant="destructive"
                                 size="sm"
-                                onClick={async () => {
-                                  if (window.confirm(`Are you sure you want to delete the pet registration for ${registration.petName}? This action cannot be undone.`)) {
-                                    try {
-                                      const response = await fetch(`/api/pet-registrations/${registration.id}`, {
-                                        method: 'DELETE'
-                                      });
-                                      
-                                      if (!response.ok) throw new Error('Failed to delete registration');
-                                      
-                                      toast({
-                                        title: "Registration Deleted",
-                                        description: `Pet registration for ${registration.petName} has been deleted`,
-                                      });
-                                      
-                                      fetchData();
-                                    } catch (error) {
-                                      toast({
-                                        title: "Error",
-                                        description: "Failed to delete registration",
-                                        variant: "destructive",
-                                      });
+                                onClick={() => {
+                                  confirmAction(
+                                    `Are you sure you want to delete the pet registration for ${registration.petName}? This action cannot be undone.`,
+                                    async () => {
+                                      try {
+                                        const response = await fetch(`/api/pet-registrations/${registration.id}`, {
+                                          method: 'DELETE'
+                                        });
+                                        if (!response.ok) throw new Error('Failed to delete registration');
+                                        toast({
+                                          title: "Registration Deleted",
+                                          description: `Pet registration for ${registration.petName} has been deleted`,
+                                        });
+                                        fetchData();
+                                      } catch (error) {
+                                        toast({
+                                          title: "Error",
+                                          description: "Failed to delete registration",
+                                          variant: "destructive",
+                                        });
+                                      }
                                     }
-                                  }
+                                  );
                                 }}
                               >
                                 <Trash2 className="h-4 w-4 mr-1" />
@@ -2334,6 +2343,37 @@ const AdminDashboard = () => {
                 </div>
               </form>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Confirm-delete dialog */}
+        <Dialog
+          open={deleteConfirm.open}
+          onOpenChange={(open) => setDeleteConfirm((prev) => ({ ...prev, open }))}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Deletion</DialogTitle>
+              <DialogDescription>{deleteConfirm.message}</DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setDeleteConfirm((prev) => ({ ...prev, open: false }))}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  setDeleteConfirm((prev) => ({ ...prev, open: false }));
+                  deleteConfirm.onConfirm();
+                }}
+              >
+                <Trash2 className="w-4 h-4 mr-2" aria-hidden="true" />
+                Delete
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
       </div>

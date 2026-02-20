@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Navbar from '@/components/layout/Navbar';
@@ -7,7 +7,7 @@ import UpcomingEvents from '@/components/widgets/UpcomingEvents';
 import RecentAnnouncements from '@/components/widgets/RecentAnnouncements';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar, Image, Book, Mail, Edit, Save, X, ShoppingCart } from 'lucide-react';
+import { Calendar, Image, Book, Mail, Edit, Save, X, ShoppingCart, Loader2 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,6 +34,8 @@ const Index = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({ title: '', content: '' });
   const [saving, setSaving] = useState(false);
+  const [buildingImageError, setBuildingImageError] = useState(false);
+  const editTitleRef = useRef<HTMLInputElement>(null);
 
   const quillModules = {
     toolbar: [
@@ -101,7 +103,8 @@ Use our platform to stay updated on events, announcements, and community activit
     };
 
     fetchHomepageData();
-  }, [toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (location.state?.message) {
@@ -120,8 +123,12 @@ Use our platform to stay updated on events, announcements, and community activit
         title: homepageData.title,
         content: homepageData.content
       });
+      setIsEditing(false);
+    } else {
+      setIsEditing(true);
+      // Focus the title field once edit form renders
+      setTimeout(() => editTitleRef.current?.focus(), 50);
     }
-    setIsEditing(!isEditing);
   };
 
   const handleSave = async () => {
@@ -179,28 +186,17 @@ Use our platform to stay updated on events, announcements, and community activit
       .replace(/\n/g, '<br/>');
   };
 
-  useEffect(() => {
-    // Make announcement links open in new tab
-    const announcementsContainer = document.getElementById('announcements-content');
-    if (announcementsContainer) {
-      const links = announcementsContainer.getElementsByTagName('a');
-      for (const link of links) {
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        if (link instanceof HTMLElement) {
-          link.style.color = '#2563eb';
-        }
-      }
-    }
-  }, [homepageData?.content]);
+  // Links within homepage HTML content are handled via global CSS (.homepage-content a)
+  // rather than direct DOM manipulation to avoid fragile imperative code.
 
   if (loading) {
     return (
       <div className="page-container">
         <Navbar />
         <div className="page-content">
-          <div className="max-w-4xl mx-auto px-4 py-8">
-            <p className="text-center text-gray-500">Loading...</p>
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16 flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
+            <p className="text-gray-500 text-sm" aria-live="polite">Loading homepage content…</p>
           </div>
         </div>
         <Footer />
@@ -213,19 +209,21 @@ Use our platform to stay updated on events, announcements, and community activit
       <Navbar />
       <div className="page-content">
         {adminUser && (
-          <div className="bg-blue-50 border-b border-blue-200">
+          <div className="bg-blue-50 border-b border-blue-200" role="region" aria-label="Admin controls">
             <div className="max-w-7xl mx-auto px-4 py-3">
               <div className="flex items-center justify-between">
                 <p className="text-blue-700 text-sm">
-                  🔧 Admin Mode: You can edit the homepage content
+                  Admin Mode: You can edit the homepage content
                 </p>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleEditToggle}
+                  aria-expanded={isEditing}
+                  aria-controls="homepage-edit-form"
                   className="bg-blue-600 text-white hover:bg-blue-700"
                 >
-                  <Edit className="w-4 h-4 mr-2" />
+                  <Edit className="w-4 h-4 mr-2" aria-hidden="true" />
                   {isEditing ? 'Cancel Edit' : 'Edit Homepage'}
                 </Button>
               </div>
@@ -234,8 +232,8 @@ Use our platform to stay updated on events, announcements, and community activit
         )}
 
         {isEditing ? (
-          <div className="bg-yellow-50 border-b border-yellow-200 py-8">
-            <div className="max-w-4xl mx-auto px-4">
+          <div id="homepage-edit-form" className="bg-yellow-50 border-b border-yellow-200 py-8">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6">
               <div className="bg-white rounded-lg p-6 shadow-md">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-lg font-semibold text-yellow-800">Editing Homepage Content</h2>
@@ -245,8 +243,12 @@ Use our platform to stay updated on events, announcements, and community activit
                       disabled={saving}
                       className="bg-green-600 hover:bg-green-700"
                     >
-                      <Save className="w-4 h-4 mr-2" />
-                      {saving ? 'Saving...' : 'Save'}
+                      {saving ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />
+                      ) : (
+                        <Save className="w-4 h-4 mr-2" aria-hidden="true" />
+                      )}
+                      {saving ? 'Saving…' : 'Save'}
                     </Button>
                     <Button
                       variant="outline"
@@ -264,9 +266,11 @@ Use our platform to stay updated on events, announcements, and community activit
                     <Label htmlFor="edit-title">Page Title</Label>
                     <Input
                       id="edit-title"
+                      ref={editTitleRef}
                       value={editData.title}
                       onChange={(e) => setEditData({...editData, title: e.target.value})}
                       className="text-lg font-medium"
+                      required
                     />
                   </div>
                   
@@ -318,33 +322,27 @@ Use our platform to stay updated on events, announcements, and community activit
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center">
                   <div className="relative rounded-lg overflow-hidden shadow-xl mx-auto max-w-3xl">
-                    <img 
-                      src="/building-602.jpg" 
-                      alt="Spectrum 4 Building - 602 Citadel Parade, Vancouver"
-                      className="w-full h-52 md:h-80 object-cover"
-                      onError={(e) => {
-                        // Fallback to a placeholder if image doesn't load
-                        console.warn('Building image failed to load, showing fallback');
-                        e.currentTarget.style.display = 'none';
-                        const nextSibling = e.currentTarget.nextElementSibling;
-                        if (nextSibling instanceof HTMLElement) {
-                          nextSibling.style.display = 'flex';
-                        }
-                      }}
-                    />
-                    {/* Fallback placeholder (hidden by default) */}
-                    <div className="w-full h-52 md:h-80 bg-gradient-to-br from-blue-100 via-gray-100 to-blue-50 items-center justify-center relative hidden">
-                      <div className="text-center">
-                        <h3 className="text-2xl font-bold text-gray-700 mb-2">Spectrum 4</h3>
-                        <p className="text-gray-600 mb-4">602 Citadel Parade</p>
-                        <p className="text-sm text-gray-500">Modern Vancouver Living</p>
+                    {buildingImageError ? (
+                      <div className="w-full h-52 md:h-80 bg-gradient-to-br from-blue-100 via-gray-100 to-blue-50 flex items-center justify-center">
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-gray-700 mb-2">Spectrum 4</p>
+                          <p className="text-gray-600 mb-1">602 Citadel Parade</p>
+                          <p className="text-sm text-gray-500">Modern Vancouver Living</p>
+                        </div>
                       </div>
-                    </div>
-                    
+                    ) : (
+                      <img
+                        src="/building-602.jpg"
+                        alt="Spectrum 4 Building at 602 Citadel Parade, Vancouver"
+                        className="w-full h-52 md:h-80 object-cover"
+                        onError={() => setBuildingImageError(true)}
+                      />
+                    )}
+
                     {/* Image overlay with building info */}
-                    <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+                    <div className="absolute inset-0 bg-black bg-opacity-20" aria-hidden="true"></div>
                     <div className="absolute bottom-4 left-4 text-white">
-                      <h3 className="text-xl font-semibold">Spectrum 4</h3>
+                      <p className="text-xl font-semibold">Spectrum 4</p>
                       <p className="text-sm opacity-90">602 Citadel Parade, Vancouver</p>
                     </div>
                   </div>
