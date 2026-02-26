@@ -11,11 +11,13 @@ datasource db {
 }
 
 model AdminUser {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now()) @map("created_at")
-  
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  password             String
+  passwordResetToken   String?   @map("password_reset_token")
+  passwordResetExpiry  DateTime? @map("password_reset_expiry")
+  createdAt            DateTime  @default(now()) @map("created_at")
+
   @@map("admin_users")
 }
 

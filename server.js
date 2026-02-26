@@ -1189,9 +1189,6 @@ app.put('/api/admin/users/:id/reset-password', async (req, res) => {
   }
 });
 
-// In-memory store for password reset tokens: token -> { adminId, expiry }
-const passwordResetTokens = new Map();
-
 // POST /api/admin/forgot-password - request a password reset email
 app.post('/api/admin/forgot-password', async (req, res) => {
   try {
@@ -1208,16 +1205,15 @@ app.post('/api/admin/forgot-password', async (req, res) => {
       return res.json({ success: true, message: 'If that email is registered, a reset link has been sent.' });
     }
 
-    // Generate a secure random token
+    // Generate a secure random token and store it in the database
     const { randomBytes } = await import('crypto');
     const token = randomBytes(32).toString('hex');
     const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
 
-    // Remove any existing tokens for this admin
-    for (const [t, data] of passwordResetTokens.entries()) {
-      if (data.adminId === admin.id) passwordResetTokens.delete(t);
-    }
-    passwordResetTokens.set(token, { adminId: admin.id, expiry });
+    await db.adminUser.update({
+      where: { id: admin.id },
+      data: { passwordResetToken: token, passwordResetExpiry: expiry },
+    });
 
     // Build reset link - use X-Forwarded-Proto when behind a reverse proxy (Coolify/nginx)
     const protocol = req.get('x-forwarded-proto') || req.protocol;
@@ -1256,12 +1252,19 @@ app.post('/api/admin/reset-password-with-token', async (req, res) => {
       return res.status(400).json({ error: 'Token and new password are required' });
     }
 
-    const tokenData = passwordResetTokens.get(token);
-    if (!tokenData) {
+    const db = await getPrisma();
+    const admin = await db.adminUser.findFirst({
+      where: { passwordResetToken: token },
+    });
+
+    if (!admin || !admin.passwordResetExpiry) {
       return res.status(400).json({ error: 'Invalid or expired reset token' });
     }
-    if (new Date() > tokenData.expiry) {
-      passwordResetTokens.delete(token);
+    if (new Date() > admin.passwordResetExpiry) {
+      await db.adminUser.update({
+        where: { id: admin.id },
+        data: { passwordResetToken: null, passwordResetExpiry: null },
+      });
       return res.status(400).json({ error: 'Reset token has expired. Please request a new one.' });
     }
 
@@ -1272,15 +1275,13 @@ app.post('/api/admin/reset-password-with-token', async (req, res) => {
       });
     }
 
-    const db = await getPrisma();
     const hashedPassword = await bcrypt.hash(newPassword, 12);
     await db.adminUser.update({
-      where: { id: tokenData.adminId },
-      data: { password: hashedPassword },
+      where: { id: admin.id },
+      data: { password: hashedPassword, passwordResetToken: null, passwordResetExpiry: null },
     });
 
-    passwordResetTokens.delete(token);
-    logger.info('Password reset via token', { adminId: tokenData.adminId });
+    logger.info('Password reset via token', { adminId: admin.id });
     res.json({ success: true, message: 'Password has been reset successfully.' });
   } catch (error) {
     logger.error('Error resetting password with token', error);
