@@ -589,6 +589,7 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.post('/api/auth/register', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { email, password } = req.body;
     logger.debug('Registration attempt', { email });
 
@@ -641,6 +642,7 @@ app.get('/api/announcements', async (req, res) => {
 
 app.post('/api/announcements', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { title, content } = req.body;
     logger.debug('Creating announcement', { title });
     const announcement = await db.announcement.create({
@@ -656,6 +658,7 @@ app.post('/api/announcements', async (req, res) => {
 
 app.put('/api/announcements/:id', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { id } = req.params;
     const { title, content, isActive } = req.body;
     logger.debug('Updating announcement', { id, title });
@@ -673,6 +676,7 @@ app.put('/api/announcements/:id', async (req, res) => {
 
 app.delete('/api/announcements/:id', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { id } = req.params;
     logger.debug('Deleting announcement', { id });
     await db.announcement.update({
@@ -704,6 +708,7 @@ app.get('/api/events', async (req, res) => {
 
 app.post('/api/events', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { title, description, startDate, endDate, location } = req.body;
     const event = await db.event.create({
       data: { 
@@ -723,6 +728,7 @@ app.post('/api/events', async (req, res) => {
 
 app.put('/api/events/:id', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { id } = req.params;
     const { title, description, startDate, endDate, location, isActive } = req.body;
     const event = await db.event.update({
@@ -745,6 +751,7 @@ app.put('/api/events/:id', async (req, res) => {
 
 app.delete('/api/events/:id', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { id } = req.params;
     await db.event.update({
       where: { id },
@@ -796,6 +803,7 @@ app.get('/api/pages/:slug', async (req, res) => {
 
 app.post('/api/pages', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { slug, title, content } = req.body;
     const page = await db.page.create({
       data: { slug, title, content }
@@ -809,6 +817,7 @@ app.post('/api/pages', async (req, res) => {
 
 app.put('/api/pages/:id', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { id } = req.params;
     const { slug, title, content, isActive } = req.body;
     const page = await db.page.update({
@@ -824,6 +833,7 @@ app.put('/api/pages/:id', async (req, res) => {
 
 app.delete('/api/pages/:id', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { id } = req.params;
     await db.page.update({
       where: { id },
@@ -853,6 +863,7 @@ app.get('/api/documents', async (req, res) => {
 
 app.get('/api/documents/:id/download', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { id } = req.params;
     const document = await db.document.findUnique({
       where: { id, isActive: true }
@@ -918,6 +929,7 @@ app.post('/api/documents', (req, res) => {
 
     // Continue with normal processing if no upload errors
     try {
+      const db = await getPrisma();
       const { title, description } = req.body;
       
       if (!req.file) {
@@ -971,6 +983,7 @@ app.post('/api/documents', (req, res) => {
 
 app.put('/api/documents/:id', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { id } = req.params;
     const { title, description, isActive } = req.body;
     
@@ -989,6 +1002,7 @@ app.put('/api/documents/:id', async (req, res) => {
 
 app.delete('/api/documents/:id', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { id } = req.params;
     
     // Get document info before deletion
@@ -1033,6 +1047,7 @@ app.get('/api/admin/users', async (req, res) => {
 
 app.post('/api/admin/users', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { email, password } = req.body;
 
     // Password strength validation
@@ -1071,6 +1086,7 @@ app.post('/api/admin/users', async (req, res) => {
 
 app.delete('/api/admin/users/:id', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { id } = req.params;
     
     // Prevent deleting the last admin user
@@ -1210,7 +1226,7 @@ app.post('/api/admin/forgot-password', async (req, res) => {
 
     // Send reset email
     await transporter.sendMail({
-      from: `"Spectrum 4 Admin" <${process.env.SMTP_USER}@spectrum4.ca>`,
+      from: process.env.SMTP_FROM || `"Spectrum 4 Admin" <${process.env.SMTP_USER}>`,
       to: admin.email,
       subject: 'Admin Password Reset Request',
       html: `
@@ -1493,6 +1509,7 @@ app.get('/api/marketplace', async (req, res) => {
 
 app.post('/api/marketplace', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { title, description, category, type, price, authorName, authorEmail, authorPhone, images, turnstileToken } = req.body;
     
     const isTurnstileValid = await verifyTurnstile(turnstileToken);
@@ -1553,6 +1570,7 @@ app.post('/api/marketplace', async (req, res) => {
 
 app.put('/api/marketplace/:id', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { id } = req.params;
     const { title, description, category, type, price, isActive } = req.body;
     const post = await db.marketplacePost.update({
@@ -1579,6 +1597,7 @@ app.put('/api/marketplace/:postId/sold', async (req, res) => {
   const { authorId } = req.cookies;
 
   try {
+    const db = await getPrisma();
     const post = await db.marketplacePost.findUnique({ where: { id: postId } });
 
     if (!post) {
@@ -1604,6 +1623,7 @@ app.put('/api/marketplace/:postId/sold', async (req, res) => {
 
 app.delete('/api/marketplace/:id', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { id } = req.params;
     await db.marketplacePost.update({
       where: { id },
@@ -1669,6 +1689,7 @@ app.post('/api/marketplace/:postId/replies', async (req, res) => {
 
 app.delete('/api/marketplace/:postId/replies/:replyId', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { replyId } = req.params;
     await db.marketplaceReply.delete({
       where: { id: replyId }
@@ -1683,6 +1704,7 @@ app.delete('/api/marketplace/:postId/replies/:replyId', async (req, res) => {
 // Admin cleanup endpoint for marketplace data
 app.post('/api/admin/cleanup', async (req, res) => {
   try {
+    const db = await getPrisma();
     const {
       deleteOlderThanDays = 90,
       deleteSoldItems = false,
@@ -1953,6 +1975,7 @@ app.post('/api/upload/image', (req, res) => {
 // Submit a new event request
 app.post('/api/event-requests', async (req, res) => {
   try {
+    const db = await getPrisma();
     const {
       firstName, lastName, unitNumber, email, phone, isOwner,
       eventTitle, eventDescription, requestedDateTime, turnstileToken
@@ -2002,6 +2025,7 @@ app.get('/api/event-requests', async (req, res) => {
 // Submit a new scooter registration
 app.post('/api/scooter-registration', async (req, res) => {
   try {
+    const db = await getPrisma();
     const {
       date, unitNumber, numberOfScooters, description, ownerNames,
       email, phone, acceptTerms, turnstileToken
@@ -2127,6 +2151,7 @@ app.get('/api/scooter-registrations', async (req, res) => {
 // Update scooter registration status (for admin)
 app.put('/api/scooter-registrations/:id', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { id } = req.params;
     const { status, keyNumber, depositPaid, depositAmount, notes } = req.body;
 
@@ -2152,6 +2177,7 @@ app.put('/api/scooter-registrations/:id', async (req, res) => {
 // Delete scooter registration (for admin)
 app.delete('/api/scooter-registrations/:id', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { id } = req.params;
     
     await db.scooterRegistration.update({
@@ -2171,6 +2197,7 @@ app.delete('/api/scooter-registrations/:id', async (req, res) => {
 // Submit a new AC inquiry
 app.post('/api/ac-inquiry', async (req, res) => {
   try {
+    const db = await getPrisma();
     const {
       ownerName, ownerUnit, ownerPhone, email, isMultiZone, bestContactMethod,
       installationTiming, notes, consentGiven, turnstileToken
@@ -2260,6 +2287,7 @@ app.get('/api/ac-inquiries', async (req, res) => {
 // Submit a new storage rental interest
 app.post('/api/storage-rental', async (req, res) => {
   try {
+    const db = await getPrisma();
     const {
       firstName, lastName, phoneNumber, email, unitNumber, bestContactMethod,
       interestedInInfo, consentGiven, notes, turnstileToken
@@ -2360,6 +2388,7 @@ app.put('/api/event-requests/:id', async (req, res) => {
   }
 
   try {
+    const db = await getPrisma();
     const updatedRequest = await db.eventRequest.update({
       where: { id },
       data: { status },
@@ -2390,6 +2419,7 @@ app.put('/api/event-requests/:id', async (req, res) => {
 // Submit emergency contact information
 app.post('/api/emergency-contact', async (req, res) => {
   try {
+    const db = await getPrisma();
     const {
       unitNumber, strataLotNumber, registeredOwnerNames, ownerEmail, phoneHome, phoneBusiness,
       phoneOther, phoneOtherSpecify, nonResidentAddress, emergencyContactName, emergencyContactEmail,
@@ -2524,6 +2554,7 @@ app.post('/api/pet-registration', (req, res) => {
 
     // Continue with normal processing if no upload errors
     try {
+      const db = await getPrisma();
       const {
         ownerName, suiteNumber, phoneNumber, email, occupancyType,
         petName, petAge, petHeight, petColor, petType, petBreed, petWeight,
@@ -2686,6 +2717,7 @@ app.get('/api/pet-registrations', async (req, res) => {
 // Update pet registration status (admin only)
 app.patch('/api/pet-registrations/:id', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { id } = req.params;
     const { status, notes } = req.body;
 
@@ -2718,6 +2750,7 @@ app.patch('/api/pet-registrations/:id', async (req, res) => {
 // Delete pet registration (admin only)
 app.delete('/api/pet-registrations/:id', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { id } = req.params;
 
     // Get the registration to access photos before deletion
@@ -3052,6 +3085,7 @@ app.get('/api/form-k-submissions', async (req, res) => {
 // Get single Form K submission with signatures (admin only)
 app.get('/api/form-k-submissions/:id', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { id } = req.params;
     
     const formKSubmission = await db.formKSubmission.findUnique({
