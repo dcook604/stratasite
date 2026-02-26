@@ -1225,13 +1225,14 @@ app.post('/api/admin/forgot-password', async (req, res) => {
     const resetLink = `${baseUrl}/admin/reset-password?token=${token}`;
 
     // Send reset email
+    const siteName = process.env.SMTP_FROM_NAME || 'Admin';
     await transporter.sendMail({
-      from: process.env.SMTP_FROM || `"${process.env.SMTP_FROM_NAME || 'Admin'}" <${process.env.SMTP_USER}>`,
+      from: process.env.SMTP_FROM || `"${siteName}" <${process.env.SMTP_USER}>`,
       to: admin.email,
-      subject: 'Admin Password Reset Request',
+      subject: `${siteName} - Password Reset Request`,
       html: `
         <h2>Password Reset Request</h2>
-        <p>You requested a password reset for your admin account.</p>
+        <p>You requested a password reset for your ${siteName} account.</p>
         <p>Click the link below to reset your password. This link expires in 1 hour.</p>
         <p><a href="${resetLink}" style="background:#2563eb;color:#fff;padding:10px 20px;text-decoration:none;border-radius:4px;display:inline-block;">Reset Password</a></p>
         <p>If you did not request this, please ignore this email.</p>
