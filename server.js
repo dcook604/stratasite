@@ -1203,13 +1203,14 @@ app.post('/api/admin/forgot-password', async (req, res) => {
     }
     passwordResetTokens.set(token, { adminId: admin.id, expiry });
 
-    // Build reset link
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    // Build reset link - use X-Forwarded-Proto when behind a reverse proxy (Coolify/nginx)
+    const protocol = req.get('x-forwarded-proto') || req.protocol;
+    const baseUrl = `${protocol}://${req.get('x-forwarded-host') || req.get('host')}`;
     const resetLink = `${baseUrl}/admin/reset-password?token=${token}`;
 
     // Send reset email
     await transporter.sendMail({
-      from: `"Spectrum 4 Admin" <${process.env.SMTP_USER}>`,
+      from: `"Spectrum 4 Admin" <${process.env.SMTP_USER}@spectrum4.ca>`,
       to: admin.email,
       subject: 'Admin Password Reset Request',
       html: `
