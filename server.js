@@ -1226,7 +1226,7 @@ app.post('/api/admin/forgot-password', async (req, res) => {
 
     // Send reset email
     await transporter.sendMail({
-      from: process.env.SMTP_FROM || `"Spectrum 4 Admin" <${process.env.SMTP_USER}>`,
+      from: process.env.SMTP_FROM || `"${process.env.SMTP_FROM_NAME || 'Admin'}" <${process.env.SMTP_USER}>`,
       to: admin.email,
       subject: 'Admin Password Reset Request',
       html: `
