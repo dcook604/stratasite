@@ -12,8 +12,14 @@ export const AdminDashboard = lazy(() =>
   }))
 );
 
-export const AdminLogin = lazy(() => 
+export const AdminLogin = lazy(() =>
   import('@/pages/AdminLogin').then(module => ({
+    default: module.default
+  }))
+);
+
+export const AdminResetPassword = lazy(() =>
+  import('@/pages/AdminResetPassword').then(module => ({
     default: module.default
   }))
 );

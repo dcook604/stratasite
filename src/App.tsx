@@ -18,6 +18,7 @@ import FormAcknowledgment from "./pages/FormAcknowledgment";
 import {
   AdminDashboard,
   AdminLogin,
+  AdminResetPassword,
   Bylaws,
   Calendar,
   ScooterRegistration,
@@ -56,6 +57,11 @@ const App = () => (
                 <Route path="/admin/login" element={
                   <Suspense fallback={<LazyLoadingFallback />}>
                     <AdminLogin />
+                  </Suspense>
+                } />
+                <Route path="/admin/reset-password" element={
+                  <Suspense fallback={<LazyLoadingFallback />}>
+                    <AdminResetPassword />
                   </Suspense>
                 } />
                 <Route path="/admin/dashboard" element={

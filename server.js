@@ -1092,6 +1092,7 @@ app.delete('/api/admin/users/:id', async (req, res) => {
 
 app.put('/api/admin/users/:id/password', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { id } = req.params;
     const { currentPassword, newPassword } = req.body;
 
@@ -1136,6 +1137,7 @@ app.put('/api/admin/users/:id/password', async (req, res) => {
 // Admin password reset endpoint (no current password required)
 app.put('/api/admin/users/:id/reset-password', async (req, res) => {
   try {
+    const db = await getPrisma();
     const { id } = req.params;
     const { newPassword } = req.body;
 
@@ -1167,6 +1169,103 @@ app.put('/api/admin/users/:id/reset-password', async (req, res) => {
 
   } catch (error) {
     logger.error('Error resetting admin password', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// In-memory store for password reset tokens: token -> { adminId, expiry }
+const passwordResetTokens = new Map();
+
+// POST /api/admin/forgot-password - request a password reset email
+app.post('/api/admin/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const db = await getPrisma();
+    const admin = await db.adminUser.findUnique({ where: { email } });
+
+    // Always return success to avoid email enumeration
+    if (!admin) {
+      return res.json({ success: true, message: 'If that email is registered, a reset link has been sent.' });
+    }
+
+    // Generate a secure random token
+    const { randomBytes } = await import('crypto');
+    const token = randomBytes(32).toString('hex');
+    const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
+    // Remove any existing tokens for this admin
+    for (const [t, data] of passwordResetTokens.entries()) {
+      if (data.adminId === admin.id) passwordResetTokens.delete(t);
+    }
+    passwordResetTokens.set(token, { adminId: admin.id, expiry });
+
+    // Build reset link
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const resetLink = `${baseUrl}/admin/reset-password?token=${token}`;
+
+    // Send reset email
+    await transporter.sendMail({
+      from: `"Spectrum 4 Admin" <${process.env.SMTP_USER}>`,
+      to: admin.email,
+      subject: 'Admin Password Reset Request',
+      html: `
+        <h2>Password Reset Request</h2>
+        <p>You requested a password reset for your admin account.</p>
+        <p>Click the link below to reset your password. This link expires in 1 hour.</p>
+        <p><a href="${resetLink}" style="background:#2563eb;color:#fff;padding:10px 20px;text-decoration:none;border-radius:4px;display:inline-block;">Reset Password</a></p>
+        <p>If you did not request this, please ignore this email.</p>
+        <p style="color:#666;font-size:12px;">Link: ${resetLink}</p>
+      `,
+    });
+
+    logger.info('Password reset email sent', { adminId: admin.id });
+    res.json({ success: true, message: 'If that email is registered, a reset link has been sent.' });
+  } catch (error) {
+    logger.error('Error sending password reset email', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/admin/reset-password-with-token - complete the reset using the token
+app.post('/api/admin/reset-password-with-token', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) {
+      return res.status(400).json({ error: 'Token and new password are required' });
+    }
+
+    const tokenData = passwordResetTokens.get(token);
+    if (!tokenData) {
+      return res.status(400).json({ error: 'Invalid or expired reset token' });
+    }
+    if (new Date() > tokenData.expiry) {
+      passwordResetTokens.delete(token);
+      return res.status(400).json({ error: 'Reset token has expired. Please request a new one.' });
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({
+        error: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character'
+      });
+    }
+
+    const db = await getPrisma();
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    await db.adminUser.update({
+      where: { id: tokenData.adminId },
+      data: { password: hashedPassword },
+    });
+
+    passwordResetTokens.delete(token);
+    logger.info('Password reset via token', { adminId: tokenData.adminId });
+    res.json({ success: true, message: 'Password has been reset successfully.' });
+  } catch (error) {
+    logger.error('Error resetting password with token', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
