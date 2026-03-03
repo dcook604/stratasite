@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, Image, Book, Mail, Menu, X, LogIn, ChevronDown, ShoppingCart } from 'lucide-react';
+import { Home, Image, Book, Mail, Menu, X, LogIn, ChevronDown, ShoppingCart, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAdminAuth } from '@/context/AdminAuthContext';
@@ -47,7 +47,6 @@ export const Navbar = () => {
     { name: 'Storage Rental', path: '/storage-rental' },
     { name: 'Pet Registration', path: '/pet-registration' },
     { name: 'Form K', path: '/form-k' },
-    { name: 'Incident Report', path: '/incident-report' },
   ];
 
   const mainNavItems = [
@@ -83,6 +82,18 @@ export const Navbar = () => {
                     </Link>
                   </Button>
                 ))}
+
+                {/* Incident Report */}
+                <Button
+                  variant="ghost"
+                  className="text-gray-700 hover:text-primary"
+                  asChild
+                >
+                  <Link to="/incident-report" className="flex items-center">
+                    <ShieldAlert className="h-4 w-4 mr-2" />
+                    Incident Report
+                  </Link>
+                </Button>
 
                 <Button
                   variant="ghost"
@@ -226,6 +237,16 @@ export const Navbar = () => {
             </Link>
           ))}
           
+          {/* Incident Report */}
+          <Link
+            to="/incident-report"
+            className="flex items-center text-gray-700 hover:bg-gray-100 hover:text-primary px-3 py-2 rounded-md text-base font-medium"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            <ShieldAlert className="h-4 w-4 mr-2" />
+            Incident Report
+          </Link>
+
           {/* Contact */}
           <Link
             to="/contact"
