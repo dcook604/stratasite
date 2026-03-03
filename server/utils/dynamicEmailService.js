@@ -292,6 +292,18 @@ const emailTemplates = {
       timeZone: 'America/Vancouver'
     });
 
+    // Format incident date/time for display
+    const formattedIncidentDate = incidentDate
+      ? new Date(incidentDate + 'T12:00:00').toLocaleDateString('en-CA', {
+          year: 'numeric', month: 'long', day: 'numeric', timeZone: 'America/Vancouver'
+        })
+      : 'Not provided';
+    const formattedIncidentTime = incidentTime
+      ? new Date(`1970-01-01T${incidentTime}:00`).toLocaleTimeString('en-CA', {
+          hour: '2-digit', minute: '2-digit', timeZone: 'UTC'
+        })
+      : 'Not provided';
+
     const flagBadges = [
       policeAttended ? '<span style="display:inline-block;background:#cce5ff;color:#004085;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid #b8daff;margin-right:8px;">&#x1F6A8; POLICE ATTENDED</span>' : '',
       bylawViolation ? '<span style="display:inline-block;background:#fff3cd;color:#856404;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid #ffc107;margin-right:8px;">&#x1F4CB; BYLAW VIOLATION</span>' : '',
@@ -360,7 +372,7 @@ const emailTemplates = {
       <!-- Incident Title + location -->
       <tr><td style="padding-bottom:6px;border-left:4px solid #b91c1c;padding-left:12px;">
         <div style="font-size:19px;font-weight:700;color:#111827;">${incidentTitle}</div>
-        <div style="font-size:13px;color:#6b7280;margin-top:3px;">${incidentDate} at ${incidentTime} &mdash; ${incidentLocation}</div>
+        <div style="font-size:13px;color:#6b7280;margin-top:3px;">${formattedIncidentDate} at ${formattedIncidentTime} &mdash; ${incidentLocation}</div>
       </td></tr>
 
       <!-- Flag badges -->
@@ -372,7 +384,20 @@ const emailTemplates = {
       <!-- Reporter -->
       <tr><td style="padding-bottom:24px;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr><td colspan="2" style="background:#f8f9fa;padding:9px 14px;font-size:11px;font-weight:700;color:#6b7280;letter-spacing:0.8px;text-transform:uppercase;border:1px solid #e5e7eb;border-bottom:2px solid #e5e7eb;">Reporter Information</td></tr>
+          <tr><td colspan="2" style="background:#f8f9fa;padding:9px 14px;font-size:11px;font-weight:700;color:#6b7280;letter-spacing:0.8px;text-transform:uppercase;border:1px solid #e5e7eb;border-bottom:2px solid #e5e7eb;">Incident Details</td></tr>
+          <tr>
+            <td style="padding:9px 14px;font-size:13px;font-weight:600;color:#374151;width:38%;border:1px solid #e5e7eb;border-top:none;background:#fafafa;">Date of Incident</td>
+            <td style="padding:9px 14px;font-size:13px;color:#111827;font-weight:600;border:1px solid #e5e7eb;border-top:none;border-left:none;">${formattedIncidentDate}</td>
+          </tr>
+          <tr>
+            <td style="padding:9px 14px;font-size:13px;font-weight:600;color:#374151;border:1px solid #e5e7eb;border-top:none;background:#fafafa;">Time of Incident</td>
+            <td style="padding:9px 14px;font-size:13px;color:#111827;font-weight:600;border:1px solid #e5e7eb;border-top:none;border-left:none;">${formattedIncidentTime}</td>
+          </tr>
+          <tr>
+            <td style="padding:9px 14px;font-size:13px;font-weight:600;color:#374151;border:1px solid #e5e7eb;border-top:none;background:#fafafa;">Location</td>
+            <td style="padding:9px 14px;font-size:13px;color:#111827;border:1px solid #e5e7eb;border-top:none;border-left:none;">${incidentLocation}</td>
+          </tr>
+          <tr><td colspan="2" style="background:#f8f9fa;padding:9px 14px;font-size:11px;font-weight:700;color:#6b7280;letter-spacing:0.8px;text-transform:uppercase;border:1px solid #e5e7eb;border-bottom:2px solid #e5e7eb;border-top:8px solid #f0f2f5;">Reporter Information</td></tr>
           <tr>
             <td style="padding:9px 14px;font-size:13px;font-weight:600;color:#374151;width:38%;border:1px solid #e5e7eb;border-top:none;background:#fafafa;">Name</td>
             <td style="padding:9px 14px;font-size:13px;color:#111827;border:1px solid #e5e7eb;border-top:none;border-left:none;">${reporterName}</td>
