@@ -282,13 +282,14 @@ const emailTemplates = {
     const {
       incidentId, reporterName, reporterEmail, reporterPhone, unitNumber,
       incidentDate, incidentTime, incidentLocation, incidentTitle, incidentDescription,
-      policeAttended, commonPropertyDamage, hasEvidence, evidenceCount,
+      policeAttended, policeCaseNumber, commonPropertyDamage, hasEvidence, evidenceCount,
       inlineImageCids, videoAttachmentNames
     } = data;
 
     const submittedAt = new Date().toLocaleString('en-CA', {
       year: 'numeric', month: 'long', day: 'numeric',
-      hour: '2-digit', minute: '2-digit', timeZoneName: 'short'
+      hour: '2-digit', minute: '2-digit', timeZoneName: 'short',
+      timeZone: 'America/Vancouver'
     });
 
     const flagBadges = [
@@ -407,7 +408,7 @@ const emailTemplates = {
           <tr><td colspan="2" style="background:#f8f9fa;padding:9px 14px;font-size:11px;font-weight:700;color:#6b7280;letter-spacing:0.8px;text-transform:uppercase;border:1px solid #e5e7eb;border-bottom:2px solid #e5e7eb;">Status Flags</td></tr>
           <tr>
             <td style="padding:9px 14px;font-size:13px;font-weight:600;color:#374151;width:38%;border:1px solid #e5e7eb;border-top:none;background:#fafafa;">Police Attended</td>
-            <td style="padding:9px 14px;font-size:13px;border:1px solid #e5e7eb;border-top:none;border-left:none;">${policeAttended ? '<span style="color:#166534;font-weight:600;">&#x2713; Yes</span>' : '<span style="color:#991b1b;">&#x2715; No</span>'}</td>
+            <td style="padding:9px 14px;font-size:13px;border:1px solid #e5e7eb;border-top:none;border-left:none;">${policeAttended ? `<span style="color:#166534;font-weight:600;">&#x2713; Yes</span>${policeCaseNumber ? ` &mdash; Case #${policeCaseNumber}` : ' &mdash; No case number provided'}` : '<span style="color:#991b1b;">&#x2715; No</span>'}</td>
           </tr>
           <tr>
             <td style="padding:9px 14px;font-size:13px;font-weight:600;color:#374151;border:1px solid #e5e7eb;border-top:none;background:#fafafa;">Common Property Damage</td>
@@ -596,7 +597,9 @@ const sendDynamicFormEmail = async (formName, formData) => {
     const emailContent = template(enrichedFormData);
     
     // Use custom subject from config if available, otherwise use template subject
-    const subject = formConfig.emailConfig?.subject || emailContent.subject;
+    // Interpolate {{placeholder}} tokens with actual form data values
+    let subject = formConfig.emailConfig?.subject || emailContent.subject;
+    subject = subject.replace(/\{\{(\w+)\}\}/g, (match, key) => formData[key] != null ? formData[key] : match);
     
     // Create transporter
     const transporter = createTransporter();

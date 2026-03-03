@@ -38,6 +38,7 @@ const formSchema = z.object({
   incidentTitle: z.string().min(3, { message: 'Please provide a brief title' }).max(150, { message: 'Title must be 150 characters or less' }),
   incidentDescription: z.string().min(10, { message: 'Please provide more detail about the incident' }),
   policeAttended: z.boolean().default(false),
+  policeCaseNumber: z.string().optional(),
   commonPropertyDamage: z.boolean().default(false),
   hasEvidence: z.boolean().default(false),
   turnstileToken: z.string().min(1, { message: 'Please complete the verification' }),
@@ -66,6 +67,7 @@ const IncidentReport: React.FC = () => {
       incidentTitle: '',
       incidentDescription: '',
       policeAttended: false,
+      policeCaseNumber: '',
       commonPropertyDamage: false,
       hasEvidence: false,
       turnstileToken: '',
@@ -73,6 +75,7 @@ const IncidentReport: React.FC = () => {
   });
 
   const hasEvidence = form.watch('hasEvidence');
+  const policeAttended = form.watch('policeAttended');
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -153,6 +156,9 @@ const IncidentReport: React.FC = () => {
       formData.append('incidentTitle', data.incidentTitle);
       formData.append('incidentDescription', data.incidentDescription);
       formData.append('policeAttended', String(data.policeAttended));
+      if (data.policeAttended && data.policeCaseNumber) {
+        formData.append('policeCaseNumber', data.policeCaseNumber);
+      }
       formData.append('commonPropertyDamage', String(data.commonPropertyDamage));
       formData.append('hasEvidence', String(data.hasEvidence));
       formData.append('turnstileToken', data.turnstileToken);
@@ -395,6 +401,22 @@ const IncidentReport: React.FC = () => {
                         </FormItem>
                       )}
                     />
+
+                    {policeAttended && (
+                      <FormField
+                        control={form.control}
+                        name="policeCaseNumber"
+                        render={({ field }) => (
+                          <FormItem className="ml-6">
+                            <FormLabel>Police Case Number <span className="text-muted-foreground font-normal">(if available)</span></FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g. 2024-12345" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
 
                     <FormField
                       control={form.control}

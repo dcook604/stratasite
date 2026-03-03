@@ -3592,7 +3592,7 @@ app.post('/api/incident-report', (req, res) => {
       const {
         reporterName, reporterEmail, reporterPhone, unitNumber,
         incidentDate, incidentTime, incidentLocation, incidentTitle,
-        incidentDescription, policeAttended, commonPropertyDamage,
+        incidentDescription, policeAttended, policeCaseNumber, commonPropertyDamage,
         hasEvidence, turnstileToken,
       } = req.body;
 
@@ -3662,6 +3662,7 @@ app.post('/api/incident-report', (req, res) => {
           incidentTitle,
           incidentDescription,
           policeAttended: policeAttended === 'true',
+          policeCaseNumber: policeAttended === 'true' ? (policeCaseNumber || null) : null,
           commonPropertyDamage: commonPropertyDamage === 'true',
           hasEvidence: hasEvidenceBool,
           evidenceFiles: evidenceFilenames.length > 0 ? JSON.stringify(evidenceFilenames) : null,
@@ -3682,6 +3683,7 @@ app.post('/api/incident-report', (req, res) => {
         incidentTitle,
         incidentDescription,
         policeAttended: policeAttended === 'true',
+        policeCaseNumber: policeAttended === 'true' ? (policeCaseNumber || null) : null,
         commonPropertyDamage: commonPropertyDamage === 'true',
         hasEvidence: hasEvidenceBool,
         evidenceFiles: evidenceFilenames,
@@ -3689,7 +3691,7 @@ app.post('/api/incident-report', (req, res) => {
         evidenceCount: evidenceFilenames.length,
       };
 
-      // Send email notification
+      // Send email notification to admins
       try {
         await sendIncidentReportEmail(incidentData);
         await db.incidentReport.update({
@@ -3699,6 +3701,91 @@ app.post('/api/incident-report', (req, res) => {
         logger.info('Incident report email sent', { incidentId, evidenceCount: evidenceFilenames.length });
       } catch (emailError) {
         logger.error('Failed to send incident report email', emailError);
+      }
+
+      // Send confirmation email to reporter
+      if (reporterEmail) {
+        try {
+          const fromName = process.env.SMTP_FROM_NAME || 'Spectrum 4';
+          const submittedAt = new Date().toLocaleString('en-CA', {
+            year: 'numeric', month: 'long', day: 'numeric',
+            hour: '2-digit', minute: '2-digit', timeZoneName: 'short',
+            timeZone: 'America/Vancouver'
+          });
+          await transporter.sendMail({
+            from: process.env.SMTP_FROM || `"${fromName}" <${process.env.SMTP_USER}>`,
+            to: reporterEmail,
+            subject: `Incident Report Received — ${incidentTitle} (Ref: ${incidentId})`,
+            html: `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f0f2f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f0f2f5;">
+<tr><td align="center" style="padding:24px 16px;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+
+  <!-- Header -->
+  <tr><td style="background:#1d4ed8;border-radius:8px 8px 0 0;padding:28px 36px;text-align:center;">
+    <div style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:-0.3px;">Incident Report Received</div>
+    <div style="color:rgba(255,255,255,0.75);font-size:13px;margin-top:4px;">Spectrum 4 Strata</div>
+  </td></tr>
+
+  <!-- Reference bar -->
+  <tr><td style="background:#dbeafe;border-left:1px solid #bfdbfe;border-right:1px solid #bfdbfe;padding:10px 36px;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td style="font-size:12px;color:#1e40af;font-weight:700;">REFERENCE: ${incidentId}</td>
+        <td align="right" style="font-size:12px;color:#1e40af;">${submittedAt}</td>
+      </tr>
+    </table>
+  </td></tr>
+
+  <!-- Body -->
+  <tr><td style="background:#ffffff;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;padding:32px 36px;">
+    <p style="margin:0 0 16px;font-size:15px;color:#111827;">Dear ${reporterName},</p>
+    <p style="margin:0 0 20px;font-size:14px;color:#374151;line-height:1.6;">
+      Thank you for submitting your incident report. We have received your submission and the strata council has been notified.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
+      <tr><td colspan="2" style="background:#f8f9fa;padding:9px 14px;font-size:11px;font-weight:700;color:#6b7280;letter-spacing:0.8px;text-transform:uppercase;border:1px solid #e5e7eb;border-bottom:2px solid #e5e7eb;">Report Summary</td></tr>
+      <tr>
+        <td style="padding:9px 14px;font-size:13px;font-weight:600;color:#374151;width:40%;border:1px solid #e5e7eb;border-top:none;background:#fafafa;">Reference Number</td>
+        <td style="padding:9px 14px;font-size:13px;color:#111827;font-weight:700;border:1px solid #e5e7eb;border-top:none;border-left:none;">${incidentId}</td>
+      </tr>
+      <tr>
+        <td style="padding:9px 14px;font-size:13px;font-weight:600;color:#374151;border:1px solid #e5e7eb;border-top:none;background:#fafafa;">Incident</td>
+        <td style="padding:9px 14px;font-size:13px;color:#111827;border:1px solid #e5e7eb;border-top:none;border-left:none;">${incidentTitle}</td>
+      </tr>
+      <tr>
+        <td style="padding:9px 14px;font-size:13px;font-weight:600;color:#374151;border:1px solid #e5e7eb;border-top:none;background:#fafafa;">Date &amp; Time</td>
+        <td style="padding:9px 14px;font-size:13px;color:#111827;border:1px solid #e5e7eb;border-top:none;border-left:none;">${incidentDate} at ${incidentTime}</td>
+      </tr>
+      <tr>
+        <td style="padding:9px 14px;font-size:13px;font-weight:600;color:#374151;border:1px solid #e5e7eb;border-top:none;background:#fafafa;">Location</td>
+        <td style="padding:9px 14px;font-size:13px;color:#111827;border:1px solid #e5e7eb;border-top:none;border-left:none;">${incidentLocation}</td>
+      </tr>
+    </table>
+
+    <p style="margin:0 0 8px;font-size:13px;color:#6b7280;line-height:1.6;">
+      Please keep this reference number for your records. If you have any additional information to add or questions about this report, please contact the strata council directly.
+    </p>
+  </td></tr>
+
+  <!-- Footer -->
+  <tr><td style="padding:16px 0 0;text-align:center;">
+    <div style="font-size:11px;color:#9ca3af;">Spectrum 4 Strata &mdash; This is an automated confirmation</div>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body></html>`
+          });
+          logger.info('Incident report confirmation email sent to reporter', { incidentId, reporterEmail });
+        } catch (confirmError) {
+          logger.error('Failed to send incident report confirmation email', confirmError);
+        }
       }
 
       res.status(201).json({

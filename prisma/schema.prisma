@@ -442,6 +442,7 @@ model IncidentReport {
 
   // Checkboxes
   policeAttended        Boolean  @default(false) @map("police_attended")
+  policeCaseNumber      String?  @map("police_case_number")
   commonPropertyDamage  Boolean  @default(false) @map("common_property_damage")
   hasEvidence           Boolean  @default(false) @map("has_evidence")
 
