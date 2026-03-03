@@ -3721,18 +3721,18 @@ app.post('/api/incident-report', (req, res) => {
             hour: '2-digit', minute: '2-digit', timeZoneName: 'short',
             timeZone: 'America/Vancouver'
           });
-          // Format date from YYYY-MM-DD to readable form
-          const formattedIncidentDate = incidentDate
-            ? new Date(incidentDate + 'T12:00:00').toLocaleDateString('en-CA', {
+          // Format date from YYYY-MM-DD to readable form (skip if Unknown)
+          const formattedIncidentDate = (!incidentDate || incidentDate === 'Unknown')
+            ? 'Unknown'
+            : new Date(incidentDate + 'T12:00:00').toLocaleDateString('en-CA', {
                 year: 'numeric', month: 'long', day: 'numeric', timeZone: 'America/Vancouver'
-              })
-            : incidentDate;
-          // Format time from HH:MM to readable form
-          const formattedIncidentTime = incidentTime
-            ? new Date(`1970-01-01T${incidentTime}:00`).toLocaleTimeString('en-CA', {
+              });
+          // Format time from HH:MM to readable form (skip if Unknown)
+          const formattedIncidentTime = (!incidentTime || incidentTime === 'Unknown')
+            ? 'Unknown'
+            : new Date(`1970-01-01T${incidentTime}:00`).toLocaleTimeString('en-CA', {
                 hour: '2-digit', minute: '2-digit', timeZone: 'UTC'
-              })
-            : incidentTime;
+              });
           await transporter.sendMail({
             from: `"${fromName}" <${fromAddress}>`,
             to: reporterEmail,

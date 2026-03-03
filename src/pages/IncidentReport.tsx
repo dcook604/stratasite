@@ -32,8 +32,10 @@ const formSchema = z.object({
   reporterEmail: z.string().email({ message: 'Please enter a valid email address' }),
   reporterPhone: z.string().min(7, { message: 'Please enter a valid phone number' }),
   unitNumber: z.string().min(1, { message: 'Unit number is required' }),
-  incidentDate: z.string().min(1, { message: 'Incident date is required' }),
-  incidentTime: z.string().min(1, { message: 'Incident time is required' }),
+  incidentDate: z.string().optional(),
+  dateUnknown: z.boolean().default(false),
+  incidentTime: z.string().optional(),
+  timeUnknown: z.boolean().default(false),
   incidentLocation: z.string().min(3, { message: 'Please describe where the incident occurred' }),
   incidentTitle: z.string().min(3, { message: 'Please provide a brief title' }).max(150, { message: 'Title must be 150 characters or less' }),
   incidentDescription: z.string().min(10, { message: 'Please provide more detail about the incident' }),
@@ -43,6 +45,13 @@ const formSchema = z.object({
   commonPropertyDamage: z.boolean().default(false),
   hasEvidence: z.boolean().default(false),
   turnstileToken: z.string().min(1, { message: 'Please complete the verification' }),
+}).superRefine((data, ctx) => {
+  if (!data.dateUnknown && !data.incidentDate) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Incident date is required', path: ['incidentDate'] });
+  }
+  if (!data.timeUnknown && !data.incidentTime) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Incident time is required', path: ['incidentTime'] });
+  }
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -63,7 +72,9 @@ const IncidentReport: React.FC = () => {
       reporterPhone: '',
       unitNumber: '',
       incidentDate: '',
+      dateUnknown: false,
       incidentTime: '',
+      timeUnknown: false,
       incidentLocation: '',
       incidentTitle: '',
       incidentDescription: '',
@@ -78,6 +89,8 @@ const IncidentReport: React.FC = () => {
 
   const hasEvidence = form.watch('hasEvidence');
   const policeAttended = form.watch('policeAttended');
+  const dateUnknown = form.watch('dateUnknown');
+  const timeUnknown = form.watch('timeUnknown');
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -152,8 +165,10 @@ const IncidentReport: React.FC = () => {
       formData.append('reporterEmail', data.reporterEmail);
       formData.append('reporterPhone', data.reporterPhone);
       formData.append('unitNumber', data.unitNumber);
-      formData.append('incidentDate', data.incidentDate);
-      formData.append('incidentTime', data.incidentTime);
+      formData.append('incidentDate', data.dateUnknown ? 'Unknown' : (data.incidentDate || ''));
+      formData.append('dateUnknown', String(data.dateUnknown));
+      formData.append('incidentTime', data.timeUnknown ? 'Unknown' : (data.incidentTime || ''));
+      formData.append('timeUnknown', String(data.timeUnknown));
       formData.append('incidentLocation', data.incidentLocation);
       formData.append('incidentTitle', data.incidentTitle);
       formData.append('incidentDescription', data.incidentDescription);
@@ -307,32 +322,85 @@ const IncidentReport: React.FC = () => {
                   <h3 className="text-lg font-semibold border-b pb-2">Incident Details</h3>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="incidentDate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Date of Incident <span className="text-red-500">*</span></FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="incidentTime"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Time of Incident <span className="text-red-500">*</span></FormLabel>
-                          <FormControl>
-                            <Input type="time" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div className="space-y-1">
+                      <FormField
+                        control={form.control}
+                        name="incidentDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Date of Incident <span className="text-red-500">*</span></FormLabel>
+                            <FormControl>
+                              <Input
+                                type="date"
+                                {...field}
+                                disabled={dateUnknown}
+                                value={dateUnknown ? '' : (field.value || '')}
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="dateUnknown"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={(checked) => {
+                                  field.onChange(checked);
+                                  if (checked) form.setValue('incidentDate', '');
+                                }}
+                              />
+                            </FormControl>
+                            <FormLabel className="text-sm font-normal cursor-pointer text-muted-foreground">Date unknown</FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <FormField
+                        control={form.control}
+                        name="incidentTime"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Time of Incident <span className="text-red-500">*</span></FormLabel>
+                            <FormControl>
+                              <Input
+                                type="time"
+                                {...field}
+                                disabled={timeUnknown}
+                                value={timeUnknown ? '' : (field.value || '')}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="timeUnknown"
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={(checked) => {
+                                  field.onChange(checked);
+                                  if (checked) form.setValue('incidentTime', '');
+                                }}
+                              />
+                            </FormControl>
+                            <FormLabel className="text-sm font-normal cursor-pointer text-muted-foreground">Time unknown</FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
 
                   <FormField

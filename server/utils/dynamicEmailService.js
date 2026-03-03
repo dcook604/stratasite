@@ -292,17 +292,17 @@ const emailTemplates = {
       timeZone: 'America/Vancouver'
     });
 
-    // Format incident date/time for display
-    const formattedIncidentDate = incidentDate
-      ? new Date(incidentDate + 'T12:00:00').toLocaleDateString('en-CA', {
+    // Format incident date/time for display (pass through 'Unknown' as-is)
+    const formattedIncidentDate = (!incidentDate || incidentDate === 'Unknown')
+      ? (incidentDate === 'Unknown' ? 'Unknown' : 'Not provided')
+      : new Date(incidentDate + 'T12:00:00').toLocaleDateString('en-CA', {
           year: 'numeric', month: 'long', day: 'numeric', timeZone: 'America/Vancouver'
-        })
-      : 'Not provided';
-    const formattedIncidentTime = incidentTime
-      ? new Date(`1970-01-01T${incidentTime}:00`).toLocaleTimeString('en-CA', {
+        });
+    const formattedIncidentTime = (!incidentTime || incidentTime === 'Unknown')
+      ? (incidentTime === 'Unknown' ? 'Unknown' : 'Not provided')
+      : new Date(`1970-01-01T${incidentTime}:00`).toLocaleTimeString('en-CA', {
           hour: '2-digit', minute: '2-digit', timeZone: 'UTC'
-        })
-      : 'Not provided';
+        });
 
     const flagBadges = [
       policeAttended ? '<span style="display:inline-block;background:#cce5ff;color:#004085;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid #b8daff;margin-right:8px;">&#x1F6A8; POLICE ATTENDED</span>' : '',
