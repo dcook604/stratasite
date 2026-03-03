@@ -606,10 +606,11 @@ const sendDynamicFormEmail = async (formName, formData) => {
 
     // Prepare recipients
     const recipients = formConfig.recipients.map(r => r.email).join(', ');
-    const fromName = formConfig.emailConfig?.fromName || 'Spectrum 4 Forms';
+    const fromName = process.env.SMTP_FROM_NAME || 'Spectrum 4';
+    const fromAddress = process.env.SMTP_FROM || `${process.env.SMTP_USER}@spectrum4.ca`;
 
     const mailOptions = {
-      from: `"${fromName}" <${process.env.SMTP_USER}@spectrum4.ca>`,
+      from: `"${fromName}" <${fromAddress}>`,
       to: recipients,
       subject: subject,
       html: emailContent.html
