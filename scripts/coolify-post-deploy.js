@@ -100,49 +100,58 @@ const formConfigurations = [
       { email: 'jennifer.danczak@spectrum4.ca', name: 'Jennifer Danczak', isPrimary: false, isActive: true },
       { email: 'hercules@spectrum4.ca', name: 'Hercules', isPrimary: false, isActive: true }
     ]
+  },
+  {
+    formName: 'incident-report',
+    displayName: 'Incident Report',
+    description: 'Report incidents occurring on the strata property',
+    isActive: true,
+    emailConfig: {
+      subject: '⚠️ Incident Report - {{incidentTitle}} (Unit {{unitNumber}})',
+      fromName: 'Spectrum 4 Incident Report',
+      template: 'incident-report'
+    },
+    recipients: [
+      { email: 'dcook@spectrum4.ca', name: 'David Cook', isPrimary: true, isActive: true },
+      { email: 'abrajlovic@ascentpm.com', name: 'Ascent PM', isPrimary: false, isActive: true },
+      { email: 'jennifer.danczak@spectrum4.ca', name: 'Jennifer Danczak', isPrimary: false, isActive: true },
+      { email: 'hercules@spectrum4.ca', name: 'Hercules', isPrimary: false, isActive: true }
+    ]
   }
 ];
 
 async function setupFormManagement() {
   console.log('🚀 Setting up Form Management System for Coolify deployment...');
-  
+
   try {
-    // Check if form configurations already exist
-    const existingConfigs = await prisma.formConfiguration.findMany();
-    if (existingConfigs.length > 0) {
-      console.log('✅ Form configurations already exist, skipping seed');
-      return;
-    }
-    
-    console.log('🌱 Seeding form configurations...');
-    
-    // Create form configurations with recipients
+    // Upsert each form config individually so new forms are always added
     for (const config of formConfigurations) {
       const { recipients, ...configData } = config;
-      
+
+      const existing = await prisma.formConfiguration.findUnique({
+        where: { formName: config.formName }
+      });
+
+      if (existing) {
+        console.log(`⏭️  Form configuration already exists: ${config.displayName}`);
+        continue;
+      }
+
       const formConfig = await prisma.formConfiguration.create({
         data: configData
       });
-      
-      // Create recipients for this form
+
       for (const recipient of recipients) {
         await prisma.formEmailRecipient.create({
-          data: {
-            ...recipient,
-            formConfigId: formConfig.id
-          }
+          data: { ...recipient, formConfigId: formConfig.id }
         });
       }
-      
+
       console.log(`✅ Created form configuration: ${config.displayName}`);
     }
-    
+
     console.log('🎉 Form Management System setup completed successfully!');
-    console.log('📋 Pre-configured forms:');
-    formConfigurations.forEach(config => {
-      console.log(`  • ${config.displayName} (${config.recipients.length} recipients)`);
-    });
-    
+
   } catch (error) {
     console.error('❌ Error setting up Form Management System:', error);
     // Don't throw error to prevent deployment failure
