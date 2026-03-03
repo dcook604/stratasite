@@ -3383,10 +3383,13 @@ app.put('/api/form-configurations/:id', async (req, res) => {
         where: { formConfigId: id }
       });
       
-      // Create new recipients
+      // Create new recipients (only pass known fields — no id/createdAt/updatedAt)
       await db.formEmailRecipient.createMany({
         data: recipients.map(recipient => ({
-          ...recipient,
+          email: recipient.email,
+          name: recipient.name || null,
+          isActive: recipient.isActive !== false,
+          isPrimary: recipient.isPrimary === true,
           formConfigId: id
         }))
       });
@@ -3446,7 +3449,10 @@ app.post('/api/form-configurations', async (req, res) => {
     if (recipients && recipients.length > 0) {
       await db.formEmailRecipient.createMany({
         data: recipients.map(recipient => ({
-          ...recipient,
+          email: recipient.email,
+          name: recipient.name || null,
+          isActive: recipient.isActive !== false,
+          isPrimary: recipient.isPrimary === true,
           formConfigId: newConfig.id
         }))
       });
