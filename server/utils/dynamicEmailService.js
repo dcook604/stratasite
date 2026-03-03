@@ -1,4 +1,6 @@
 import nodemailer from 'nodemailer';
+import fs from 'fs';
+import path from 'path';
 import { PrismaClient } from '@prisma/client';
 import { generateFormKPdf } from './formKPdfGenerator.js';
 
@@ -280,55 +282,157 @@ const emailTemplates = {
     const {
       incidentId, reporterName, reporterEmail, reporterPhone, unitNumber,
       incidentDate, incidentTime, incidentLocation, incidentTitle, incidentDescription,
-      policeAttended, commonPropertyDamage, hasEvidence, evidenceFiles, evidenceCount
+      policeAttended, commonPropertyDamage, hasEvidence, evidenceCount,
+      inlineImageCids, videoAttachmentNames
     } = data;
 
-    const evidenceSection = hasEvidence && evidenceCount > 0
-      ? `<h3>Evidence Files:</h3><p>${evidenceCount} file(s) have been uploaded and are available in the admin dashboard.</p>`
-      : hasEvidence
-        ? '<p><strong>Evidence:</strong> Reporter indicated they have evidence but no files were uploaded.</p>'
-        : '<p><strong>Evidence:</strong> No evidence provided.</p>';
+    const submittedAt = new Date().toLocaleString('en-CA', {
+      year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', timeZoneName: 'short'
+    });
+
+    const flagBadges = [
+      policeAttended ? '<span style="display:inline-block;background:#cce5ff;color:#004085;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid #b8daff;margin-right:8px;">&#x1F6A8; POLICE ATTENDED</span>' : '',
+      commonPropertyDamage ? '<span style="display:inline-block;background:#f8d7da;color:#721c24;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid #f5c6cb;">&#x26A0;&#xFE0F; PROPERTY DAMAGE</span>' : '',
+    ].filter(Boolean).join('');
+
+    const inlineImagesHtml = inlineImageCids && inlineImageCids.length > 0
+      ? `<tr><td style="padding:0 0 24px;">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr><td style="background:#f8f9fa;padding:10px 14px;font-size:11px;font-weight:700;color:#6c757d;letter-spacing:0.8px;text-transform:uppercase;border:1px solid #dee2e6;border-bottom:2px solid #dee2e6;">
+              Evidence Photos (${inlineImageCids.length} image${inlineImageCids.length > 1 ? 's' : ''}${videoAttachmentNames && videoAttachmentNames.length > 0 ? `, ${videoAttachmentNames.length} video${videoAttachmentNames.length > 1 ? 's' : ''} attached` : ''})
+            </td></tr>
+            <tr><td style="border:1px solid #dee2e6;border-top:none;padding:12px;">
+              <table cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
+                ${inlineImageCids.map((cid, i) =>
+                  `<td style="padding:4px;width:${Math.min(100, Math.floor(100 / Math.min(inlineImageCids.length, 3)))}%;vertical-align:top;">
+                    <img src="cid:${cid}" alt="Evidence ${i + 1}" style="width:100%;max-width:200px;height:auto;display:block;border-radius:4px;border:1px solid #dee2e6;" />
+                  </td>`
+                ).join('')}
+              </tr></table>
+            </td></tr>
+          </table>
+        </td></tr>`
+      : videoAttachmentNames && videoAttachmentNames.length > 0
+        ? `<tr><td style="padding:0 0 24px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr><td style="background:#f8f9fa;padding:10px 14px;font-size:11px;font-weight:700;color:#6c757d;letter-spacing:0.8px;text-transform:uppercase;border:1px solid #dee2e6;border-bottom:2px solid #dee2e6;">Evidence (${videoAttachmentNames.length} video${videoAttachmentNames.length > 1 ? 's' : ''} attached)</td></tr>
+              <tr><td style="border:1px solid #dee2e6;border-top:none;padding:12px;font-size:14px;color:#495057;">
+                Video file${videoAttachmentNames.length > 1 ? 's' : ''} attached: ${videoAttachmentNames.join(', ')}
+              </td></tr>
+            </table>
+          </td></tr>`
+        : '';
 
     return {
-      subject: `⚠️ Incident Report Submitted - ${incidentTitle} (Unit ${unitNumber})`,
-      html: `
-        <div style="background-color: #fff3cd; border: 2px solid #ffc107; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
-          <h2 style="color: #856404; margin-top: 0;">⚠️ New Incident Report Submitted</h2>
-          <p style="color: #856404; margin-bottom: 0;"><strong>Incident ID:</strong> ${incidentId}</p>
-        </div>
+      subject: `⚠️ Incident Report — ${incidentTitle} (Unit ${unitNumber})`,
+      html: `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Incident Report</title></head>
+<body style="margin:0;padding:0;background-color:#f0f2f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f0f2f5;">
+<tr><td align="center" style="padding:24px 16px;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:680px;">
 
-        <h3>Reporter Information:</h3>
-        <ul>
-          <li><strong>Name:</strong> ${reporterName}</li>
-          <li><strong>Unit Number:</strong> ${unitNumber}</li>
-          <li><strong>Email:</strong> ${reporterEmail}</li>
-          <li><strong>Phone:</strong> ${reporterPhone}</li>
-        </ul>
+  <!-- Header -->
+  <tr><td style="background:#b91c1c;border-radius:8px 8px 0 0;padding:28px 36px;text-align:center;">
+    <div style="font-size:28px;margin-bottom:6px;">&#x26A0;&#xFE0F;</div>
+    <div style="color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.3px;">Incident Report</div>
+    <div style="color:rgba(255,255,255,0.75);font-size:13px;margin-top:4px;">Spectrum 4 Strata — Action Required</div>
+  </td></tr>
 
-        <h3>Incident Details:</h3>
-        <ul>
-          <li><strong>Title:</strong> ${incidentTitle}</li>
-          <li><strong>Date:</strong> ${incidentDate}</li>
-          <li><strong>Time:</strong> ${incidentTime}</li>
-          <li><strong>Location:</strong> ${incidentLocation}</li>
-        </ul>
+  <!-- ID + Date bar -->
+  <tr><td style="background:#fef3c7;border-left:1px solid #fde68a;border-right:1px solid #fde68a;padding:10px 36px;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td style="font-size:12px;color:#92400e;font-weight:700;">REPORT ID: ${incidentId}</td>
+        <td align="right" style="font-size:12px;color:#92400e;">${submittedAt}</td>
+      </tr>
+    </table>
+  </td></tr>
 
-        <h3>Description:</h3>
-        <p style="background-color: #f3f4f6; padding: 12px; border-radius: 5px; white-space: pre-wrap;">${incidentDescription}</p>
+  <!-- Body -->
+  <tr><td style="background:#ffffff;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;padding:32px 36px;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
 
-        <h3>Additional Information:</h3>
-        <ul>
-          <li><strong>Police Attended:</strong> ${policeAttended ? '✅ Yes' : '❌ No'}</li>
-          <li><strong>Common Property Damage:</strong> ${commonPropertyDamage ? '✅ Yes' : '❌ No'}</li>
-          <li><strong>Evidence Submitted:</strong> ${hasEvidence ? `✅ Yes (${evidenceCount || 0} file(s))` : '❌ No'}</li>
-        </ul>
+      <!-- Incident Title + location -->
+      <tr><td style="padding-bottom:6px;border-left:4px solid #b91c1c;padding-left:12px;">
+        <div style="font-size:19px;font-weight:700;color:#111827;">${incidentTitle}</div>
+        <div style="font-size:13px;color:#6b7280;margin-top:3px;">${incidentDate} at ${incidentTime} &mdash; ${incidentLocation}</div>
+      </td></tr>
 
-        ${evidenceSection}
+      <!-- Flag badges -->
+      ${flagBadges ? `<tr><td style="padding:16px 0 0;">${flagBadges}</td></tr>` : ''}
 
-        <hr>
-        <p><em>Submitted on ${new Date().toLocaleString()}</em></p>
-        <p><em>Please log into the admin dashboard to review all submitted evidence and details.</em></p>
-      `
+      <!-- Divider -->
+      <tr><td style="padding:20px 0;"><hr style="border:none;border-top:1px solid #e5e7eb;margin:0;" /></td></tr>
+
+      <!-- Reporter -->
+      <tr><td style="padding-bottom:24px;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr><td colspan="2" style="background:#f8f9fa;padding:9px 14px;font-size:11px;font-weight:700;color:#6b7280;letter-spacing:0.8px;text-transform:uppercase;border:1px solid #e5e7eb;border-bottom:2px solid #e5e7eb;">Reporter Information</td></tr>
+          <tr>
+            <td style="padding:9px 14px;font-size:13px;font-weight:600;color:#374151;width:38%;border:1px solid #e5e7eb;border-top:none;background:#fafafa;">Name</td>
+            <td style="padding:9px 14px;font-size:13px;color:#111827;border:1px solid #e5e7eb;border-top:none;border-left:none;">${reporterName}</td>
+          </tr>
+          <tr>
+            <td style="padding:9px 14px;font-size:13px;font-weight:600;color:#374151;border:1px solid #e5e7eb;border-top:none;background:#fafafa;">Unit Number</td>
+            <td style="padding:9px 14px;font-size:13px;color:#111827;border:1px solid #e5e7eb;border-top:none;border-left:none;">${unitNumber}</td>
+          </tr>
+          <tr>
+            <td style="padding:9px 14px;font-size:13px;font-weight:600;color:#374151;border:1px solid #e5e7eb;border-top:none;background:#fafafa;">Email</td>
+            <td style="padding:9px 14px;font-size:13px;border:1px solid #e5e7eb;border-top:none;border-left:none;"><a href="mailto:${reporterEmail}" style="color:#2563eb;text-decoration:none;">${reporterEmail}</a></td>
+          </tr>
+          <tr>
+            <td style="padding:9px 14px;font-size:13px;font-weight:600;color:#374151;border:1px solid #e5e7eb;border-top:none;background:#fafafa;">Phone</td>
+            <td style="padding:9px 14px;font-size:13px;color:#111827;border:1px solid #e5e7eb;border-top:none;border-left:none;">${reporterPhone}</td>
+          </tr>
+        </table>
+      </td></tr>
+
+      <!-- Description -->
+      <tr><td style="padding-bottom:24px;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr><td style="background:#f8f9fa;padding:9px 14px;font-size:11px;font-weight:700;color:#6b7280;letter-spacing:0.8px;text-transform:uppercase;border:1px solid #e5e7eb;border-bottom:2px solid #e5e7eb;">Incident Description</td></tr>
+          <tr><td style="padding:16px;border:1px solid #e5e7eb;border-top:none;font-size:14px;line-height:1.7;color:#1f2937;white-space:pre-wrap;">${incidentDescription.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td></tr>
+        </table>
+      </td></tr>
+
+      <!-- Inline evidence images / video note -->
+      ${inlineImagesHtml}
+
+      <!-- Status flags -->
+      <tr><td style="padding-bottom:8px;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr><td colspan="2" style="background:#f8f9fa;padding:9px 14px;font-size:11px;font-weight:700;color:#6b7280;letter-spacing:0.8px;text-transform:uppercase;border:1px solid #e5e7eb;border-bottom:2px solid #e5e7eb;">Status Flags</td></tr>
+          <tr>
+            <td style="padding:9px 14px;font-size:13px;font-weight:600;color:#374151;width:38%;border:1px solid #e5e7eb;border-top:none;background:#fafafa;">Police Attended</td>
+            <td style="padding:9px 14px;font-size:13px;border:1px solid #e5e7eb;border-top:none;border-left:none;">${policeAttended ? '<span style="color:#166534;font-weight:600;">&#x2713; Yes</span>' : '<span style="color:#991b1b;">&#x2715; No</span>'}</td>
+          </tr>
+          <tr>
+            <td style="padding:9px 14px;font-size:13px;font-weight:600;color:#374151;border:1px solid #e5e7eb;border-top:none;background:#fafafa;">Common Property Damage</td>
+            <td style="padding:9px 14px;font-size:13px;border:1px solid #e5e7eb;border-top:none;border-left:none;">${commonPropertyDamage ? '<span style="color:#166534;font-weight:600;">&#x2713; Yes</span>' : '<span style="color:#991b1b;">&#x2715; No</span>'}</td>
+          </tr>
+          <tr>
+            <td style="padding:9px 14px;font-size:13px;font-weight:600;color:#374151;border:1px solid #e5e7eb;border-top:none;background:#fafafa;">Evidence Submitted</td>
+            <td style="padding:9px 14px;font-size:13px;border:1px solid #e5e7eb;border-top:none;border-left:none;">${hasEvidence && evidenceCount > 0 ? `<span style="color:#166534;font-weight:600;">&#x2713; Yes &mdash; ${evidenceCount} file${evidenceCount > 1 ? 's' : ''}</span>` : hasEvidence ? '<span style="color:#92400e;">&#x26A0; Indicated but no files uploaded</span>' : '<span style="color:#991b1b;">&#x2715; None</span>'}</td>
+          </tr>
+        </table>
+      </td></tr>
+
+    </table>
+  </td></tr>
+
+  <!-- Footer -->
+  <tr><td style="padding:16px 0 0;text-align:center;">
+    <div style="font-size:11px;color:#9ca3af;">Spectrum 4 Strata &mdash; Automated Incident Notification</div>
+    <div style="font-size:11px;color:#d1d5db;margin-top:2px;">Log into the admin dashboard to manage this report.</div>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body></html>`
     };
   },
 
@@ -458,8 +562,38 @@ const sendDynamicFormEmail = async (formName, formData) => {
       return { success: false, error: 'Email template not found' };
     }
 
+    // Build evidence attachments for incident reports (inline CID images + video attachments)
+    let evidenceAttachments = [];
+    let enrichedFormData = formData;
+    if (formName === 'incident-report' && formData.evidenceFilePaths && formData.evidenceFilePaths.length > 0) {
+      const inlineImageCids = [];
+      const videoAttachmentNames = [];
+
+      for (let i = 0; i < formData.evidenceFilePaths.length; i++) {
+        const filePath = formData.evidenceFilePaths[i];
+        const filename = formData.evidenceFiles[i];
+        if (!filePath || !fs.existsSync(filePath)) continue;
+
+        const ext = path.extname(filename).toLowerCase().slice(1);
+        const isImage = /^(jpeg|jpg|png|webp)$/.test(ext);
+        const content = fs.readFileSync(filePath);
+
+        if (isImage) {
+          const cid = `evidence-${i}@spectrum4.ca`;
+          const contentType = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+          evidenceAttachments.push({ filename, content, cid, contentType });
+          inlineImageCids.push(cid);
+        } else {
+          evidenceAttachments.push({ filename, content, contentType: `video/${ext}` });
+          videoAttachmentNames.push(filename);
+        }
+      }
+
+      enrichedFormData = { ...formData, inlineImageCids, videoAttachmentNames };
+    }
+
     // Generate email content
-    const emailContent = template(formData);
+    const emailContent = template(enrichedFormData);
     
     // Use custom subject from config if available, otherwise use template subject
     const subject = formConfig.emailConfig?.subject || emailContent.subject;
@@ -478,18 +612,24 @@ const sendDynamicFormEmail = async (formName, formData) => {
       html: emailContent.html
     };
 
+    // Attach evidence files for incident reports
+    if (formName === 'incident-report' && evidenceAttachments.length > 0) {
+      mailOptions.attachments = evidenceAttachments;
+      console.log(`Attaching ${evidenceAttachments.length} evidence file(s) to incident report email`);
+    }
+
     // Generate and attach PDF for Form K completions
     if (formName === 'form-k' && (formData.formStatus === 'COMPLETE' || formData.formStatus === 'COMPLETE_ALL_SIGNATURES')) {
       try {
         console.log('Generating Form K PDF for completion notification...');
         const pdfBuffer = await generateFormKPdf(formData);
-        
+
         mailOptions.attachments = [{
           filename: `Form_K_Unit_${formData.unitNumber}_${formData.submissionId}.pdf`,
           content: pdfBuffer,
           contentType: 'application/pdf'
         }];
-        
+
         console.log('Form K PDF generated and attached successfully');
       } catch (pdfError) {
         console.error('Error generating Form K PDF:', pdfError);

@@ -3685,6 +3685,7 @@ app.post('/api/incident-report', (req, res) => {
         commonPropertyDamage: commonPropertyDamage === 'true',
         hasEvidence: hasEvidenceBool,
         evidenceFiles: evidenceFilenames,
+        evidenceFilePaths: evidenceFilenames.map(f => path.join(incidentUploadDir, f)),
         evidenceCount: evidenceFilenames.length,
       };
 
