@@ -1058,59 +1058,6 @@ const AdminDashboard = () => {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="event-requests" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Pending Event Requests</CardTitle>
-                    <CardDescription>
-                      Review and approve or reject event requests from residents. Approving a request will automatically add it to the public calendar.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {eventRequests.filter(req => req.status === 'PENDING').length === 0 ? (
-                      <p className="text-gray-500">No pending event requests.</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {eventRequests.filter(req => req.status === 'PENDING').map((req) => (
-                          <div key={req.id} className="p-4 border rounded-lg">
-                            <h3 className="font-semibold text-lg">{req.eventTitle}</h3>
-                            <p className="text-gray-600 mt-1">{req.eventDescription}</p>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4 text-sm">
-                              <div>
-                                <Label className="font-medium">Requested By</Label>
-                                <p>{req.firstName} {req.lastName} (Unit: {req.unitNumber})</p>
-                              </div>
-                              <div>
-                                <Label className="font-medium">Contact</Label>
-                                <p>{req.email} / {req.phone}</p>
-                              </div>
-                              <div>
-                                <Label className="font-medium">Status</Label>
-                                <p>{req.isOwner ? 'Owner' : 'Tenant'}</p>
-                              </div>
-                              <div>
-                                <Label className="font-medium">Requested Date & Time</Label>
-                                <p>{new Date(req.requestedDateTime).toLocaleString()}</p>
-                              </div>
-                            </div>
-                            <div className="flex gap-2 mt-4">
-                              <Button size="sm" onClick={() => handleRequestStatusChange(req.id, 'APPROVED')}>
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                                Approve
-                              </Button>
-                              <Button size="sm" variant="destructive" onClick={() => handleRequestStatusChange(req.id, 'REJECTED')}>
-                                <X className="w-4 h-4 mr-2" />
-                                Reject
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
               <TabsContent value="form-management" className="space-y-6">
                 <FormManagement />
               </TabsContent>
