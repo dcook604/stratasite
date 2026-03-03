@@ -20,7 +20,6 @@ import {
   AdminLogin,
   AdminResetPassword,
   Bylaws,
-  Calendar,
   ScooterRegistration,
   PetRegistration,
   EmergencyContact,
@@ -31,6 +30,7 @@ import {
   Marketplace,
   Documents,
   WelcomePackage,
+  IncidentReport,
   LazyLoadingFallback
 } from "./components/lazy/LazyComponents";
 
@@ -48,11 +48,6 @@ const App = () => (
             <Suspense fallback={<LazyLoadingFallback />}>
               <Routes>
                 <Route path="/" element={<Index />} />
-                <Route path="/calendar" element={
-                  <Suspense fallback={<LazyLoadingFallback />}>
-                    <Calendar />
-                  </Suspense>
-                } />
                 <Route path="/gallery" element={<DynamicPage />} />
                 <Route path="/admin/login" element={
                   <Suspense fallback={<LazyLoadingFallback />}>
@@ -133,6 +128,12 @@ const App = () => (
                 <Route path="/tenant-signature/:submissionId/:token" element={
                   <Suspense fallback={<LazyLoadingFallback />}>
                     <TenantSignature />
+                  </Suspense>
+                } />
+                {/* Incident Report page */}
+                <Route path="/incident-report" element={
+                  <Suspense fallback={<LazyLoadingFallback />}>
+                    <IncidentReport />
                   </Suspense>
                 } />
                 {/* Form Acknowledgment page */}

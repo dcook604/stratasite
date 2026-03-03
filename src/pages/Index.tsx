@@ -3,11 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import UpcomingEvents from '@/components/widgets/UpcomingEvents';
 import RecentAnnouncements from '@/components/widgets/RecentAnnouncements';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar, Image, Book, Mail, Edit, Save, X, ShoppingCart, Loader2 } from 'lucide-react';
+import { Image, Book, Mail, Edit, Save, X, ShoppingCart, Loader2 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -307,9 +306,6 @@ Use our platform to stay updated on events, announcements, and community activit
                   )}
                   <div className="mt-8 flex flex-wrap justify-center gap-4">
                     <Button asChild size="lg">
-                      <Link to="/calendar">View Calendar</Link>
-                    </Button>
-                    <Button variant="outline" size="lg" asChild>
                       <Link to="/contact">Contact Us</Link>
                     </Button>
                   </div>
@@ -352,22 +348,7 @@ Use our platform to stay updated on events, announcements, and community activit
 
             {/* Feature Cards */}
             <section className="strata-section">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-none shadow-md">
-                  <CardContent className="p-6 flex flex-col items-center text-center">
-                    <div className="h-12 w-12 bg-blue-500 rounded-full flex items-center justify-center mb-4">
-                      <Calendar className="h-6 w-6 text-white" />
-                    </div>
-                    <h3 className="font-semibold text-lg mb-2">Building Calendar</h3>
-                    <p className="text-gray-600 mb-4">
-                      Stay updated on events, maintenance, and community gatherings.
-                    </p>
-                    <Button variant="ghost" asChild className="mt-auto">
-                      <Link to="/calendar">View Calendar</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-                
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <Card className="bg-gradient-to-br from-green-50 to-green-100 border-none shadow-md">
                   <CardContent className="p-6 flex flex-col items-center text-center">
                     <div className="h-12 w-12 bg-green-500 rounded-full flex items-center justify-center mb-4">
@@ -402,14 +383,7 @@ Use our platform to stay updated on events, announcements, and community activit
 
             {/* Widgets Section */}
             <section className="strata-section pt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <UpcomingEvents />
-                </div>
-                <div>
-                  <RecentAnnouncements />
-                </div>
-              </div>
+              <RecentAnnouncements />
             </section>
 
             {/* Call to Action Section */}

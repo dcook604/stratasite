@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { RequireAdminAuth } from '@/components/hoc/RequireAdminAuth';
-import { Plus, Trash2, Edit2, Users, Calendar, FileText, Megaphone, ShoppingCart, Save, X, Database, AlertTriangle, CheckCircle, Zap, PawPrint, Download, ClipboardList, Settings } from 'lucide-react';
+import { Plus, Trash2, Edit2, Users, FileText, Megaphone, ShoppingCart, Save, X, Database, AlertTriangle, CheckCircle, Zap, PawPrint, Download, ClipboardList, Settings, ShieldAlert } from 'lucide-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { cleanupMarketplaceData, getCleanupPreview, formatCleanupStats, CleanupOptions } from '@/utils/databaseCleanup';
@@ -29,18 +29,17 @@ const AdminDashboard = () => {
   const { toast } = useToast();
 
   const [announcements, setAnnouncements] = useState([]);
-  const [events, setEvents] = useState([]);
   const [pages, setPages] = useState([]);
   const [adminUsers, setAdminUsers] = useState([]);
   const [marketplacePosts, setMarketplacePosts] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [eventRequests, setEventRequests] = useState([]);
   const [scooterRegistrations, setScooterRegistrations] = useState([]);
   const [petRegistrations, setPetRegistrations] = useState([]);
   const [emergencyContacts, setEmergencyContacts] = useState([]);
   const [acInquiries, setACInquiries] = useState([]);
   const [storageRentals, setStorageRentals] = useState([]);
+  const [incidentReports, setIncidentReports] = useState([]);
   
   // Form K cleanup states
   const [formKStats, setFormKStats] = useState(null);
@@ -49,7 +48,6 @@ const AdminDashboard = () => {
 
   // Form states
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' });
-  const [newEvent, setNewEvent] = useState({ title: '', description: '', startDate: '', endDate: '', location: '' });
   const [newPage, setNewPage] = useState({ slug: '', title: '', content: '' });
   const [newAdmin, setNewAdmin] = useState({ email: '', password: '' });
   const [newDocument, setNewDocument] = useState({ title: '', description: '', file: null });
@@ -96,31 +94,29 @@ const AdminDashboard = () => {
       console.log('AdminDashboard: Starting data fetch...');
       
       const [
-        announcementsRes, 
-        eventsRes, 
-        pagesRes, 
-        marketplaceRes, 
+        announcementsRes,
+        pagesRes,
+        marketplaceRes,
         adminUsersRes,
-        eventRequestsRes,
         documentsRes,
         scooterRegistrationsRes,
         petRegistrationsRes,
         emergencyContactsRes,
         acInquiriesRes,
-        storageRentalsRes
+        storageRentalsRes,
+        incidentReportsRes
       ] = await Promise.all([
         fetch('/api/announcements').catch(err => err),
-        fetch('/api/events').catch(err => err),
         fetch('/api/pages').catch(err => err),
         fetch('/api/marketplace').catch(err => err),
         fetch('/api/admin/users').catch(err => err),
-        fetch('/api/event-requests').catch(err => err),
         fetch('/api/documents').catch(err => err),
         fetch('/api/scooter-registrations').catch(err => err),
         fetch('/api/pet-registrations').catch(err => err),
         fetch('/api/emergency-contacts').catch(err => err),
         fetch('/api/ac-inquiries').catch(err => err),
-        fetch('/api/storage-rentals').catch(err => err)
+        fetch('/api/storage-rentals').catch(err => err),
+        fetch('/api/incident-reports').catch(err => err)
       ]);
 
       console.log('AdminDashboard: API responses received');
@@ -133,16 +129,6 @@ const AdminDashboard = () => {
       } else {
         console.error('AdminDashboard: Failed to load announcements', announcementsRes);
         setAnnouncements([]);
-      }
-      
-      // Handle events
-      if (eventsRes instanceof Response && eventsRes.ok) {
-        const eventsData = await eventsRes.json();
-        console.log('AdminDashboard: Events loaded:', eventsData.length);
-        setEvents(eventsData);
-      } else {
-        console.error('AdminDashboard: Failed to load events:', eventsRes);
-        setEvents([]);
       }
       
       // Handle pages
@@ -173,16 +159,6 @@ const AdminDashboard = () => {
       } else {
         console.error('AdminDashboard: Failed to load admin users:', adminUsersRes);
         setAdminUsers([]);
-      }
-      
-      // Handle event requests
-      if (eventRequestsRes instanceof Response && eventRequestsRes.ok) {
-        const eventRequestsData = await eventRequestsRes.json();
-        console.log('AdminDashboard: Event requests loaded:', eventRequestsData.length);
-        setEventRequests(eventRequestsData);
-      } else {
-        console.error('AdminDashboard: Failed to load event requests:', eventRequestsRes);
-        setEventRequests([]);
       }
       
       // Handle documents
@@ -243,6 +219,16 @@ const AdminDashboard = () => {
       } else {
         console.error('AdminDashboard: Failed to load storage rentals:', storageRentalsRes);
         setStorageRentals([]);
+      }
+
+      // Handle incident reports
+      if (incidentReportsRes instanceof Response && incidentReportsRes.ok) {
+        const incidentReportsData = await incidentReportsRes.json();
+        console.log('AdminDashboard: Incident reports loaded:', incidentReportsData.length);
+        setIncidentReports(incidentReportsData);
+      } else {
+        console.error('AdminDashboard: Failed to load incident reports:', incidentReportsRes);
+        setIncidentReports([]);
       }
     } catch (error) {
       console.error('AdminDashboard: Error fetching data:', error);
@@ -334,27 +320,6 @@ const AdminDashboard = () => {
         fetchData();
       } else {
         throw new Error('Failed to create announcement');
-      }
-    } catch (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    }
-  };
-
-  const createEvent = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await fetch('/api/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newEvent)
-      });
-      
-      if (response.ok) {
-        toast({ title: "Success", description: "Event created" });
-        setNewEvent({ title: '', description: '', startDate: '', endDate: '', location: '' });
-        fetchData();
-      } else {
-        throw new Error('Failed to create event');
       }
     } catch (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -551,24 +516,6 @@ const AdminDashboard = () => {
     'link', 'blockquote', 'code-block'
   ];
 
-  const handleRequestStatusChange = async (requestId, status) => {
-    try {
-      const response = await fetch(`/api/event-requests/${requestId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
-      });
-      if (response.ok) {
-        toast({ title: "Success", description: `Event request has been ${status.toLowerCase()}.` });
-        fetchData(); // Refresh all data
-      } else {
-        throw new Error('Failed to update request status');
-      }
-    } catch (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    }
-  };
-
   // Helper function to get current scooter edit data
   const getScooterEditData = (registration) => {
     return scooterEdits[registration.id] || {
@@ -701,11 +648,6 @@ const AdminDashboard = () => {
                       <span className="hidden sm:inline">Announcements</span>
                       <span className="sm:hidden">Announce</span>
                     </TabsTrigger>
-                    <TabsTrigger value="events" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                      <Calendar className="w-4 h-4 flex-shrink-0" />
-                      <span className="hidden sm:inline">Events</span>
-                      <span className="sm:hidden">Events</span>
-                    </TabsTrigger>
                     <TabsTrigger value="pages" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
                       <FileText className="w-4 h-4 flex-shrink-0" />
                       <span className="hidden sm:inline">Pages</span>
@@ -743,6 +685,11 @@ const AdminDashboard = () => {
                       <span className="hidden sm:inline">Pet Registrations</span>
                       <span className="sm:hidden">Pets</span>
                     </TabsTrigger>
+                    <TabsTrigger value="incident-reports" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                      <ShieldAlert className="w-4 h-4 flex-shrink-0" />
+                      <span className="hidden sm:inline">Incident Reports</span>
+                      <span className="sm:hidden">Incidents</span>
+                    </TabsTrigger>
                   </TabsList>
                 </div>
 
@@ -754,11 +701,6 @@ const AdminDashboard = () => {
                       <ShoppingCart className="w-4 h-4 flex-shrink-0" />
                       <span className="hidden sm:inline">Marketplace</span>
                       <span className="sm:hidden">Market</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="event-requests" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                      <Calendar className="w-4 h-4 flex-shrink-0" />
-                      <span className="hidden sm:inline">Event Requests</span>
-                      <span className="sm:hidden">Requests</span>
                     </TabsTrigger>
                     <TabsTrigger value="users" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
                       <Users className="w-4 h-4 flex-shrink-0" />
@@ -837,102 +779,6 @@ const AdminDashboard = () => {
                               variant="destructive"
                               size="sm"
                               onClick={() => deleteItem('announcements', announcement.id)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="events" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Plus className="w-5 h-5" />
-                      Create New Event
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <form onSubmit={createEvent} className="space-y-4">
-                      <div>
-                        <Label htmlFor="event-title">Title</Label>
-                        <Input
-                          id="event-title"
-                          value={newEvent.title}
-                          onChange={(e) => setNewEvent({...newEvent, title: e.target.value})}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="event-description">Description</Label>
-                        <Textarea
-                          id="event-description"
-                          value={newEvent.description}
-                          onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
-                          rows={3}
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="event-start">Start Date</Label>
-                          <Input
-                            id="event-start"
-                            type="datetime-local"
-                            value={newEvent.startDate}
-                            onChange={(e) => setNewEvent({...newEvent, startDate: e.target.value})}
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="event-end">End Date (Optional)</Label>
-                          <Input
-                            id="event-end"
-                            type="datetime-local"
-                            value={newEvent.endDate}
-                            onChange={(e) => setNewEvent({...newEvent, endDate: e.target.value})}
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="event-location">Location</Label>
-                        <Input
-                          id="event-location"
-                          value={newEvent.location}
-                          onChange={(e) => setNewEvent({...newEvent, location: e.target.value})}
-                        />
-                      </div>
-                      <Button type="submit">Create Event</Button>
-                    </form>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Existing Events</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {events.length === 0 ? (
-                      <p className="text-gray-500">No events yet.</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {events.map((event) => (
-                          <div key={event.id} className="flex justify-between items-start p-4 border rounded">
-                            <div>
-                              <h3 className="font-semibold">{event.title}</h3>
-                              {event.description && <p className="text-gray-600 mt-1">{event.description}</p>}
-                              <p className="text-sm text-gray-500 mt-2">
-                                {new Date(event.startDate).toLocaleString()}
-                                {event.location && ` • ${event.location}`}
-                              </p>
-                            </div>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => deleteItem('events', event.id)}
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -1820,6 +1666,109 @@ const AdminDashboard = () => {
                               </Button>
                             </div>
                           </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="incident-reports" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <ShieldAlert className="h-5 w-5 text-orange-500" />
+                      Incident Reports
+                    </CardTitle>
+                    <CardDescription>
+                      View and manage incident reports submitted by residents, council members, and property managers.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {incidentReports.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No incident reports submitted yet.</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {incidentReports.map((report) => (
+                          <Card key={report.id} className="border border-orange-100">
+                            <CardContent className="pt-4 pb-4">
+                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                                <div className="flex-1 min-w-0 space-y-2">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span className="font-mono text-xs text-muted-foreground">{report.incidentId}</span>
+                                    {report.policeAttended && (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Police Attended</span>
+                                    )}
+                                    {report.commonPropertyDamage && (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Property Damage</span>
+                                    )}
+                                    {report.hasEvidence && (
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Has Evidence</span>
+                                    )}
+                                  </div>
+                                  <h4 className="font-semibold text-base">{report.incidentTitle}</h4>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-600">
+                                    <div><span className="font-medium">Reporter:</span> {report.reporterName} (Unit {report.unitNumber})</div>
+                                    <div><span className="font-medium">Email:</span> {report.reporterEmail}</div>
+                                    <div><span className="font-medium">Phone:</span> {report.reporterPhone}</div>
+                                    <div><span className="font-medium">Date/Time:</span> {report.incidentDate} at {report.incidentTime}</div>
+                                    <div className="sm:col-span-2"><span className="font-medium">Location:</span> {report.incidentLocation}</div>
+                                  </div>
+                                  <div className="text-sm text-gray-700 bg-gray-50 rounded p-3 mt-2">
+                                    <span className="font-medium">Description:</span>
+                                    <p className="mt-1 whitespace-pre-wrap">{report.incidentDescription}</p>
+                                  </div>
+                                  {report.hasEvidence && report.evidenceFiles && report.evidenceFiles.length > 0 && (
+                                    <div className="mt-2">
+                                      <span className="text-sm font-medium">Evidence Files ({report.evidenceFiles.length}):</span>
+                                      <div className="flex flex-wrap gap-2 mt-1">
+                                        {report.evidenceFiles.map((filename, idx) => {
+                                          const isImage = /\.(jpeg|jpg|png|webp)$/i.test(filename);
+                                          return (
+                                            <a
+                                              key={idx}
+                                              href={`/uploads/incidents/${filename}`}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="text-xs text-blue-600 hover:underline flex items-center gap-1 border rounded px-2 py-1"
+                                            >
+                                              {isImage ? '🖼️' : '🎥'} {filename.split('-').slice(-1)[0]}
+                                            </a>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
+                                  <div className="text-xs text-muted-foreground mt-2">
+                                    Submitted: {new Date(report.createdAt).toLocaleString()} {report.emailSent ? '· Email sent' : '· Email not sent'}
+                                  </div>
+                                </div>
+                                <div className="flex sm:flex-col gap-2 flex-shrink-0">
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => {
+                                      confirmAction(
+                                        `Are you sure you want to delete incident report "${report.incidentTitle}"?`,
+                                        async () => {
+                                          try {
+                                            await fetch(`/api/incident-reports/${report.id}`, { method: 'DELETE' });
+                                            toast({ title: "Deleted", description: "Incident report deleted." });
+                                            fetchData();
+                                          } catch (error) {
+                                            toast({ title: "Error", description: "Failed to delete report.", variant: "destructive" });
+                                          }
+                                        }
+                                      );
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-1" />
+                                    Delete
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
                         ))}
                       </div>
                     )}

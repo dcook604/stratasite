@@ -89,15 +89,15 @@ export const Documents = lazy(() =>
 );
 
 // Welcome package with potentially large content
-export const WelcomePackage = lazy(() => 
+export const WelcomePackage = lazy(() =>
   import('@/pages/information/WelcomePackage').then(module => ({
     default: module.default
   }))
 );
 
-// Calendar with date picker dependencies
-export const Calendar = lazy(() => 
-  import('@/pages/Calendar').then(module => ({
+// Incident Report form
+export const IncidentReport = lazy(() =>
+  import('@/pages/IncidentReport').then(module => ({
     default: module.default
   }))
 );

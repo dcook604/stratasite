@@ -419,6 +419,40 @@ model FormKSubmission {
   
   createdAt            DateTime @default(now()) @map("created_at")
   updatedAt            DateTime @updatedAt @map("updated_at")
-  
+
   @@map("form_k_submissions")
+}
+
+model IncidentReport {
+  id                    String   @id @default(cuid())
+  incidentId            String   @unique @map("incident_id") // IR-timestamp format
+
+  // Reporter Information
+  reporterName          String   @map("reporter_name")
+  reporterEmail         String   @map("reporter_email")
+  reporterPhone         String   @map("reporter_phone")
+  unitNumber            String   @map("unit_number")
+
+  // Incident Details
+  incidentDate          String   @map("incident_date")
+  incidentTime          String   @map("incident_time")
+  incidentLocation      String   @map("incident_location")
+  incidentTitle         String   @map("incident_title")
+  incidentDescription   String   @map("incident_description")
+
+  // Checkboxes
+  policeAttended        Boolean  @default(false) @map("police_attended")
+  commonPropertyDamage  Boolean  @default(false) @map("common_property_damage")
+  hasEvidence           Boolean  @default(false) @map("has_evidence")
+
+  // Evidence files (JSON array of file paths)
+  evidenceFiles         String?  @map("evidence_files")
+
+  // Metadata
+  emailSent             Boolean  @default(false) @map("email_sent")
+  isActive              Boolean  @default(true) @map("is_active")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("incident_reports")
 }

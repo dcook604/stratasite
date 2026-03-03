@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Home, Calendar, Image, Book, Mail, Menu, X, LogIn, ChevronDown, ShoppingCart } from 'lucide-react';
+import { Home, Image, Book, Mail, Menu, X, LogIn, ChevronDown, ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAdminAuth } from '@/context/AdminAuthContext';
@@ -46,11 +46,11 @@ export const Navbar = () => {
     { name: 'AC Inquiry', path: '/ac-inquiry' },
     { name: 'Storage Rental', path: '/storage-rental' },
     { name: 'Pet Registration', path: '/pet-registration' },
-        { name: 'Form K', path: '/form-k' },
+    { name: 'Form K', path: '/form-k' },
+    { name: 'Incident Report', path: '/incident-report' },
   ];
 
   const mainNavItems = [
-    { name: 'Calendar', path: '/calendar', icon: <Calendar className="h-4 w-4 mr-2" /> },
     { name: 'Contact', path: '/contact', icon: <Mail className="h-4 w-4 mr-2" /> },
     { name: 'Bylaws', path: '/bylaws', icon: <Book className="h-4 w-4 mr-2" /> },
     { name: 'Marketplace', path: '/marketplace', icon: <ShoppingCart className="h-4 w-4 mr-2" /> },
@@ -83,18 +83,6 @@ export const Navbar = () => {
                     </Link>
                   </Button>
                 ))}
-
-                {/* Calendar and Contact */}
-                <Button
-                  variant="ghost"
-                  className="text-gray-700 hover:text-primary"
-                  asChild
-                >
-                  <Link to="/calendar" className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Calendar
-                  </Link>
-                </Button>
 
                 <Button
                   variant="ghost"
@@ -238,16 +226,6 @@ export const Navbar = () => {
             </Link>
           ))}
           
-          {/* Calendar */}
-          <Link
-            to="/calendar"
-            className="flex items-center text-gray-700 hover:bg-gray-100 hover:text-primary px-3 py-2 rounded-md text-base font-medium"
-            onClick={() => setIsMenuOpen(false)}
-          >
-            <Calendar className="h-4 w-4 mr-2" />
-            Calendar
-          </Link>
-
           {/* Contact */}
           <Link
             to="/contact"

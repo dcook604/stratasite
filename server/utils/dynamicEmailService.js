@@ -276,6 +276,62 @@ const emailTemplates = {
     };
   },
 
+  'incident-report': (data) => {
+    const {
+      incidentId, reporterName, reporterEmail, reporterPhone, unitNumber,
+      incidentDate, incidentTime, incidentLocation, incidentTitle, incidentDescription,
+      policeAttended, commonPropertyDamage, hasEvidence, evidenceFiles, evidenceCount
+    } = data;
+
+    const evidenceSection = hasEvidence && evidenceCount > 0
+      ? `<h3>Evidence Files:</h3><p>${evidenceCount} file(s) have been uploaded and are available in the admin dashboard.</p>`
+      : hasEvidence
+        ? '<p><strong>Evidence:</strong> Reporter indicated they have evidence but no files were uploaded.</p>'
+        : '<p><strong>Evidence:</strong> No evidence provided.</p>';
+
+    return {
+      subject: `⚠️ Incident Report Submitted - ${incidentTitle} (Unit ${unitNumber})`,
+      html: `
+        <div style="background-color: #fff3cd; border: 2px solid #ffc107; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+          <h2 style="color: #856404; margin-top: 0;">⚠️ New Incident Report Submitted</h2>
+          <p style="color: #856404; margin-bottom: 0;"><strong>Incident ID:</strong> ${incidentId}</p>
+        </div>
+
+        <h3>Reporter Information:</h3>
+        <ul>
+          <li><strong>Name:</strong> ${reporterName}</li>
+          <li><strong>Unit Number:</strong> ${unitNumber}</li>
+          <li><strong>Email:</strong> ${reporterEmail}</li>
+          <li><strong>Phone:</strong> ${reporterPhone}</li>
+        </ul>
+
+        <h3>Incident Details:</h3>
+        <ul>
+          <li><strong>Title:</strong> ${incidentTitle}</li>
+          <li><strong>Date:</strong> ${incidentDate}</li>
+          <li><strong>Time:</strong> ${incidentTime}</li>
+          <li><strong>Location:</strong> ${incidentLocation}</li>
+        </ul>
+
+        <h3>Description:</h3>
+        <p style="background-color: #f3f4f6; padding: 12px; border-radius: 5px; white-space: pre-wrap;">${incidentDescription}</p>
+
+        <h3>Additional Information:</h3>
+        <ul>
+          <li><strong>Police Attended:</strong> ${policeAttended ? '✅ Yes' : '❌ No'}</li>
+          <li><strong>Common Property Damage:</strong> ${commonPropertyDamage ? '✅ Yes' : '❌ No'}</li>
+          <li><strong>Evidence Submitted:</strong> ${hasEvidence ? `✅ Yes (${evidenceCount || 0} file(s))` : '❌ No'}</li>
+        </ul>
+
+        ${evidenceSection}
+
+        <hr>
+        <p><em>Submitted on ${new Date().toLocaleString()}</em></p>
+        <p><em>Please log into the admin dashboard to review all submitted evidence and details.</em></p>
+      `
+    };
+  },
+
   'form-k': (data) => {
     const {
       strataPlan, address, unitNumber, strataLotNumber, 

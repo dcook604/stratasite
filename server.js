@@ -3524,6 +3524,231 @@ app.get('/api/form-configurations/by-name/:formName', async (req, res) => {
   }
 });
 
+// ============================================================
+// INCIDENT REPORT ENDPOINTS
+// ============================================================
+
+// Multer configuration for incident evidence (images + videos)
+const incidentEvidenceUpload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB per file
+    files: 10,
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      'image/jpeg', 'image/jpg', 'image/png', 'image/webp',
+      'video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm',
+    ];
+    const allowedExtensions = /\.(jpeg|jpg|png|webp|mp4|mov|avi|webm)$/i;
+    const validMime = allowedTypes.includes(file.mimetype);
+    const validExt = allowedExtensions.test(file.originalname);
+    if (validMime && validExt) return cb(null, true);
+    return cb(new Error('Evidence files must be images (JPEG, PNG, WebP) or videos (MP4, MOV, AVI, WebM)'));
+  },
+});
+
+// Send incident report email using dynamic email service
+const sendIncidentReportEmail = async (incidentData) => {
+  const { sendDynamicFormEmail, sendFormEmailFallback } = await import('./server/utils/dynamicEmailService.js');
+  try {
+    const result = await sendDynamicFormEmail('incident-report', incidentData);
+    if (result.success) {
+      logger.info('Incident report email sent successfully via dynamic service', {
+        incidentId: incidentData.incidentId,
+        recipients: result.recipients,
+      });
+      return true;
+    }
+    logger.warn('Dynamic email service failed for incident report, using fallback', { error: result.error });
+    return await sendFormEmailFallback('incident-report', incidentData);
+  } catch (error) {
+    logger.error('Failed to send incident report email', error);
+    try {
+      return await sendFormEmailFallback('incident-report', incidentData);
+    } catch (fallbackError) {
+      logger.error('Fallback email sending also failed for incident report', fallbackError);
+      throw error;
+    }
+  }
+};
+
+// Submit incident report
+app.post('/api/incident-report', (req, res) => {
+  incidentEvidenceUpload.array('evidence', 10)(req, res, async (err) => {
+    if (err) {
+      logger.error('File upload error in incident report', { error: err.message });
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'File too large. Each file must be under 10MB.' });
+      }
+      if (err.code === 'LIMIT_FILE_COUNT') {
+        return res.status(400).json({ error: 'Too many files. Maximum 10 files allowed.' });
+      }
+      return res.status(400).json({ error: err.message || 'File upload error.' });
+    }
+
+    try {
+      const db = await getPrisma();
+      const {
+        reporterName, reporterEmail, reporterPhone, unitNumber,
+        incidentDate, incidentTime, incidentLocation, incidentTitle,
+        incidentDescription, policeAttended, commonPropertyDamage,
+        hasEvidence, turnstileToken,
+      } = req.body;
+
+      // Verify Turnstile CAPTCHA
+      const isTurnstileValid = await verifyTurnstile(turnstileToken);
+      if (!isTurnstileValid) {
+        return res.status(400).json({ error: 'Invalid CAPTCHA. Please try again.' });
+      }
+
+      // Validate required fields
+      if (!reporterName || !reporterEmail || !reporterPhone || !unitNumber ||
+          !incidentDate || !incidentTime || !incidentLocation || !incidentTitle || !incidentDescription) {
+        return res.status(400).json({ error: 'Missing required fields.' });
+      }
+
+      const timestamp = Date.now();
+      const incidentId = `IR-${timestamp}`;
+
+      // Ensure upload directory exists
+      const incidentUploadDir = path.join(__dirname, 'public', 'uploads', 'incidents');
+      if (!fs.existsSync(incidentUploadDir)) {
+        fs.mkdirSync(incidentUploadDir, { recursive: true });
+      }
+
+      // Process uploaded evidence files
+      const evidenceFilenames = [];
+      const hasEvidenceBool = hasEvidence === 'true';
+
+      if (hasEvidenceBool && req.files && req.files.length > 0) {
+        for (const file of req.files) {
+          try {
+            const fileExt = path.extname(file.originalname).toLowerCase();
+            const filename = `incident-${incidentId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}${fileExt}`;
+            const outputPath = path.join(incidentUploadDir, filename);
+
+            const isImage = file.mimetype.startsWith('image/');
+            if (isImage) {
+              // Compress images with sharp
+              await sharp(file.buffer)
+                .resize(1920, 1920, { fit: 'inside', withoutEnlargement: true })
+                .jpeg({ quality: 85, progressive: true })
+                .toFile(outputPath);
+            } else {
+              // Write video files directly
+              fs.writeFileSync(outputPath, file.buffer);
+            }
+
+            evidenceFilenames.push(filename);
+            logger.info('Incident evidence file processed', { filename, originalName: file.originalname });
+          } catch (fileError) {
+            logger.error('Failed to process incident evidence file', fileError);
+          }
+        }
+      }
+
+      // Save to database
+      const incidentReport = await db.incidentReport.create({
+        data: {
+          incidentId,
+          reporterName,
+          reporterEmail,
+          reporterPhone,
+          unitNumber,
+          incidentDate,
+          incidentTime,
+          incidentLocation,
+          incidentTitle,
+          incidentDescription,
+          policeAttended: policeAttended === 'true',
+          commonPropertyDamage: commonPropertyDamage === 'true',
+          hasEvidence: hasEvidenceBool,
+          evidenceFiles: evidenceFilenames.length > 0 ? JSON.stringify(evidenceFilenames) : null,
+          emailSent: false,
+        },
+      });
+
+      // Prepare email data
+      const incidentData = {
+        incidentId,
+        reporterName,
+        reporterEmail,
+        reporterPhone,
+        unitNumber,
+        incidentDate,
+        incidentTime,
+        incidentLocation,
+        incidentTitle,
+        incidentDescription,
+        policeAttended: policeAttended === 'true',
+        commonPropertyDamage: commonPropertyDamage === 'true',
+        hasEvidence: hasEvidenceBool,
+        evidenceFiles: evidenceFilenames,
+        evidenceCount: evidenceFilenames.length,
+      };
+
+      // Send email notification
+      try {
+        await sendIncidentReportEmail(incidentData);
+        await db.incidentReport.update({
+          where: { id: incidentReport.id },
+          data: { emailSent: true },
+        });
+        logger.info('Incident report email sent', { incidentId, evidenceCount: evidenceFilenames.length });
+      } catch (emailError) {
+        logger.error('Failed to send incident report email', emailError);
+      }
+
+      res.status(201).json({
+        success: true,
+        message: 'Incident report submitted successfully.',
+        incidentId,
+      });
+    } catch (error) {
+      logger.error('Error processing incident report submission', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+});
+
+// Get all incident reports (admin only)
+app.get('/api/incident-reports', async (req, res) => {
+  try {
+    const db = await getPrisma();
+    const reports = await db.incidentReport.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const reportsWithFiles = reports.map(report => ({
+      ...report,
+      evidenceFiles: report.evidenceFiles ? JSON.parse(report.evidenceFiles) : [],
+    }));
+
+    res.json(reportsWithFiles);
+  } catch (error) {
+    logger.error('Error fetching incident reports', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Delete (soft-delete) an incident report (admin only)
+app.delete('/api/incident-reports/:id', async (req, res) => {
+  try {
+    const db = await getPrisma();
+    const { id } = req.params;
+    await db.incidentReport.update({
+      where: { id },
+      data: { isActive: false },
+    });
+    res.json({ success: true, message: 'Incident report deleted.' });
+  } catch (error) {
+    logger.error('Error deleting incident report', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Serve static files (must be after API routes, before error handler)
 app.use(express.static(path.join(__dirname, 'dist'), {
   // Better caching for static assets
