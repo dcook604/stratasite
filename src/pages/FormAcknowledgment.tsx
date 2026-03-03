@@ -5,7 +5,7 @@ import Footer from '@/components/layout/Footer';
 import PageHeader from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, ArrowLeft, Home, Mail, Phone } from 'lucide-react';
+import { CheckCircle, ArrowLeft, Home } from 'lucide-react';
 
 interface FormSubmissionData {
   formType: string;
@@ -235,31 +235,6 @@ const FormAcknowledgment = () => {
                 </li>
               ))}
             </ul>
-          </CardContent>
-        </Card>
-
-        {/* Contact Information */}
-        <Card className="mb-8 bg-blue-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="text-blue-800">Need Help?</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex items-center gap-3">
-                <Mail className="h-5 w-5 text-blue-600" />
-                <div>
-                  <p className="font-semibold">Email Support</p>
-                  <p className="text-sm text-gray-600">management@spectrum4.ca</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Phone className="h-5 w-5 text-blue-600" />
-                <div>
-                  <p className="font-semibold">Phone Support</p>
-                  <p className="text-sm text-gray-600">(604) 555-0123</p>
-                </div>
-              </div>
-            </div>
           </CardContent>
         </Card>
 

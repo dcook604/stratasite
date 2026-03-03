@@ -3709,13 +3709,26 @@ app.post('/api/incident-report', (req, res) => {
       if (reporterEmail) {
         try {
           const fromName = process.env.SMTP_FROM_NAME || 'Spectrum 4';
+          const fromAddress = process.env.SMTP_FROM || `${process.env.SMTP_USER}@spectrum4.ca`;
           const submittedAt = new Date().toLocaleString('en-CA', {
             year: 'numeric', month: 'long', day: 'numeric',
             hour: '2-digit', minute: '2-digit', timeZoneName: 'short',
             timeZone: 'America/Vancouver'
           });
+          // Format date from YYYY-MM-DD to readable form
+          const formattedIncidentDate = incidentDate
+            ? new Date(incidentDate + 'T12:00:00').toLocaleDateString('en-CA', {
+                year: 'numeric', month: 'long', day: 'numeric', timeZone: 'America/Vancouver'
+              })
+            : incidentDate;
+          // Format time from HH:MM to readable form
+          const formattedIncidentTime = incidentTime
+            ? new Date(`1970-01-01T${incidentTime}:00`).toLocaleTimeString('en-CA', {
+                hour: '2-digit', minute: '2-digit', timeZone: 'UTC'
+              })
+            : incidentTime;
           await transporter.sendMail({
-            from: process.env.SMTP_FROM || `"${fromName}" <${process.env.SMTP_USER}>`,
+            from: `"${fromName}" <${fromAddress}>`,
             to: reporterEmail,
             subject: `Incident Report Received — ${incidentTitle} (Ref: ${incidentId})`,
             html: `<!DOCTYPE html>
@@ -3729,7 +3742,7 @@ app.post('/api/incident-report', (req, res) => {
   <!-- Header -->
   <tr><td style="background:#1d4ed8;border-radius:8px 8px 0 0;padding:28px 36px;text-align:center;">
     <div style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:-0.3px;">Incident Report Received</div>
-    <div style="color:rgba(255,255,255,0.75);font-size:13px;margin-top:4px;">Spectrum 4 Strata</div>
+    <div style="color:rgba(255,255,255,0.75);font-size:13px;margin-top:4px;">${fromName}</div>
   </td></tr>
 
   <!-- Reference bar -->
@@ -3761,7 +3774,7 @@ app.post('/api/incident-report', (req, res) => {
       </tr>
       <tr>
         <td style="padding:9px 14px;font-size:13px;font-weight:600;color:#374151;border:1px solid #e5e7eb;border-top:none;background:#fafafa;">Date &amp; Time</td>
-        <td style="padding:9px 14px;font-size:13px;color:#111827;border:1px solid #e5e7eb;border-top:none;border-left:none;">${incidentDate} at ${incidentTime}</td>
+        <td style="padding:9px 14px;font-size:13px;color:#111827;border:1px solid #e5e7eb;border-top:none;border-left:none;">${formattedIncidentDate} at ${formattedIncidentTime}</td>
       </tr>
       <tr>
         <td style="padding:9px 14px;font-size:13px;font-weight:600;color:#374151;border:1px solid #e5e7eb;border-top:none;background:#fafafa;">Location</td>
