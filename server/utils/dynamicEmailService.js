@@ -282,7 +282,7 @@ const emailTemplates = {
     const {
       incidentId, reporterName, reporterEmail, reporterPhone, unitNumber,
       incidentDate, incidentTime, incidentLocation, incidentTitle, incidentDescription,
-      policeAttended, policeCaseNumber, commonPropertyDamage, hasEvidence, evidenceCount,
+      policeAttended, policeCaseNumber, bylawViolation, commonPropertyDamage, hasEvidence, evidenceCount,
       inlineImageCids, videoAttachmentNames
     } = data;
 
@@ -294,6 +294,7 @@ const emailTemplates = {
 
     const flagBadges = [
       policeAttended ? '<span style="display:inline-block;background:#cce5ff;color:#004085;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid #b8daff;margin-right:8px;">&#x1F6A8; POLICE ATTENDED</span>' : '',
+      bylawViolation ? '<span style="display:inline-block;background:#fff3cd;color:#856404;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid #ffc107;margin-right:8px;">&#x1F4CB; BYLAW VIOLATION</span>' : '',
       commonPropertyDamage ? '<span style="display:inline-block;background:#f8d7da;color:#721c24;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid #f5c6cb;">&#x26A0;&#xFE0F; PROPERTY DAMAGE</span>' : '',
     ].filter(Boolean).join('');
 
@@ -409,6 +410,10 @@ const emailTemplates = {
           <tr>
             <td style="padding:9px 14px;font-size:13px;font-weight:600;color:#374151;width:38%;border:1px solid #e5e7eb;border-top:none;background:#fafafa;">Police Attended</td>
             <td style="padding:9px 14px;font-size:13px;border:1px solid #e5e7eb;border-top:none;border-left:none;">${policeAttended ? `<span style="color:#166534;font-weight:600;">&#x2713; Yes</span>${policeCaseNumber ? ` &mdash; Case #${policeCaseNumber}` : ' &mdash; No case number provided'}` : '<span style="color:#991b1b;">&#x2715; No</span>'}</td>
+          </tr>
+          <tr>
+            <td style="padding:9px 14px;font-size:13px;font-weight:600;color:#374151;border:1px solid #e5e7eb;border-top:none;background:#fafafa;">Bylaw Violation</td>
+            <td style="padding:9px 14px;font-size:13px;border:1px solid #e5e7eb;border-top:none;border-left:none;">${bylawViolation ? '<span style="color:#92400e;font-weight:600;">&#x2713; Yes</span>' : '<span style="color:#6b7280;">&#x2715; No</span>'}</td>
           </tr>
           <tr>
             <td style="padding:9px 14px;font-size:13px;font-weight:600;color:#374151;border:1px solid #e5e7eb;border-top:none;background:#fafafa;">Common Property Damage</td>

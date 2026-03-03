@@ -39,6 +39,7 @@ const formSchema = z.object({
   incidentDescription: z.string().min(10, { message: 'Please provide more detail about the incident' }),
   policeAttended: z.boolean().default(false),
   policeCaseNumber: z.string().optional(),
+  bylawViolation: z.boolean().default(false),
   commonPropertyDamage: z.boolean().default(false),
   hasEvidence: z.boolean().default(false),
   turnstileToken: z.string().min(1, { message: 'Please complete the verification' }),
@@ -68,6 +69,7 @@ const IncidentReport: React.FC = () => {
       incidentDescription: '',
       policeAttended: false,
       policeCaseNumber: '',
+      bylawViolation: false,
       commonPropertyDamage: false,
       hasEvidence: false,
       turnstileToken: '',
@@ -159,6 +161,7 @@ const IncidentReport: React.FC = () => {
       if (data.policeAttended && data.policeCaseNumber) {
         formData.append('policeCaseNumber', data.policeCaseNumber);
       }
+      formData.append('bylawViolation', String(data.bylawViolation));
       formData.append('commonPropertyDamage', String(data.commonPropertyDamage));
       formData.append('hasEvidence', String(data.hasEvidence));
       formData.append('turnstileToken', data.turnstileToken);
@@ -417,6 +420,24 @@ const IncidentReport: React.FC = () => {
                         )}
                       />
                     )}
+
+                    <FormField
+                      control={form.control}
+                      name="bylawViolation"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel className="cursor-pointer">Is this a bylaw violation?</FormLabel>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
 
                     <FormField
                       control={form.control}

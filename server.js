@@ -3592,7 +3592,7 @@ app.post('/api/incident-report', (req, res) => {
       const {
         reporterName, reporterEmail, reporterPhone, unitNumber,
         incidentDate, incidentTime, incidentLocation, incidentTitle,
-        incidentDescription, policeAttended, policeCaseNumber, commonPropertyDamage,
+        incidentDescription, policeAttended, policeCaseNumber, bylawViolation, commonPropertyDamage,
         hasEvidence, turnstileToken,
       } = req.body;
 
@@ -3663,6 +3663,7 @@ app.post('/api/incident-report', (req, res) => {
           incidentDescription,
           policeAttended: policeAttended === 'true',
           policeCaseNumber: policeAttended === 'true' ? (policeCaseNumber || null) : null,
+          bylawViolation: bylawViolation === 'true',
           commonPropertyDamage: commonPropertyDamage === 'true',
           hasEvidence: hasEvidenceBool,
           evidenceFiles: evidenceFilenames.length > 0 ? JSON.stringify(evidenceFilenames) : null,
@@ -3684,6 +3685,7 @@ app.post('/api/incident-report', (req, res) => {
         incidentDescription,
         policeAttended: policeAttended === 'true',
         policeCaseNumber: policeAttended === 'true' ? (policeCaseNumber || null) : null,
+        bylawViolation: bylawViolation === 'true',
         commonPropertyDamage: commonPropertyDamage === 'true',
         hasEvidence: hasEvidenceBool,
         evidenceFiles: evidenceFilenames,
