@@ -3677,6 +3677,20 @@ app.post('/api/incident-report', (req, res) => {
         },
       });
 
+      // Bylaw keyword matching — only runs when bylaw violation is flagged
+      let matchedBylaw = null;
+      if (bylawViolation === 'true') {
+        try {
+          const { findRelevantBylaws } = await import('./server/utils/bylawMatcher.js');
+          matchedBylaw = await findRelevantBylaws(incidentTitle, incidentDescription);
+          if (matchedBylaw) {
+            logger.info('Bylaw match found for incident', { incidentId });
+          }
+        } catch (err) {
+          logger.warn('Bylaw matching failed, continuing without match', { error: err.message });
+        }
+      }
+
       // Prepare email data
       const incidentData = {
         incidentId,
@@ -3697,6 +3711,7 @@ app.post('/api/incident-report', (req, res) => {
         evidenceFiles: evidenceFilenames,
         evidenceFilePaths: evidenceFilenames.map(f => path.join(incidentUploadDir, f)),
         evidenceCount: evidenceFilenames.length,
+        matchedBylaw,
       };
 
       // Send email notification to admins

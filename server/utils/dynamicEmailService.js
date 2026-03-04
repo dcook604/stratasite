@@ -283,7 +283,7 @@ const emailTemplates = {
       incidentId, reporterName, reporterEmail, reporterPhone, unitNumber,
       incidentDate, incidentTime, incidentLocation, incidentTitle, incidentDescription,
       policeAttended, policeCaseNumber, bylawViolation, commonPropertyDamage, hasEvidence, evidenceCount,
-      inlineImageCids, videoAttachmentNames
+      inlineImageCids, videoAttachmentNames, matchedBylaw
     } = data;
 
     const submittedAt = new Date().toLocaleString('en-CA', {
@@ -424,6 +424,14 @@ const emailTemplates = {
           <tr><td style="padding:16px;border:1px solid #e5e7eb;border-top:none;font-size:14px;line-height:1.7;color:#1f2937;white-space:pre-wrap;">${incidentDescription.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td></tr>
         </table>
       </td></tr>
+
+      <!-- Matched Bylaw Section (shown only when bylaw violation flagged and a match is found) -->
+      ${bylawViolation && matchedBylaw ? `<tr><td style="padding-bottom:24px;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr><td style="background:#fff3cd;padding:9px 14px;font-size:11px;font-weight:700;color:#856404;letter-spacing:0.8px;text-transform:uppercase;border:1px solid #ffc107;border-bottom:2px solid #ffc107;">&#x1F4CB; Matched Bylaw Section(s)</td></tr>
+          <tr><td style="padding:16px;border:1px solid #ffc107;border-top:none;font-size:13px;line-height:1.8;color:#1f2937;white-space:pre-wrap;font-family:Georgia,serif;">${matchedBylaw.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td></tr>
+        </table>
+      </td></tr>` : ''}
 
       <!-- Inline evidence images / video note -->
       ${inlineImagesHtml}
