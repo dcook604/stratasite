@@ -61,6 +61,7 @@ COPY --from=builder /app/server ./server/
 COPY --from=builder /app/server.js ./
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma/
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma/
+COPY --from=builder /app/public/documents ./public/documents/
 
 # Create data directories for persistence
 RUN mkdir -p /app/data/uploads/documents /app/data/uploads/marketplace /app/public/uploads
