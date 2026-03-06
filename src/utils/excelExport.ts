@@ -1,6 +1,5 @@
 // Excel Export Utilities for Form Data
-import * as XLSX from 'xlsx';
-import { formatPetRegistrationForCSV, formatScooterRegistrationForCSV, formatEmergencyContactForCSV, formatACInquiryForCSV, formatStorageRentalForCSV } from './csvExport';
+import ExcelJS from 'exceljs';
 
 export interface ExcelExportOptions {
   filename?: string;
@@ -11,24 +10,29 @@ export interface ExcelExportOptions {
 /**
  * Download data as an Excel file
  */
-export function downloadExcel(data: any[], filename: string, sheetName: string = 'Data'): void {
-  // Create a new workbook
-  const workbook = XLSX.utils.book_new();
-  
-  // Convert data to worksheet
-  const worksheet = XLSX.utils.json_to_sheet(data);
-  
-  // Add the worksheet to the workbook
-  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-  
-  // Generate Excel file and download
-  XLSX.writeFile(workbook, filename);
+export async function downloadExcel(data: Record<string, unknown>[], filename: string, sheetName: string = 'Data'): Promise<void> {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet(sheetName);
+
+  if (data.length > 0) {
+    worksheet.columns = Object.keys(data[0]).map(key => ({ header: key, key }));
+    data.forEach(row => worksheet.addRow(row));
+  }
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 /**
  * Format Pet Registration data for Excel export with enhanced formatting
  */
-export function formatPetRegistrationForExcel(data: any[]): any[] {
+export function formatPetRegistrationForExcel(data: Record<string, unknown>[]): Record<string, unknown>[] {
   return data.map(item => ({
     'Registration ID': item.registrationId,
     'Owner Name': item.ownerName,
@@ -48,12 +52,12 @@ export function formatPetRegistrationForExcel(data: any[]): any[] {
     'Status': item.status,
     'Admin Notes': item.notes || 'N/A',
     'Email Sent': item.emailSent ? 'Yes' : 'No',
-    'Submitted Date': new Date(item.createdAt).toLocaleDateString('en-US', {
+    'Submitted Date': new Date(item.createdAt as string).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     }),
-    'Last Updated': new Date(item.updatedAt).toLocaleDateString('en-US', {
+    'Last Updated': new Date(item.updatedAt as string).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -65,7 +69,7 @@ export function formatPetRegistrationForExcel(data: any[]): any[] {
 /**
  * Format Scooter Registration data for Excel export
  */
-export function formatScooterRegistrationForExcel(data: any[]): any[] {
+export function formatScooterRegistrationForExcel(data: Record<string, unknown>[]): Record<string, unknown>[] {
   return data.map(item => ({
     'Registration ID': item.registrationId,
     'Registration Date': item.registrationDate,
@@ -78,15 +82,15 @@ export function formatScooterRegistrationForExcel(data: any[]): any[] {
     'Status': item.status,
     'Key Number': item.keyNumber || 'N/A',
     'Deposit Paid': item.depositPaid ? 'Yes' : 'No',
-    'Deposit Amount': `$${item.depositAmount.toFixed(2)}`,
+    'Deposit Amount': `$${(item.depositAmount as number).toFixed(2)}`,
     'Admin Notes': item.notes || 'N/A',
     'Email Sent': item.emailSent ? 'Yes' : 'No',
-    'Submitted Date': new Date(item.createdAt).toLocaleDateString('en-US', {
+    'Submitted Date': new Date(item.createdAt as string).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     }),
-    'Last Updated': new Date(item.updatedAt).toLocaleDateString('en-US', {
+    'Last Updated': new Date(item.updatedAt as string).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -98,7 +102,7 @@ export function formatScooterRegistrationForExcel(data: any[]): any[] {
 /**
  * Format Emergency Contact data for Excel export
  */
-export function formatEmergencyContactForExcel(data: any[]): any[] {
+export function formatEmergencyContactForExcel(data: Record<string, unknown>[]): Record<string, unknown>[] {
   return data.map(item => ({
     'Contact ID': item.contactId,
     'Unit Number': item.unitNumber,
@@ -119,7 +123,7 @@ export function formatEmergencyContactForExcel(data: any[]): any[] {
     'Concierge Key Provided': item.conciergeKeyProvided ? 'Yes' : 'No',
     'Date Provided to Concierge': item.dateProvidedToConcierge || 'N/A',
     'Security Code Provided': item.securityCode ? 'Yes' : 'No',
-    'Submitted Date': new Date(item.createdAt).toLocaleDateString('en-US', {
+    'Submitted Date': new Date(item.createdAt as string).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -131,7 +135,7 @@ export function formatEmergencyContactForExcel(data: any[]): any[] {
 /**
  * Format AC Inquiry data for Excel export
  */
-export function formatACInquiryForExcel(data: any[]): any[] {
+export function formatACInquiryForExcel(data: Record<string, unknown>[]): Record<string, unknown>[] {
   return data.map(item => ({
     'Inquiry ID': item.inquiryId,
     'Owner Name': item.ownerName,
@@ -143,7 +147,7 @@ export function formatACInquiryForExcel(data: any[]): any[] {
     'Installation Timing': item.installationTiming,
     'Notes': item.notes || 'N/A',
     'Consent Given': item.consentGiven ? 'Yes' : 'No',
-    'Submitted Date': new Date(item.createdAt).toLocaleDateString('en-US', {
+    'Submitted Date': new Date(item.createdAt as string).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -155,7 +159,7 @@ export function formatACInquiryForExcel(data: any[]): any[] {
 /**
  * Format Storage Rental data for Excel export
  */
-export function formatStorageRentalForExcel(data: any[]): any[] {
+export function formatStorageRentalForExcel(data: Record<string, unknown>[]): Record<string, unknown>[] {
   return data.map(item => ({
     'Rental ID': item.rentalId,
     'First Name': item.firstName,
@@ -168,7 +172,7 @@ export function formatStorageRentalForExcel(data: any[]): any[] {
     'Interested in Information': item.interestedInInfo ? 'Yes' : 'No',
     'Consent Given': item.consentGiven ? 'Yes' : 'No',
     'Notes': item.notes || 'N/A',
-    'Submitted Date': new Date(item.createdAt).toLocaleDateString('en-US', {
+    'Submitted Date': new Date(item.createdAt as string).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -180,15 +184,15 @@ export function formatStorageRentalForExcel(data: any[]): any[] {
 /**
  * Export form data as Excel
  */
-export function exportFormDataAsExcel(
-  data: any[], 
+export async function exportFormDataAsExcel(
+  data: Record<string, unknown>[],
   formType: 'emergency-contact' | 'ac-inquiry' | 'storage-rental' | 'pet-registration' | 'scooter-registration',
   options: ExcelExportOptions = {}
-): void {
-  let formattedData: any[];
+): Promise<void> {
+  let formattedData: Record<string, unknown>[];
   let defaultFilename: string;
   let defaultSheetName: string;
-  
+
   switch (formType) {
     case 'emergency-contact':
       formattedData = formatEmergencyContactForExcel(data);
@@ -218,30 +222,27 @@ export function exportFormDataAsExcel(
     default:
       throw new Error(`Unknown form type: ${formType}`);
   }
-  
-  const filename = options.filename || defaultFilename;
-  const sheetName = options.sheetName || defaultSheetName;
-  
-  downloadExcel(formattedData, filename, sheetName);
+
+  await downloadExcel(formattedData, options.filename || defaultFilename, options.sheetName || defaultSheetName);
 }
 
 /**
  * Export multiple form types as a single Excel file with multiple sheets
  */
-export function exportMultipleFormsAsExcel(
+export async function exportMultipleFormsAsExcel(
   formsData: {
     type: 'emergency-contact' | 'ac-inquiry' | 'storage-rental' | 'pet-registration' | 'scooter-registration';
-    data: any[];
+    data: Record<string, unknown>[];
     sheetName?: string;
   }[],
   filename: string = `form-data-export-${new Date().toISOString().split('T')[0]}.xlsx`
-): void {
-  const workbook = XLSX.utils.book_new();
-  
+): Promise<void> {
+  const workbook = new ExcelJS.Workbook();
+
   formsData.forEach(({ type, data, sheetName }) => {
-    let formattedData: any[];
+    let formattedData: Record<string, unknown>[];
     let defaultSheetName: string;
-    
+
     switch (type) {
       case 'emergency-contact':
         formattedData = formatEmergencyContactForExcel(data);
@@ -264,14 +265,22 @@ export function exportMultipleFormsAsExcel(
         defaultSheetName = 'Scooter Registrations';
         break;
       default:
-        return; // Skip unknown types
+        return;
     }
-    
+
     if (formattedData.length > 0) {
-      const worksheet = XLSX.utils.json_to_sheet(formattedData);
-      XLSX.utils.book_append_sheet(workbook, worksheet, sheetName || defaultSheetName);
+      const worksheet = workbook.addWorksheet(sheetName || defaultSheetName);
+      worksheet.columns = Object.keys(formattedData[0]).map(key => ({ header: key, key }));
+      formattedData.forEach(row => worksheet.addRow(row));
     }
   });
-  
-  XLSX.writeFile(workbook, filename);
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
