@@ -423,38 +423,98 @@ model FormKSubmission {
   @@map("form_k_submissions")
 }
 
+enum IncidentStatus {
+  NEW
+  UNDER_REVIEW
+  ACTION_TAKEN
+  RESOLVED
+  CLOSED
+}
+
+enum IncidentPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum IncidentNoteType {
+  INTERNAL
+  UPDATE
+}
+
 model IncidentReport {
-  id                    String   @id @default(cuid())
-  incidentId            String   @unique @map("incident_id") // IR-timestamp format
+  id                    String           @id @default(cuid())
+  incidentId            String           @unique @map("incident_id") // IR-timestamp format
 
   // Reporter Information
-  reporterName          String   @map("reporter_name")
-  reporterEmail         String   @map("reporter_email")
-  reporterPhone         String   @map("reporter_phone")
-  unitNumber            String   @map("unit_number")
+  reporterName          String           @map("reporter_name")
+  reporterEmail         String           @map("reporter_email")
+  reporterPhone         String           @map("reporter_phone")
+  unitNumber            String           @map("unit_number")
 
   // Incident Details
-  incidentDate          String   @map("incident_date")
-  incidentTime          String   @map("incident_time")
-  incidentLocation      String   @map("incident_location")
-  incidentTitle         String   @map("incident_title")
-  incidentDescription   String   @map("incident_description")
+  incidentDate          String           @map("incident_date")
+  incidentTime          String           @map("incident_time")
+  incidentLocation      String           @map("incident_location")
+  incidentTitle         String           @map("incident_title")
+  incidentDescription   String           @map("incident_description")
 
   // Checkboxes
-  policeAttended        Boolean  @default(false) @map("police_attended")
-  policeCaseNumber      String?  @map("police_case_number")
-  bylawViolation        Boolean  @default(false) @map("bylaw_violation")
-  commonPropertyDamage  Boolean  @default(false) @map("common_property_damage")
-  hasEvidence           Boolean  @default(false) @map("has_evidence")
+  policeAttended        Boolean          @default(false) @map("police_attended")
+  policeCaseNumber      String?          @map("police_case_number")
+  bylawViolation        Boolean          @default(false) @map("bylaw_violation")
+  commonPropertyDamage  Boolean          @default(false) @map("common_property_damage")
+  hasEvidence           Boolean          @default(false) @map("has_evidence")
 
   // Evidence files (JSON array of file paths)
-  evidenceFiles         String?  @map("evidence_files")
+  evidenceFiles         String?          @map("evidence_files")
+
+  // Tracking fields
+  status                IncidentStatus   @default(NEW)
+  priority              IncidentPriority @default(MEDIUM)
+  assignedTo            String?          @map("assigned_to") // admin email or name
+  resolvedAt            DateTime?        @map("resolved_at")
+  resolution            String?          // How the incident was resolved
+  notifyReporter        Boolean          @default(false) @map("notify_reporter") // reporter opted-in to updates
 
   // Metadata
-  emailSent             Boolean  @default(false) @map("email_sent")
-  isActive              Boolean  @default(true) @map("is_active")
-  createdAt             DateTime @default(now()) @map("created_at")
-  updatedAt             DateTime @updatedAt @map("updated_at")
+  emailSent             Boolean          @default(false) @map("email_sent")
+  isActive              Boolean          @default(true) @map("is_active")
+  createdAt             DateTime         @default(now()) @map("created_at")
+  updatedAt             DateTime         @updatedAt @map("updated_at")
+
+  notes                 IncidentNote[]
+  statusHistory         IncidentStatusHistory[]
 
   @@map("incident_reports")
+}
+
+model IncidentNote {
+  id          String           @id @default(cuid())
+  incidentId  String           @map("incident_id")
+  type        IncidentNoteType @default(INTERNAL)
+  body        String
+  authorName  String           @map("author_name")
+  authorEmail String           @map("author_email")
+  emailedToReporter Boolean   @default(false) @map("emailed_to_reporter")
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  incident    IncidentReport   @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@map("incident_notes")
+}
+
+model IncidentStatusHistory {
+  id          String         @id @default(cuid())
+  incidentId  String         @map("incident_id")
+  fromStatus  IncidentStatus @map("from_status")
+  toStatus    IncidentStatus @map("to_status")
+  changedBy   String         @map("changed_by") // admin email
+  comment     String?
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  incident    IncidentReport @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@map("incident_status_history")
 }

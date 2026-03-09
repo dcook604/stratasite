@@ -3599,7 +3599,7 @@ app.post('/api/incident-report', (req, res) => {
         reporterName, reporterEmail, reporterPhone, unitNumber,
         incidentDate, incidentTime, incidentLocation, incidentTitle,
         incidentDescription, policeAttended, policeCaseNumber, bylawViolation, commonPropertyDamage,
-        hasEvidence, turnstileToken,
+        hasEvidence, notifyReporter, turnstileToken,
       } = req.body;
 
       // Verify Turnstile CAPTCHA
@@ -3673,6 +3673,7 @@ app.post('/api/incident-report', (req, res) => {
           commonPropertyDamage: commonPropertyDamage === 'true',
           hasEvidence: hasEvidenceBool,
           evidenceFiles: evidenceFilenames.length > 0 ? JSON.stringify(evidenceFilenames) : null,
+          notifyReporter: notifyReporter === 'true',
           emailSent: false,
         },
       });
@@ -3803,8 +3804,22 @@ app.post('/api/incident-report', (req, res) => {
       </tr>
     </table>
 
+    <!-- Check status CTA -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
+      <tr><td style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:16px 20px;">
+        <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#1e40af;">Track Your Report Online</p>
+        <p style="margin:0 0 12px;font-size:13px;color:#1e40af;line-height:1.5;">
+          You can check the current status of your report at any time using your reference number and email address.
+        </p>
+        <a href="https://www.spectrum4.ca/incident-status?ref=${incidentId}&amp;email=${encodeURIComponent(reporterEmail)}"
+           style="display:inline-block;background:#1d4ed8;color:#ffffff;font-size:13px;font-weight:600;text-decoration:none;padding:8px 18px;border-radius:5px;">
+          Check Report Status →
+        </a>
+      </td></tr>
+    </table>
+
     <p style="margin:0 0 8px;font-size:13px;color:#6b7280;line-height:1.6;">
-      Please keep this reference number for your records. If you have any additional information to add or questions about this report, please contact the strata council directly.
+      Please keep this reference number for your records. If you have any additional information to add or questions, please contact the strata council directly.
     </p>
   </td></tr>
 
@@ -3840,9 +3855,18 @@ app.post('/api/incident-report', (req, res) => {
 app.get('/api/incident-reports', async (req, res) => {
   try {
     const db = await getPrisma();
+    const { status, priority } = req.query;
+    const where = { isActive: true };
+    if (status) where.status = status;
+    if (priority) where.priority = priority;
+
     const reports = await db.incidentReport.findMany({
-      where: { isActive: true },
+      where,
       orderBy: { createdAt: 'desc' },
+      include: {
+        notes: { orderBy: { createdAt: 'asc' } },
+        statusHistory: { orderBy: { createdAt: 'asc' } },
+      },
     });
 
     const reportsWithFiles = reports.map(report => ({
@@ -3853,6 +3877,293 @@ app.get('/api/incident-reports', async (req, res) => {
     res.json(reportsWithFiles);
   } catch (error) {
     logger.error('Error fetching incident reports', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get single incident report with full detail (admin only)
+app.get('/api/incident-reports/:id', async (req, res) => {
+  try {
+    const db = await getPrisma();
+    const { id } = req.params;
+    const report = await db.incidentReport.findUnique({
+      where: { id },
+      include: {
+        notes: { orderBy: { createdAt: 'asc' } },
+        statusHistory: { orderBy: { createdAt: 'asc' } },
+      },
+    });
+    if (!report || !report.isActive) {
+      return res.status(404).json({ error: 'Incident report not found.' });
+    }
+    res.json({
+      ...report,
+      evidenceFiles: report.evidenceFiles ? JSON.parse(report.evidenceFiles) : [],
+    });
+  } catch (error) {
+    logger.error('Error fetching incident report', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update incident status (admin only)
+app.patch('/api/incident-reports/:id/status', async (req, res) => {
+  try {
+    const db = await getPrisma();
+    const { id } = req.params;
+    const { status, priority, assignedTo, resolution, comment, changedBy } = req.body;
+
+    const validStatuses = ['NEW', 'UNDER_REVIEW', 'ACTION_TAKEN', 'RESOLVED', 'CLOSED'];
+    const validPriorities = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
+
+    if (status && !validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Invalid status value.' });
+    }
+    if (priority && !validPriorities.includes(priority)) {
+      return res.status(400).json({ error: 'Invalid priority value.' });
+    }
+    if (!changedBy) {
+      return res.status(400).json({ error: 'changedBy is required.' });
+    }
+
+    const existing = await db.incidentReport.findUnique({ where: { id } });
+    if (!existing || !existing.isActive) {
+      return res.status(404).json({ error: 'Incident report not found.' });
+    }
+
+    const updateData = {};
+    if (status) updateData.status = status;
+    if (priority) updateData.priority = priority;
+    if (assignedTo !== undefined) updateData.assignedTo = assignedTo || null;
+    if (resolution !== undefined) updateData.resolution = resolution || null;
+    if (status === 'RESOLVED' || status === 'CLOSED') {
+      updateData.resolvedAt = updateData.resolvedAt || existing.resolvedAt || new Date();
+    }
+
+    // Create status history entry if status changed
+    const historyCreate = (status && status !== existing.status)
+      ? {
+          create: {
+            fromStatus: existing.status,
+            toStatus: status,
+            changedBy,
+            comment: comment || null,
+          },
+        }
+      : undefined;
+
+    const updated = await db.incidentReport.update({
+      where: { id },
+      data: {
+        ...updateData,
+        ...(historyCreate ? { statusHistory: historyCreate } : {}),
+      },
+      include: {
+        notes: { orderBy: { createdAt: 'asc' } },
+        statusHistory: { orderBy: { createdAt: 'asc' } },
+      },
+    });
+
+    // If status changed and reporter opted in to notifications, email them
+    if (status && status !== existing.status && existing.notifyReporter && existing.reporterEmail) {
+      try {
+        const fromName = process.env.SMTP_FROM_NAME || 'Spectrum 4';
+        const fromAddress = process.env.SMTP_FROM || `${process.env.SMTP_USER}@spectrum4.ca`;
+        const statusLabels = {
+          NEW: 'New',
+          UNDER_REVIEW: 'Under Review',
+          ACTION_TAKEN: 'Action Taken',
+          RESOLVED: 'Resolved',
+          CLOSED: 'Closed',
+        };
+        const statusLabel = statusLabels[status] || status;
+        await transporter.sendMail({
+          from: `"${fromName}" <${fromAddress}>`,
+          to: existing.reporterEmail,
+          subject: `Incident Update — ${existing.incidentTitle} (Ref: ${existing.incidentId})`,
+          html: `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f0f2f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f0f2f5;">
+<tr><td align="center" style="padding:24px 16px;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+  <tr><td style="background:#1d4ed8;border-radius:8px 8px 0 0;padding:28px 36px;text-align:center;">
+    <div style="color:#ffffff;font-size:20px;font-weight:700;">Incident Status Update</div>
+    <div style="color:rgba(255,255,255,0.75);font-size:13px;margin-top:4px;">${fromName}</div>
+  </td></tr>
+  <tr><td style="background:#dbeafe;border-left:1px solid #bfdbfe;border-right:1px solid #bfdbfe;padding:10px 36px;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td style="font-size:12px;color:#1e40af;font-weight:700;">REFERENCE: ${existing.incidentId}</td>
+        <td align="right" style="font-size:12px;color:#1e40af;">Status: ${statusLabel}</td>
+      </tr>
+    </table>
+  </td></tr>
+  <tr><td style="background:#ffffff;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;padding:32px 36px;">
+    <p style="margin:0 0 16px;font-size:15px;color:#111827;">Dear ${existing.reporterName},</p>
+    <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
+      The status of your incident report <strong>${existing.incidentTitle}</strong> has been updated to <strong>${statusLabel}</strong>.
+    </p>
+    ${comment ? `<p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;background:#f8f9fa;padding:12px 16px;border-left:3px solid #1d4ed8;border-radius:0 4px 4px 0;">${comment}</p>` : ''}
+    ${resolution ? `<p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;"><strong>Resolution:</strong> ${resolution}</p>` : ''}
+    <p style="margin:0;font-size:13px;color:#6b7280;">If you have questions, please contact the strata council directly, quoting your reference number.</p>
+  </td></tr>
+  <tr><td style="padding:16px 0 0;text-align:center;">
+    <div style="font-size:11px;color:#9ca3af;">Spectrum 4 Strata &mdash; Automated incident update</div>
+  </td></tr>
+</table>
+</td></tr>
+</table>
+</body></html>`,
+        });
+        logger.info('Incident status update email sent to reporter', { incidentId: existing.incidentId, status });
+      } catch (emailError) {
+        logger.error('Failed to send incident status update email', emailError);
+      }
+    }
+
+    res.json({
+      ...updated,
+      evidenceFiles: updated.evidenceFiles ? JSON.parse(updated.evidenceFiles) : [],
+    });
+  } catch (error) {
+    logger.error('Error updating incident status', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Add a note to an incident (admin only)
+app.post('/api/incident-reports/:id/notes', async (req, res) => {
+  try {
+    const db = await getPrisma();
+    const { id } = req.params;
+    const { type, body, authorName, authorEmail, emailReporter } = req.body;
+
+    if (!body || !authorName || !authorEmail) {
+      return res.status(400).json({ error: 'body, authorName, and authorEmail are required.' });
+    }
+
+    const validTypes = ['INTERNAL', 'UPDATE'];
+    const noteType = validTypes.includes(type) ? type : 'INTERNAL';
+
+    const incident = await db.incidentReport.findUnique({ where: { id } });
+    if (!incident || !incident.isActive) {
+      return res.status(404).json({ error: 'Incident report not found.' });
+    }
+
+    let emailedToReporter = false;
+    if (noteType === 'UPDATE' && emailReporter && incident.reporterEmail) {
+      try {
+        const fromName = process.env.SMTP_FROM_NAME || 'Spectrum 4';
+        const fromAddress = process.env.SMTP_FROM || `${process.env.SMTP_USER}@spectrum4.ca`;
+        await transporter.sendMail({
+          from: `"${fromName}" <${fromAddress}>`,
+          to: incident.reporterEmail,
+          subject: `Update on Your Incident Report — ${incident.incidentTitle} (Ref: ${incident.incidentId})`,
+          html: `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#f0f2f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f0f2f5;">
+<tr><td align="center" style="padding:24px 16px;">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;">
+  <tr><td style="background:#1d4ed8;border-radius:8px 8px 0 0;padding:28px 36px;text-align:center;">
+    <div style="color:#ffffff;font-size:20px;font-weight:700;">Update on Your Incident</div>
+    <div style="color:rgba(255,255,255,0.75);font-size:13px;margin-top:4px;">${fromName}</div>
+  </td></tr>
+  <tr><td style="background:#dbeafe;border-left:1px solid #bfdbfe;border-right:1px solid #bfdbfe;padding:10px 36px;">
+    <span style="font-size:12px;color:#1e40af;font-weight:700;">REFERENCE: ${incident.incidentId}</span>
+  </td></tr>
+  <tr><td style="background:#ffffff;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;padding:32px 36px;">
+    <p style="margin:0 0 16px;font-size:15px;color:#111827;">Dear ${incident.reporterName},</p>
+    <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
+      There is a new update on your incident report <strong>${incident.incidentTitle}</strong>:
+    </p>
+    <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;background:#f8f9fa;padding:12px 16px;border-left:3px solid #1d4ed8;border-radius:0 4px 4px 0;">${body}</p>
+    <p style="margin:0;font-size:13px;color:#6b7280;">If you have questions, please contact the strata council quoting your reference number.</p>
+  </td></tr>
+  <tr><td style="padding:16px 0 0;text-align:center;">
+    <div style="font-size:11px;color:#9ca3af;">Spectrum 4 Strata &mdash; Automated incident update</div>
+  </td></tr>
+</table>
+</td></tr>
+</table>
+</body></html>`,
+        });
+        emailedToReporter = true;
+        logger.info('Incident note emailed to reporter', { incidentId: incident.incidentId });
+      } catch (emailError) {
+        logger.error('Failed to email incident note to reporter', emailError);
+      }
+    }
+
+    const note = await db.incidentNote.create({
+      data: {
+        incidentId: id,
+        type: noteType,
+        body,
+        authorName,
+        authorEmail,
+        emailedToReporter,
+      },
+    });
+
+    res.status(201).json(note);
+  } catch (error) {
+    logger.error('Error adding incident note', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Public status check — reporter can look up their incident by incidentId + email
+app.get('/api/incident-status/:incidentId', async (req, res) => {
+  try {
+    const db = await getPrisma();
+    const { incidentId } = req.params;
+    const { email } = req.query;
+
+    if (!email) {
+      return res.status(400).json({ error: 'email query parameter is required.' });
+    }
+
+    const report = await db.incidentReport.findFirst({
+      where: { incidentId, reporterEmail: email, isActive: true },
+      include: {
+        notes: {
+          where: { type: 'UPDATE' },
+          orderBy: { createdAt: 'asc' },
+          select: { id: true, body: true, createdAt: true },
+        },
+        statusHistory: {
+          orderBy: { createdAt: 'asc' },
+          select: { fromStatus: true, toStatus: true, createdAt: true },
+        },
+      },
+    });
+
+    if (!report) {
+      return res.status(404).json({ error: 'Incident not found. Please check your reference number and email.' });
+    }
+
+    // Return only public-safe fields
+    res.json({
+      incidentId: report.incidentId,
+      incidentTitle: report.incidentTitle,
+      incidentDate: report.incidentDate,
+      incidentLocation: report.incidentLocation,
+      status: report.status,
+      priority: report.priority,
+      assignedTo: report.assignedTo,
+      resolvedAt: report.resolvedAt,
+      resolution: report.resolution,
+      createdAt: report.createdAt,
+      updatedAt: report.updatedAt,
+      updates: report.notes,
+      statusHistory: report.statusHistory,
+    });
+  } catch (error) {
+    logger.error('Error fetching public incident status', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
