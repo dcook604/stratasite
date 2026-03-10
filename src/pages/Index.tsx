@@ -6,7 +6,7 @@ import Footer from '@/components/layout/Footer';
 import RecentAnnouncements from '@/components/widgets/RecentAnnouncements';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Image, Book, Mail, Edit, Save, X, ShoppingCart, Loader2 } from 'lucide-react';
+import { Image, Book, Mail, Edit, Save, X, ShoppingCart, Loader2, Paintbrush, Wind, Hammer } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -384,6 +384,39 @@ Use our platform to stay updated on events, announcements, and community activit
             {/* Widgets Section */}
             <section className="strata-section pt-0">
               <RecentAnnouncements />
+            </section>
+
+            {/* Preferred Vendors Section */}
+            <section className="py-12 bg-gray-50">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="text-center mb-8">
+                  <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Preferred Vendors</h2>
+                  <p className="text-gray-600">Trusted service providers recommended by the Strata Council.</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+                  {[
+                    { icon: Paintbrush, color: 'bg-blue-500', name: 'Honest John Painting Co.', summary: 'Interior & exterior painting, drywall, carpentry and more.' },
+                    { icon: Wind, color: 'bg-orange-500', name: 'Airlux', summary: 'Heat pump & AC specialists serving BC since 2004.' },
+                    { icon: Hammer, color: 'bg-green-600', name: 'Swift Contracting & Renovations', summary: 'Full-service renovations — kitchens, bathrooms, decks & more.' },
+                  ].map((v) => {
+                    const Icon = v.icon;
+                    return (
+                      <Card key={v.name} className="flex flex-col items-center text-center p-5 shadow-sm">
+                        <div className={`h-10 w-10 ${v.color} rounded-xl flex items-center justify-center mb-3`}>
+                          <Icon className="h-5 w-5 text-white" />
+                        </div>
+                        <h3 className="font-semibold text-sm mb-1">{v.name}</h3>
+                        <p className="text-xs text-gray-500">{v.summary}</p>
+                      </Card>
+                    );
+                  })}
+                </div>
+                <div className="text-center">
+                  <Button variant="outline" asChild>
+                    <Link to="/preferred-vendors">View All Vendors</Link>
+                  </Button>
+                </div>
+              </div>
             </section>
 
             {/* Call to Action Section */}

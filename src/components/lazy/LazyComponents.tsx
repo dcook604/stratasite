@@ -109,6 +109,13 @@ export const IncidentStatus = lazy(() =>
   }))
 );
 
+// Preferred Vendors page
+export const PreferredVendors = lazy(() =>
+  import('@/pages/PreferredVendors').then(module => ({
+    default: module.default
+  }))
+);
+
 // Loading fallback component
 export const LazyLoadingFallback = () => (
   <PageLoading text="Loading..." />

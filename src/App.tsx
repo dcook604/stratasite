@@ -32,6 +32,7 @@ import {
   WelcomePackage,
   IncidentReport,
   IncidentStatus,
+  PreferredVendors,
   LazyLoadingFallback
 } from "./components/lazy/LazyComponents";
 
@@ -141,6 +142,12 @@ const App = () => (
                 <Route path="/incident-status" element={
                   <Suspense fallback={<LazyLoadingFallback />}>
                     <IncidentStatus />
+                  </Suspense>
+                } />
+                {/* Preferred Vendors page */}
+                <Route path="/preferred-vendors" element={
+                  <Suspense fallback={<LazyLoadingFallback />}>
+                    <PreferredVendors />
                   </Suspense>
                 } />
                 {/* Form Acknowledgment page */}

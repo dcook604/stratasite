@@ -26,6 +26,7 @@ export const Navbar = () => {
     { name: 'Recycling', path: '/recycling' },
     { name: 'Renovations', path: '/renovations' },
     { name: 'Welcome Package', path: '/welcome-package' },
+    { name: 'Preferred Vendors', path: '/preferred-vendors' },
   ];
 
   const formsItems = [
