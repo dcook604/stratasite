@@ -44,6 +44,7 @@ const formSchema = z.object({
   bylawViolation: z.boolean().default(false),
   commonPropertyDamage: z.boolean().default(false),
   hasEvidence: z.boolean().default(false),
+  notifyReporter: z.boolean().default(true),
   turnstileToken: z.string().min(1, { message: 'Please complete the verification' }),
 }).superRefine((data, ctx) => {
   if (!data.dateUnknown && !data.incidentDate) {
@@ -83,6 +84,7 @@ const IncidentReport: React.FC = () => {
       bylawViolation: false,
       commonPropertyDamage: false,
       hasEvidence: false,
+      notifyReporter: true,
       turnstileToken: '',
     },
   });
@@ -179,6 +181,7 @@ const IncidentReport: React.FC = () => {
       formData.append('bylawViolation', String(data.bylawViolation));
       formData.append('commonPropertyDamage', String(data.commonPropertyDamage));
       formData.append('hasEvidence', String(data.hasEvidence));
+      formData.append('notifyReporter', String(data.notifyReporter));
       formData.append('turnstileToken', data.turnstileToken);
 
       // Append evidence files
@@ -611,6 +614,31 @@ const IncidentReport: React.FC = () => {
                       )}
                     </div>
                   )}
+                </section>
+
+                {/* Status notifications */}
+                <section className="space-y-4">
+                  <h3 className="text-lg font-semibold border-b pb-2">Status Updates</h3>
+                  <FormField
+                    control={form.control}
+                    name="notifyReporter"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 bg-blue-50 border-blue-200">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="cursor-pointer">Notify me when the status of my report changes</FormLabel>
+                          <p className="text-xs text-muted-foreground">
+                            We'll send you an email update at the address above whenever the council updates this report. You can also check your report status anytime at <span className="font-medium">spectrum4.ca/incident-status</span>.
+                          </p>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
                 </section>
 
                 {/* CAPTCHA */}

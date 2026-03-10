@@ -102,6 +102,13 @@ export const IncidentReport = lazy(() =>
   }))
 );
 
+// Incident status portal (public)
+export const IncidentStatus = lazy(() =>
+  import('@/pages/IncidentStatus').then(module => ({
+    default: module.default
+  }))
+);
+
 // Loading fallback component
 export const LazyLoadingFallback = () => (
   <PageLoading text="Loading..." />

@@ -22,6 +22,7 @@ import ChangePasswordDialog from '@/components/shared/ChangePasswordDialog';
 import { exportFormData } from '@/utils/csvExport';
 import { exportFormDataAsExcel } from '@/utils/excelExport';
 import FormManagement from '@/components/admin/FormManagement';
+import IncidentManagement from '@/components/admin/IncidentManagement';
 
 const AdminDashboard = () => {
   const { adminUser, logout } = useAdminAuth();
@@ -1628,100 +1629,20 @@ const AdminDashboard = () => {
                       Incident Reports
                     </CardTitle>
                     <CardDescription>
-                      View and manage incident reports submitted by residents, council members, and property managers.
+                      Track and manage incident reports through to resolution.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {incidentReports.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No incident reports submitted yet.</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {incidentReports.map((report) => (
-                          <Card key={report.id} className="border border-orange-100">
-                            <CardContent className="pt-4 pb-4">
-                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                                <div className="flex-1 min-w-0 space-y-2">
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <span className="font-mono text-xs text-muted-foreground">{report.incidentId}</span>
-                                    {report.policeAttended && (
-                                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Police Attended</span>
-                                    )}
-                                    {report.commonPropertyDamage && (
-                                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Property Damage</span>
-                                    )}
-                                    {report.hasEvidence && (
-                                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Has Evidence</span>
-                                    )}
-                                  </div>
-                                  <h4 className="font-semibold text-base">{report.incidentTitle}</h4>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-600">
-                                    <div><span className="font-medium">Reporter:</span> {report.reporterName} (Unit {report.unitNumber})</div>
-                                    <div><span className="font-medium">Email:</span> {report.reporterEmail}</div>
-                                    <div><span className="font-medium">Phone:</span> {report.reporterPhone}</div>
-                                    <div><span className="font-medium">Date/Time:</span> {report.incidentDate} at {report.incidentTime}</div>
-                                    <div className="sm:col-span-2"><span className="font-medium">Location:</span> {report.incidentLocation}</div>
-                                  </div>
-                                  <div className="text-sm text-gray-700 bg-gray-50 rounded p-3 mt-2">
-                                    <span className="font-medium">Description:</span>
-                                    <p className="mt-1 whitespace-pre-wrap">{report.incidentDescription}</p>
-                                  </div>
-                                  {report.hasEvidence && report.evidenceFiles && report.evidenceFiles.length > 0 && (
-                                    <div className="mt-2">
-                                      <span className="text-sm font-medium">Evidence Files ({report.evidenceFiles.length}):</span>
-                                      <div className="flex flex-wrap gap-2 mt-1">
-                                        {report.evidenceFiles.map((filename, idx) => {
-                                          const isImage = /\.(jpeg|jpg|png|webp)$/i.test(filename);
-                                          return (
-                                            <a
-                                              key={idx}
-                                              href={`/uploads/incidents/${filename}`}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className="text-xs text-blue-600 hover:underline flex items-center gap-1 border rounded px-2 py-1"
-                                            >
-                                              {isImage ? '🖼️' : '🎥'} {filename.split('-').slice(-1)[0]}
-                                            </a>
-                                          );
-                                        })}
-                                      </div>
-                                    </div>
-                                  )}
-                                  <div className="text-xs text-muted-foreground mt-2">
-                                    Submitted: {new Date(report.createdAt).toLocaleString()} {report.emailSent ? '· Email sent' : '· Email not sent'}
-                                  </div>
-                                </div>
-                                <div className="flex sm:flex-col gap-2 flex-shrink-0">
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() => {
-                                      confirmAction(
-                                        `Are you sure you want to delete incident report "${report.incidentTitle}"?`,
-                                        async () => {
-                                          try {
-                                            await fetch(`/api/incident-reports/${report.id}`, { method: 'DELETE' });
-                                            toast({ title: "Deleted", description: "Incident report deleted." });
-                                            fetchData();
-                                          } catch (error) {
-                                            toast({ title: "Error", description: "Failed to delete report.", variant: "destructive" });
-                                          }
-                                        }
-                                      );
-                                    }}
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-1" />
-                                    Delete
-                                  </Button>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    )}
+                    <IncidentManagement
+                      initialReports={incidentReports}
+                      onReportsChange={setIncidentReports}
+                      onDeleteConfirm={confirmAction}
+                    />
                   </CardContent>
                 </Card>
               </TabsContent>
+
+
 
               <TabsContent value="forms" className="space-y-6">
                 <Card>
