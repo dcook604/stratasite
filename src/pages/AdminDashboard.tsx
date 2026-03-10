@@ -6,9 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/layout/Navbar';
@@ -23,11 +22,41 @@ import { exportFormData } from '@/utils/csvExport';
 import { exportFormDataAsExcel } from '@/utils/excelExport';
 import FormManagement from '@/components/admin/FormManagement';
 import IncidentManagement from '@/components/admin/IncidentManagement';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from '@/components/ui/sidebar';
+
+const sectionTitles: Record<string, string> = {
+  announcements: 'Announcements',
+  pages: 'Pages',
+  documents: 'Documents',
+  'incident-reports': 'Incident Reports',
+  'scooter-registrations': 'Scooter Registrations',
+  'pet-registrations': 'Pet Registrations',
+  'form-submissions': 'Form Submissions',
+  marketplace: 'Marketplace',
+  'form-management': 'Form Email Config',
+  'form-k-cleanup': 'Form K Management',
+  users: 'Admin Users',
+  cleanup: 'DB Cleanup',
+};
 
 const AdminDashboard = () => {
   const { adminUser, logout } = useAdminAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const [activeSection, setActiveSection] = React.useState('announcements');
 
   const [announcements, setAnnouncements] = useState([]);
   const [pages, setPages] = useState([]);
@@ -41,7 +70,7 @@ const AdminDashboard = () => {
   const [acInquiries, setACInquiries] = useState([]);
   const [storageRentals, setStorageRentals] = useState([]);
   const [incidentReports, setIncidentReports] = useState([]);
-  
+
   // Form K cleanup states
   const [formKStats, setFormKStats] = useState(null);
   const [expiredFormKs, setExpiredFormKs] = useState([]);
@@ -52,12 +81,12 @@ const AdminDashboard = () => {
   const [newPage, setNewPage] = useState({ slug: '', title: '', content: '' });
   const [newAdmin, setNewAdmin] = useState({ email: '', password: '' });
   const [newDocument, setNewDocument] = useState({ title: '', description: '', file: null });
-  
+
   // Edit states
   const [editingPage, setEditingPage] = useState(null);
   const [editPageData, setEditPageData] = useState({ slug: '', title: '', content: '' });
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  
+
   // Scooter registration edit states
   const [scooterEdits, setScooterEdits] = useState({});
   const [savingScooter, setSavingScooter] = useState({});
@@ -93,7 +122,7 @@ const AdminDashboard = () => {
     setLoading(true);
     try {
       console.log('AdminDashboard: Starting data fetch...');
-      
+
       const [
         announcementsRes,
         pagesRes,
@@ -131,7 +160,7 @@ const AdminDashboard = () => {
         console.error('AdminDashboard: Failed to load announcements', announcementsRes);
         setAnnouncements([]);
       }
-      
+
       // Handle pages
       if (pagesRes instanceof Response && pagesRes.ok) {
         const pagesData = await pagesRes.json();
@@ -141,7 +170,7 @@ const AdminDashboard = () => {
         console.error('AdminDashboard: Failed to load pages:', pagesRes);
         setPages([]);
       }
-      
+
       // Handle marketplace
       if (marketplaceRes instanceof Response && marketplaceRes.ok) {
         const marketplaceData = await marketplaceRes.json();
@@ -151,7 +180,7 @@ const AdminDashboard = () => {
         console.error('AdminDashboard: Failed to load marketplace posts:', marketplaceRes);
         setMarketplacePosts([]);
       }
-      
+
       // Handle admin users
       if (adminUsersRes instanceof Response && adminUsersRes.ok) {
         const adminUsersData = await adminUsersRes.json();
@@ -161,7 +190,7 @@ const AdminDashboard = () => {
         console.error('AdminDashboard: Failed to load admin users:', adminUsersRes);
         setAdminUsers([]);
       }
-      
+
       // Handle documents
       if (documentsRes instanceof Response && documentsRes.ok) {
         const documentsData = await documentsRes.json();
@@ -171,7 +200,7 @@ const AdminDashboard = () => {
         console.error('AdminDashboard: Failed to load documents:', documentsRes);
         setDocuments([]);
       }
-      
+
       // Handle scooter registrations
       if (scooterRegistrationsRes instanceof Response && scooterRegistrationsRes.ok) {
         const scooterRegistrationsData = await scooterRegistrationsRes.json();
@@ -181,7 +210,7 @@ const AdminDashboard = () => {
         console.error('AdminDashboard: Failed to load scooter registrations:', scooterRegistrationsRes);
         setScooterRegistrations([]);
       }
-      
+
       // Handle pet registrations
       if (petRegistrationsRes instanceof Response && petRegistrationsRes.ok) {
         const petRegistrationsData = await petRegistrationsRes.json();
@@ -191,7 +220,7 @@ const AdminDashboard = () => {
         console.error('AdminDashboard: Failed to load pet registrations:', petRegistrationsRes);
         setPetRegistrations([]);
       }
-      
+
       // Handle emergency contacts
       if (emergencyContactsRes instanceof Response && emergencyContactsRes.ok) {
         const emergencyContactsData = await emergencyContactsRes.json();
@@ -201,7 +230,7 @@ const AdminDashboard = () => {
         console.error('AdminDashboard: Failed to load emergency contacts:', emergencyContactsRes);
         setEmergencyContacts([]);
       }
-      
+
       // Handle AC inquiries
       if (acInquiriesRes instanceof Response && acInquiriesRes.ok) {
         const acInquiriesData = await acInquiriesRes.json();
@@ -211,7 +240,7 @@ const AdminDashboard = () => {
         console.error('AdminDashboard: Failed to load AC inquiries:', acInquiriesRes);
         setACInquiries([]);
       }
-      
+
       // Handle storage rentals
       if (storageRentalsRes instanceof Response && storageRentalsRes.ok) {
         const storageRentalsData = await storageRentalsRes.json();
@@ -272,19 +301,19 @@ const AdminDashboard = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dryRun })
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
-        const message = dryRun 
+        const message = dryRun
           ? `Dry run completed. Would purge ${data.expiredSubmissions.length} expired submissions.`
           : `Successfully purged ${data.purgedCount} expired Form K submissions.`;
-        
+
         toast({
           title: "Form K Cleanup",
           description: message,
         });
-        
+
         // Refresh data
         await fetchFormKStats();
         await fetchExpiredFormKs();
@@ -314,7 +343,7 @@ const AdminDashboard = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newAnnouncement)
       });
-      
+
       if (response.ok) {
         toast({ title: "Success", description: "Announcement created" });
         setNewAnnouncement({ title: '', content: '' });
@@ -335,7 +364,7 @@ const AdminDashboard = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newPage)
       });
-      
+
       if (response.ok) {
         toast({ title: "Success", description: "Page created" });
         setNewPage({ slug: '', title: '', content: '' });
@@ -365,7 +394,7 @@ const AdminDashboard = () => {
         method: 'POST',
         body: formData
       });
-      
+
       if (response.ok) {
         toast({ title: "Success", description: "Document uploaded successfully" });
         setNewDocument({ title: '', description: '', file: null });
@@ -390,7 +419,7 @@ const AdminDashboard = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newAdmin)
       });
-      
+
       if (response.ok) {
         toast({ title: "Success", description: "Admin user created" });
         setNewAdmin({ email: '', password: '' });
@@ -436,7 +465,7 @@ const AdminDashboard = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editPageData)
       });
-      
+
       if (response.ok) {
         toast({ title: "Success", description: "Page updated" });
         setEditDialogOpen(false);
@@ -471,12 +500,12 @@ const AdminDashboard = () => {
     try {
       setCleanupInProgress(true);
       const result = await cleanupMarketplaceData({ ...cleanupOptions, dryRun: false });
-      
+
       toast({
         title: "Cleanup Complete",
         description: formatCleanupStats(result)
       });
-      
+
       // Refresh marketplace data
       fetchData();
       setCleanupPreview(null);
@@ -543,7 +572,7 @@ const AdminDashboard = () => {
   const hasScooterChanges = (registration) => {
     const edits = scooterEdits[registration.id];
     if (!edits) return false;
-    
+
     return (
       edits.status !== registration.status ||
       edits.keyNumber !== (registration.keyNumber || '') ||
@@ -559,14 +588,14 @@ const AdminDashboard = () => {
     if (!edits) return;
 
     setSavingScooter(prev => ({ ...prev, [id]: true }));
-    
+
     try {
       const response = await fetch(`/api/scooter-registrations/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(edits)
       });
-      
+
       if (response.ok) {
         toast({ title: "Success", description: "Scooter registration updated successfully." });
         // Clear the edit state for this registration
@@ -615,1491 +644,1537 @@ const AdminDashboard = () => {
 
   return (
     <RequireAdminAuth>
-      <div className="page-container">
+      <div className="min-h-screen flex flex-col">
         <Navbar />
-        <div className="page-content">
-          <div className="max-w-7xl mx-auto px-4 py-8">
-            <div className="flex justify-between items-center mb-8">
-              <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-              <Button variant="outline" onClick={handleLogout}>Log Out</Button>
-            </div>
-            
-            <Alert className="mb-6">
-              <AlertDescription>
-                Welcome back, {adminUser?.email}! Use the tabs below to manage your website content.
-              </AlertDescription>
-            </Alert>
+        <SidebarProvider>
+          <div className="flex flex-1 w-full">
+            {/* Sidebar */}
+            <Sidebar collapsible="offcanvas" className="border-r">
+              <SidebarContent>
+                {/* Content Management group */}
+                <SidebarGroup>
+                  <SidebarGroupLabel>Content Management</SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton isActive={activeSection === 'announcements'} onClick={() => setActiveSection('announcements')}>
+                          <Megaphone className="w-4 h-4" />
+                          <span>Announcements</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton isActive={activeSection === 'pages'} onClick={() => setActiveSection('pages')}>
+                          <FileText className="w-4 h-4" />
+                          <span>Pages</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton isActive={activeSection === 'documents'} onClick={() => setActiveSection('documents')}>
+                          <FileText className="w-4 h-4" />
+                          <span>Documents</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
 
-            <Tabs defaultValue="announcements" className="space-y-6">
-              {/* 
-                Responsive tabs layout:
-                - Mobile/Tablet: Horizontal scrollable for better UX
-                - Medium screens: 5-column grid
-                - Large screens: 5-column grid with better spacing
-                - Extra large: 10-column grid for optimal layout
-              */}
-              {/* Multi-Row Organized Tab Layout */}
-              <div className="space-y-4 dashboard-tabs">
-                {/* Row 1: Content Management */}
-                <div className="flex flex-col space-y-2">
-                  <h3 className="text-sm font-medium text-muted-foreground px-2">Content Management</h3>
-                  <TabsList className="h-auto flex-nowrap overflow-x-auto md:flex-wrap md:overflow-visible md:gap-2">
-                    <TabsTrigger value="announcements" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                      <Megaphone className="w-4 h-4 flex-shrink-0" />
-                      <span className="hidden sm:inline">Announcements</span>
-                      <span className="sm:hidden">Announce</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="pages" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                      <FileText className="w-4 h-4 flex-shrink-0" />
-                      <span className="hidden sm:inline">Pages</span>
-                      <span className="sm:hidden">Pages</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="documents" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                      <FileText className="w-4 h-4 flex-shrink-0" />
-                      <span className="hidden sm:inline">Documents</span>
-                      <span className="sm:hidden">Docs</span>
-                    </TabsTrigger>
-                  </TabsList>
+                {/* Submissions group */}
+                <SidebarGroup>
+                  <SidebarGroupLabel>Submissions</SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton isActive={activeSection === 'incident-reports'} onClick={() => setActiveSection('incident-reports')}>
+                          <ShieldAlert className="w-4 h-4" />
+                          <span>Incident Reports</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton isActive={activeSection === 'scooter-registrations'} onClick={() => setActiveSection('scooter-registrations')}>
+                          <Zap className="w-4 h-4" />
+                          <span>Scooter Registrations</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton isActive={activeSection === 'pet-registrations'} onClick={() => setActiveSection('pet-registrations')}>
+                          <PawPrint className="w-4 h-4" />
+                          <span>Pet Registrations</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton isActive={activeSection === 'form-submissions'} onClick={() => setActiveSection('form-submissions')}>
+                          <ClipboardList className="w-4 h-4" />
+                          <span>Form Submissions</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+
+                {/* Marketplace group */}
+                <SidebarGroup>
+                  <SidebarGroupLabel>Marketplace</SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton isActive={activeSection === 'marketplace'} onClick={() => setActiveSection('marketplace')}>
+                          <ShoppingCart className="w-4 h-4" />
+                          <span>Marketplace</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+
+                {/* Settings group */}
+                <SidebarGroup>
+                  <SidebarGroupLabel>Settings</SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton isActive={activeSection === 'form-management'} onClick={() => setActiveSection('form-management')}>
+                          <Settings className="w-4 h-4" />
+                          <span>Form Email Config</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton isActive={activeSection === 'form-k-cleanup'} onClick={() => setActiveSection('form-k-cleanup')}>
+                          <Database className="w-4 h-4" />
+                          <span>Form K Management</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton isActive={activeSection === 'users'} onClick={() => setActiveSection('users')}>
+                          <Users className="w-4 h-4" />
+                          <span>Admin Users</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton isActive={activeSection === 'cleanup'} onClick={() => setActiveSection('cleanup')}>
+                          <Trash2 className="w-4 h-4" />
+                          <span>DB Cleanup</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              </SidebarContent>
+            </Sidebar>
+
+            {/* Main content */}
+            <SidebarInset className="flex-1 overflow-auto">
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <div className="flex items-center gap-3">
+                    <SidebarTrigger className="md:hidden" />
+                    <h1 className="text-2xl font-bold">{sectionTitles[activeSection]}</h1>
+                  </div>
+                  <Button variant="outline" onClick={handleLogout}>Log Out</Button>
                 </div>
 
-                {/* Row 2: Forms & Registrations */}
-                <div className="flex flex-col space-y-2">
-                  <h3 className="text-sm font-medium text-muted-foreground px-2">Forms & Registrations</h3>
-                  <TabsList className="h-auto flex-nowrap overflow-x-auto md:flex-wrap md:overflow-visible md:gap-2">
-                    <TabsTrigger value="form-management" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                      <Settings className="w-4 h-4 flex-shrink-0" />
-                      <span className="hidden sm:inline">Form Management</span>
-                      <span className="sm:hidden">Forms</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="form-k-cleanup" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                      <Database className="w-4 h-4 flex-shrink-0" />
-                      <span className="hidden sm:inline">Form K Cleanup</span>
-                      <span className="sm:hidden">Cleanup</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="scooter-registrations" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                      <Zap className="w-4 h-4 flex-shrink-0" />
-                      <span className="hidden sm:inline">Scooter Registrations</span>
-                      <span className="sm:hidden">Scooters</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="pet-registrations" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                      <PawPrint className="w-4 h-4 flex-shrink-0" />
-                      <span className="hidden sm:inline">Pet Registrations</span>
-                      <span className="sm:hidden">Pets</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="incident-reports" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                      <ShieldAlert className="w-4 h-4 flex-shrink-0" />
-                      <span className="hidden sm:inline">Incident Reports</span>
-                      <span className="sm:hidden">Incidents</span>
-                    </TabsTrigger>
-                  </TabsList>
-                </div>
+                <Alert className="mb-6">
+                  <AlertDescription>Welcome back, {adminUser?.email}!</AlertDescription>
+                </Alert>
 
-                {/* Row 3: User Management */}
-                <div className="flex flex-col space-y-2">
-                  <h3 className="text-sm font-medium text-muted-foreground px-2">User Management</h3>
-                  <TabsList className="h-auto flex-nowrap overflow-x-auto md:flex-wrap md:overflow-visible md:gap-2">
-                    <TabsTrigger value="marketplace" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                      <ShoppingCart className="w-4 h-4 flex-shrink-0" />
-                      <span className="hidden sm:inline">Marketplace</span>
-                      <span className="sm:hidden">Market</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="users" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                      <Users className="w-4 h-4 flex-shrink-0" />
-                      <span className="hidden sm:inline">Admin Users</span>
-                      <span className="sm:hidden">Users</span>
-                    </TabsTrigger>
-                  </TabsList>
-                </div>
-
-                {/* Row 4: System */}
-                <div className="flex flex-col space-y-2">
-                  <h3 className="text-sm font-medium text-muted-foreground px-2">System</h3>
-                  <TabsList className="h-auto flex-nowrap overflow-x-auto md:flex-wrap md:overflow-visible md:gap-2">
-                    <TabsTrigger value="cleanup" className="flex items-center gap-2 whitespace-nowrap min-w-fit">
-                      <Database className="w-4 h-4 flex-shrink-0" />
-                      <span className="hidden sm:inline">Cleanup</span>
-                      <span className="sm:hidden">Cleanup</span>
-                    </TabsTrigger>
-                  </TabsList>
-                </div>
-              </div>
-
-              <TabsContent value="announcements" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Plus className="w-5 h-5" />
-                      Create New Announcement
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <form onSubmit={createAnnouncement} className="space-y-4">
-                      <div>
-                        <Label htmlFor="announcement-title">Title</Label>
-                        <Input
-                          id="announcement-title"
-                          value={newAnnouncement.title}
-                          onChange={(e) => setNewAnnouncement({...newAnnouncement, title: e.target.value})}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="announcement-content">Content</Label>
-                        <Textarea
-                          id="announcement-content"
-                          value={newAnnouncement.content}
-                          onChange={(e) => setNewAnnouncement({...newAnnouncement, content: e.target.value})}
-                          rows={4}
-                          required
-                        />
-                      </div>
-                      <Button type="submit">Create Announcement</Button>
-                    </form>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Existing Announcements</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {announcements.length === 0 ? (
-                      <p className="text-gray-500">No announcements yet.</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {announcements.map((announcement) => (
-                          <div key={announcement.id} className="flex justify-between items-start p-4 border rounded">
-                            <div>
-                              <h3 className="font-semibold">{announcement.title}</h3>
-                              <p className="text-gray-600 mt-1">{announcement.content}</p>
-                              <p className="text-sm text-gray-400 mt-2">
-                                {new Date(announcement.createdAt).toLocaleDateString()}
-                              </p>
-                            </div>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => deleteItem('announcements', announcement.id)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                {activeSection === 'announcements' && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Plus className="w-5 h-5" />
+                          Create New Announcement
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <form onSubmit={createAnnouncement} className="space-y-4">
+                          <div>
+                            <Label htmlFor="announcement-title">Title</Label>
+                            <Input
+                              id="announcement-title"
+                              value={newAnnouncement.title}
+                              onChange={(e) => setNewAnnouncement({...newAnnouncement, title: e.target.value})}
+                              required
+                            />
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="pages" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Plus className="w-5 h-5" />
-                      Create New Page
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <form onSubmit={createPage} className="space-y-4">
-                      <div>
-                        <Label htmlFor="page-slug">URL Slug</Label>
-                        <Input
-                          id="page-slug"
-                          value={newPage.slug}
-                          onChange={(e) => setNewPage({...newPage, slug: e.target.value})}
-                          placeholder="page-url-slug"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="page-title">Title</Label>
-                        <Input
-                          id="page-title"
-                          value={newPage.title}
-                          onChange={(e) => setNewPage({...newPage, title: e.target.value})}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="page-content">Content</Label>
-                        <div className="border rounded-md">
-                          <ReactQuill
-                            theme="snow"
-                            value={newPage.content}
-                            onChange={(content) => setNewPage({...newPage, content})}
-                            modules={quillModules}
-                            formats={quillFormats}
-                            style={{ minHeight: '200px' }}
-                          />
-                        </div>
-                      </div>
-                      <Button type="submit">Create Page</Button>
-                    </form>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Existing Pages</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {pages.length === 0 ? (
-                      <p className="text-gray-500">No pages yet.</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {pages.map((page) => (
-                          <div key={page.id} className="flex justify-between items-start p-4 border rounded">
-                            <div className="flex-1">
-                              <h3 className="font-semibold">{page.title}</h3>
-                              <p className="text-sm text-gray-500">/{page.slug}</p>
-                              <p className="text-gray-600 mt-1">
-                                {page.content.replace(/<[^>]*>/g, '').substring(0, 100)}...
-                              </p>
-                              <p className="text-xs text-gray-400 mt-2">
-                                Last updated: {new Date(page.updatedAt).toLocaleDateString()}
-                              </p>
-                            </div>
-                            <div className="flex gap-2 ml-4">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => openEditDialog(page)}
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => deleteItem('pages', page.id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
+                          <div>
+                            <Label htmlFor="announcement-content">Content</Label>
+                            <Textarea
+                              id="announcement-content"
+                              value={newAnnouncement.content}
+                              onChange={(e) => setNewAnnouncement({...newAnnouncement, content: e.target.value})}
+                              rows={4}
+                              required
+                            />
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                          <Button type="submit">Create Announcement</Button>
+                        </form>
+                      </CardContent>
+                    </Card>
 
-              <TabsContent value="documents" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Plus className="w-5 h-5" />
-                      Upload New Document
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <form onSubmit={createDocument} className="space-y-4">
-                      <div>
-                        <Label htmlFor="document-title">Document Title</Label>
-                        <Input
-                          id="document-title"
-                          value={newDocument.title}
-                          onChange={(e) => setNewDocument({...newDocument, title: e.target.value})}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="document-description">Description (Optional)</Label>
-                        <Textarea
-                          id="document-description"
-                          value={newDocument.description}
-                          onChange={(e) => setNewDocument({...newDocument, description: e.target.value})}
-                          rows={3}
-                          placeholder="Brief description of the document..."
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="document-file">Document File (PDF, DOC, DOCX)</Label>
-                        <Input
-                          id="document-file"
-                          type="file"
-                          accept=".pdf,.doc,.docx"
-                          onChange={(e) => setNewDocument({...newDocument, file: e.target.files[0]})}
-                          required
-                        />
-                        <p className="text-sm text-gray-500 mt-1">
-                          Maximum file size: 10MB. Supported formats: PDF, DOC, DOCX
-                        </p>
-                      </div>
-                      <Button type="submit">Upload Document</Button>
-                    </form>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Existing Documents</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {documents.length === 0 ? (
-                      <p className="text-gray-500">No documents uploaded yet.</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {documents.map((document) => (
-                          <div key={document.id} className="flex justify-between items-start p-4 border rounded">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <h3 className="font-semibold">{document.title}</h3>
-                                <span className={`px-2 py-1 text-xs rounded ${
-                                  document.fileType === 'pdf' ? 'bg-red-100 text-red-800' :
-                                  document.fileType === 'doc' || document.fileType === 'docx' ? 'bg-blue-100 text-blue-800' :
-                                  'bg-gray-100 text-gray-800'
-                                }`}>
-                                  {document.fileType.toUpperCase()}
-                                </span>
-                              </div>
-                              {document.description && (
-                                <p className="text-gray-600 mb-2">{document.description}</p>
-                              )}
-                              <div className="text-sm text-gray-500">
-                                <p>File: {document.fileName}</p>
-                                <p>Size: {(document.fileSize / 1024 / 1024).toFixed(2)} MB</p>
-                                <p>Uploaded: {new Date(document.createdAt).toLocaleDateString()}</p>
-                              </div>
-                            </div>
-                            <div className="flex gap-2 ml-4">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => window.open(`/api/documents/${document.id}/download`, '_blank')}
-                              >
-                                <FileText className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => deleteItem('documents', document.id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="marketplace" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Marketplace Management</CardTitle>
-                    <CardDescription>Manage user-posted marketplace items</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {marketplacePosts.length === 0 ? (
-                      <p className="text-gray-500">No marketplace posts yet.</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {marketplacePosts.map((post) => (
-                          <div key={post.id} className="p-4 border rounded">
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <h3 className="font-semibold">{post.title}</h3>
-                                  <span className={`px-2 py-1 text-xs rounded ${
-                                    post.type === 'sell' ? 'bg-green-100 text-green-800' :
-                                    post.type === 'buy' ? 'bg-blue-100 text-blue-800' :
-                                    'bg-purple-100 text-purple-800'
-                                  }`}>
-                                    {post.type.charAt(0).toUpperCase() + post.type.slice(1)}
-                                  </span>
-                                  {post.category && (
-                                    <span className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded">
-                                      {post.category}
-                                    </span>
-                                  )}
-                                  {post.price && (
-                                    <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">
-                                      ${post.price}
-                                    </span>
-                                  )}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Existing Announcements</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {announcements.length === 0 ? (
+                          <p className="text-gray-500">No announcements yet.</p>
+                        ) : (
+                          <div className="space-y-4">
+                            {announcements.map((announcement) => (
+                              <div key={announcement.id} className="flex justify-between items-start p-4 border rounded">
+                                <div>
+                                  <h3 className="font-semibold">{announcement.title}</h3>
+                                  <p className="text-gray-600 mt-1">{announcement.content}</p>
+                                  <p className="text-sm text-gray-400 mt-2">
+                                    {new Date(announcement.createdAt).toLocaleDateString()}
+                                  </p>
                                 </div>
-                                <p className="text-gray-600 mb-2">{post.description}</p>
-                                <div className="text-sm text-gray-500">
-                                  <p>Posted by: {post.authorName} ({post.authorEmail})</p>
-                                  <p>Date: {new Date(post.createdAt).toLocaleDateString()}</p>
-                                  {post.replies && post.replies.length > 0 && (
-                                    <p>Replies: {post.replies.length}</p>
-                                  )}
-                                </div>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => deleteItem('announcements', announcement.id)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
                               </div>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => deleteItem('marketplace', post.id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                            
-                            {post.replies && post.replies.length > 0 && (
-                              <div className="mt-4 pl-4 border-l-2 border-gray-200">
-                                <h4 className="font-medium text-sm mb-2">Replies:</h4>
-                                {post.replies.map((reply) => (
-                                  <div key={reply.id} className="mb-2 p-2 bg-gray-50 rounded text-sm">
-                                    <p>{reply.content}</p>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      {reply.authorName} - {new Date(reply.createdAt).toLocaleDateString()}
-                                    </p>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="form-management" className="space-y-6">
-                <FormManagement />
-              </TabsContent>
-
-              <TabsContent value="form-k-cleanup" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Database className="h-5 w-5" />
-                      Form K Data Retention & Cleanup
-                    </CardTitle>
-                    <CardDescription>
-                      Manage Form K submissions with automatic 6-month expiration and data purging for compliance.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Statistics Section */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <Card>
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium text-muted-foreground">Total Submissions</p>
-                              <p className="text-2xl font-bold">{formKStats?.total || 0}</p>
-                            </div>
-                            <FileText className="h-8 w-8 text-blue-500" />
-                          </div>
-                        </CardContent>
-                      </Card>
-                      
-                      <Card>
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium text-muted-foreground">Active (&lt; 6 months)</p>
-                              <p className="text-2xl font-bold text-green-600">{formKStats?.active || 0}</p>
-                            </div>
-                            <CheckCircle className="h-8 w-8 text-green-500" />
-                          </div>
-                        </CardContent>
-                      </Card>
-                      
-                      <Card>
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium text-muted-foreground">Expired (&gt; 6 months)</p>
-                              <p className="text-2xl font-bold text-red-600">{formKStats?.expired || 0}</p>
-                            </div>
-                            <AlertTriangle className="h-8 w-8 text-red-500" />
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    {/* Actions Section */}
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <Button 
-                        onClick={fetchFormKStats}
-                        variant="outline"
-                        className="flex items-center gap-2"
-                      >
-                        <Database className="h-4 w-4" />
-                        Refresh Statistics
-                      </Button>
-                      
-                      <Button 
-                        onClick={() => performFormKCleanup(true)}
-                        variant="outline"
-                        disabled={formKCleanupLoading}
-                        className="flex items-center gap-2"
-                      >
-                        <CheckCircle className="h-4 w-4" />
-                        Preview Cleanup (Dry Run)
-                      </Button>
-                      
-                      <Button 
-                        onClick={() => performFormKCleanup(false)}
-                        variant="destructive"
-                        disabled={formKCleanupLoading || (formKStats?.expired || 0) === 0}
-                        className="flex items-center gap-2"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        {formKCleanupLoading ? 'Cleaning...' : 'Purge Expired Data'}
-                      </Button>
-                    </div>
-
-                    {/* Information Section */}
-                    <Alert>
-                      <AlertTriangle className="h-4 w-4" />
-                      <AlertDescription>
-                        <strong>Data Retention Policy:</strong> Form K submissions are automatically expired after 6 months 
-                        ({formKStats?.expirationMonths || 6} months) from creation date. 
-                        Expired submissions can be safely purged to comply with data retention requirements.
-                        {formKStats?.expirationCutoffDate && (
-                          <><br />Current cutoff date: <strong>{new Date(formKStats.expirationCutoffDate).toLocaleDateString()}</strong></>
                         )}
-                      </AlertDescription>
-                    </Alert>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
 
-                    {/* Expired Submissions List */}
-                    {expiredFormKs.length > 0 && (
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Expired Form K Submissions ({expiredFormKs.length})</CardTitle>
-                          <CardDescription>
-                            These submissions are older than 6 months and can be purged.
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2 max-h-60 overflow-y-auto">
-                            {expiredFormKs.map((submission) => {
-                              const age = Math.floor((new Date() - new Date(submission.createdAt)) / (1000 * 60 * 60 * 24));
-                              return (
-                                <div key={submission.id} className="flex items-center justify-between p-2 border rounded">
-                                  <div>
-                                    <p className="font-medium">Unit {submission.unitNumber}</p>
-                                    <p className="text-sm text-muted-foreground">
-                                      {submission.tenant1Name}
-                                      {submission.tenant2Name && ` & ${submission.tenant2Name}`}
-                                    </p>
+                {activeSection === 'pages' && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Plus className="w-5 h-5" />
+                          Create New Page
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <form onSubmit={createPage} className="space-y-4">
+                          <div>
+                            <Label htmlFor="page-slug">URL Slug</Label>
+                            <Input
+                              id="page-slug"
+                              value={newPage.slug}
+                              onChange={(e) => setNewPage({...newPage, slug: e.target.value})}
+                              placeholder="page-url-slug"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="page-title">Title</Label>
+                            <Input
+                              id="page-title"
+                              value={newPage.title}
+                              onChange={(e) => setNewPage({...newPage, title: e.target.value})}
+                              required
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="page-content">Content</Label>
+                            <div className="border rounded-md">
+                              <ReactQuill
+                                theme="snow"
+                                value={newPage.content}
+                                onChange={(content) => setNewPage({...newPage, content})}
+                                modules={quillModules}
+                                formats={quillFormats}
+                                style={{ minHeight: '200px' }}
+                              />
+                            </div>
+                          </div>
+                          <Button type="submit">Create Page</Button>
+                        </form>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Existing Pages</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {pages.length === 0 ? (
+                          <p className="text-gray-500">No pages yet.</p>
+                        ) : (
+                          <div className="space-y-4">
+                            {pages.map((page) => (
+                              <div key={page.id} className="flex justify-between items-start p-4 border rounded">
+                                <div className="flex-1">
+                                  <h3 className="font-semibold">{page.title}</h3>
+                                  <p className="text-sm text-gray-500">/{page.slug}</p>
+                                  <p className="text-gray-600 mt-1">
+                                    {page.content.replace(/<[^>]*>/g, '').substring(0, 100)}...
+                                  </p>
+                                  <p className="text-xs text-gray-400 mt-2">
+                                    Last updated: {new Date(page.updatedAt).toLocaleDateString()}
+                                  </p>
+                                </div>
+                                <div className="flex gap-2 ml-4">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => openEditDialog(page)}
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => deleteItem('pages', page.id)}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {activeSection === 'documents' && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Plus className="w-5 h-5" />
+                          Upload New Document
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <form onSubmit={createDocument} className="space-y-4">
+                          <div>
+                            <Label htmlFor="document-title">Document Title</Label>
+                            <Input
+                              id="document-title"
+                              value={newDocument.title}
+                              onChange={(e) => setNewDocument({...newDocument, title: e.target.value})}
+                              required
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="document-description">Description (Optional)</Label>
+                            <Textarea
+                              id="document-description"
+                              value={newDocument.description}
+                              onChange={(e) => setNewDocument({...newDocument, description: e.target.value})}
+                              rows={3}
+                              placeholder="Brief description of the document..."
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="document-file">Document File (PDF, DOC, DOCX)</Label>
+                            <Input
+                              id="document-file"
+                              type="file"
+                              accept=".pdf,.doc,.docx"
+                              onChange={(e) => setNewDocument({...newDocument, file: e.target.files[0]})}
+                              required
+                            />
+                            <p className="text-sm text-gray-500 mt-1">
+                              Maximum file size: 10MB. Supported formats: PDF, DOC, DOCX
+                            </p>
+                          </div>
+                          <Button type="submit">Upload Document</Button>
+                        </form>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Existing Documents</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {documents.length === 0 ? (
+                          <p className="text-gray-500">No documents uploaded yet.</p>
+                        ) : (
+                          <div className="space-y-4">
+                            {documents.map((document) => (
+                              <div key={document.id} className="flex justify-between items-start p-4 border rounded">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <h3 className="font-semibold">{document.title}</h3>
+                                    <span className={`px-2 py-1 text-xs rounded ${
+                                      document.fileType === 'pdf' ? 'bg-red-100 text-red-800' :
+                                      document.fileType === 'doc' || document.fileType === 'docx' ? 'bg-blue-100 text-blue-800' :
+                                      'bg-gray-100 text-gray-800'
+                                    }`}>
+                                      {document.fileType.toUpperCase()}
+                                    </span>
                                   </div>
-                                  <div className="text-right">
-                                    <p className="text-sm font-medium">{age} days old</p>
-                                    <p className="text-xs text-muted-foreground">
-                                      {new Date(submission.createdAt).toLocaleDateString()}
-                                    </p>
+                                  {document.description && (
+                                    <p className="text-gray-600 mb-2">{document.description}</p>
+                                  )}
+                                  <div className="text-sm text-gray-500">
+                                    <p>File: {document.fileName}</p>
+                                    <p>Size: {(document.fileSize / 1024 / 1024).toFixed(2)} MB</p>
+                                    <p>Uploaded: {new Date(document.createdAt).toLocaleDateString()}</p>
+                                  </div>
+                                </div>
+                                <div className="flex gap-2 ml-4">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => window.open(`/api/documents/${document.id}/download`, '_blank')}
+                                  >
+                                    <FileText className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => deleteItem('documents', document.id)}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {activeSection === 'incident-reports' && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <ShieldAlert className="h-5 w-5 text-orange-500" />
+                          Incident Reports
+                        </CardTitle>
+                        <CardDescription>
+                          Track and manage incident reports through to resolution.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <IncidentManagement
+                          initialReports={incidentReports}
+                          onReportsChange={setIncidentReports}
+                          onDeleteConfirm={confirmAction}
+                        />
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {activeSection === 'scooter-registrations' && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>E-Scooter Registration Management</CardTitle>
+                        <CardDescription>
+                          Manage e-scooter registrations, track key deposits, and update statuses.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {scooterRegistrations.length === 0 ? (
+                          <p className="text-gray-500">No scooter registrations yet.</p>
+                        ) : (
+                          <div className="space-y-6">
+                            {scooterRegistrations.map((registration) => {
+                              const editData = getScooterEditData(registration);
+                              const hasChanges = hasScooterChanges(registration);
+                              const isSaving = savingScooter[registration.id];
+
+                              return (
+                                <div key={registration.id} className="p-6 border rounded-lg bg-gray-50">
+                                  <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                      <h3 className="font-semibold text-lg">Registration #{registration.registrationId}</h3>
+                                      <div className="flex items-center gap-2 mt-1">
+                                        <span className={`px-2 py-1 text-xs rounded font-medium ${
+                                          editData.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                          editData.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
+                                          editData.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                                          editData.status === 'KEY_ISSUED' ? 'bg-blue-100 text-blue-800' :
+                                          editData.status === 'DEPOSIT_PAID' ? 'bg-purple-100 text-purple-800' :
+                                          'bg-gray-100 text-gray-800'
+                                        }`}>
+                                          {editData.status.replace('_', ' ')}
+                                        </span>
+                                        {registration.emailSent ? (
+                                          <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                                            Email Sent
+                                          </span>
+                                        ) : (
+                                          <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">
+                                            Email Failed
+                                          </span>
+                                        )}
+                                        {hasChanges && (
+                                          <span className="px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded">
+                                            Unsaved Changes
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="text-sm text-gray-500">
+                                      Submitted: {new Date(registration.createdAt).toLocaleDateString()}
+                                    </div>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                                    <div>
+                                      <Label className="font-medium text-sm">Unit & Owner</Label>
+                                      <p className="text-sm">Unit {registration.unitNumber}</p>
+                                      <p className="text-sm">{registration.ownerNames}</p>
+                                    </div>
+                                    <div>
+                                      <Label className="font-medium text-sm">Contact Info</Label>
+                                      <p className="text-sm">{registration.email}</p>
+                                      <p className="text-sm">{registration.phone || 'No phone provided'}</p>
+                                    </div>
+                                    <div>
+                                      <Label className="font-medium text-sm">E-Scooter Details</Label>
+                                      <p className="text-sm">{registration.numberOfScooters} scooter(s)</p>
+                                      <p className="text-sm">Date: {registration.registrationDate}</p>
+                                    </div>
+                                  </div>
+
+                                  <div className="mb-4">
+                                    <Label className="font-medium text-sm">Description</Label>
+                                    <p className="text-sm text-gray-700 mt-1">{registration.description}</p>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                                    <div>
+                                      <Label htmlFor={`status-${registration.id}`} className="text-sm font-medium">Status</Label>
+                                      <select
+                                        id={`status-${registration.id}`}
+                                        className="w-full mt-1 p-2 border rounded text-sm"
+                                        value={editData.status}
+                                        onChange={(e) => updateScooterEdit(registration.id, 'status', e.target.value)}
+                                      >
+                                        <option value="PENDING">Pending</option>
+                                        <option value="APPROVED">Approved</option>
+                                        <option value="REJECTED">Rejected</option>
+                                        <option value="KEY_ISSUED">Key Issued</option>
+                                        <option value="DEPOSIT_PAID">Deposit Paid</option>
+                                      </select>
+                                    </div>
+                                    <div>
+                                      <Label htmlFor={`key-${registration.id}`} className="text-sm font-medium">Key Number</Label>
+                                      <Input
+                                        id={`key-${registration.id}`}
+                                        className="mt-1 text-sm"
+                                        value={editData.keyNumber}
+                                        onChange={(e) => updateScooterEdit(registration.id, 'keyNumber', e.target.value)}
+                                        placeholder="e.g. K-001"
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label htmlFor={`deposit-${registration.id}`} className="text-sm font-medium">Deposit Amount</Label>
+                                      <Input
+                                        id={`deposit-${registration.id}`}
+                                        type="number"
+                                        step="0.01"
+                                        className="mt-1 text-sm"
+                                        value={editData.depositAmount}
+                                        onChange={(e) => updateScooterEdit(registration.id, 'depositAmount', e.target.value)}
+                                      />
+                                    </div>
+                                    <div className="flex items-center space-x-2 mt-6">
+                                      <Checkbox
+                                        id={`deposit-paid-${registration.id}`}
+                                        checked={editData.depositPaid}
+                                        onCheckedChange={(checked) => updateScooterEdit(registration.id, 'depositPaid', checked)}
+                                      />
+                                      <Label htmlFor={`deposit-paid-${registration.id}`} className="text-sm">Deposit Paid</Label>
+                                    </div>
+                                  </div>
+
+                                  <div className="mb-4">
+                                    <Label htmlFor={`notes-${registration.id}`} className="text-sm font-medium">Admin Notes</Label>
+                                    <Textarea
+                                      id={`notes-${registration.id}`}
+                                      className="mt-1 text-sm"
+                                      rows={2}
+                                      value={editData.notes}
+                                      onChange={(e) => updateScooterEdit(registration.id, 'notes', e.target.value)}
+                                      placeholder="Add any admin notes here..."
+                                    />
+                                  </div>
+
+                                  <div className="flex justify-between items-center pt-4 border-t">
+                                    <div className="text-sm text-gray-500">
+                                      Last updated: {new Date(registration.updatedAt).toLocaleString()}
+                                    </div>
+                                    <div className="flex gap-2">
+                                      {hasChanges && (
+                                        <>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => cancelScooterEdit(registration.id)}
+                                            disabled={isSaving}
+                                          >
+                                            Cancel
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            onClick={() => updateScooterRegistration(registration.id)}
+                                            disabled={isSaving}
+                                          >
+                                            {isSaving ? 'Saving...' : 'Save Changes'}
+                                          </Button>
+                                        </>
+                                      )}
+                                      <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() => deleteScooterRegistration(registration.id)}
+                                      >
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Delete
+                                      </Button>
+                                    </div>
                                   </div>
                                 </div>
                               );
                             })}
                           </div>
-                        </CardContent>
-                      </Card>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
 
-              <TabsContent value="scooter-registrations" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>E-Scooter Registration Management</CardTitle>
-                    <CardDescription>
-                      Manage e-scooter registrations, track key deposits, and update statuses.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {scooterRegistrations.length === 0 ? (
-                      <p className="text-gray-500">No scooter registrations yet.</p>
-                    ) : (
-                      <div className="space-y-6">
-                        {scooterRegistrations.map((registration) => {
-                          const editData = getScooterEditData(registration);
-                          const hasChanges = hasScooterChanges(registration);
-                          const isSaving = savingScooter[registration.id];
-                          
-                          return (
-                            <div key={registration.id} className="p-6 border rounded-lg bg-gray-50">
-                              <div className="flex justify-between items-start mb-4">
-                                <div>
-                                  <h3 className="font-semibold text-lg">Registration #{registration.registrationId}</h3>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <span className={`px-2 py-1 text-xs rounded font-medium ${
-                                      editData.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                                      editData.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
-                                      editData.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
-                                      editData.status === 'KEY_ISSUED' ? 'bg-blue-100 text-blue-800' :
-                                      editData.status === 'DEPOSIT_PAID' ? 'bg-purple-100 text-purple-800' :
-                                      'bg-gray-100 text-gray-800'
-                                    }`}>
-                                      {editData.status.replace('_', ' ')}
-                                    </span>
-                                    {registration.emailSent ? (
-                                      <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
-                                        Email Sent
+                {activeSection === 'pet-registrations' && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <CardTitle>Pet Registration Management</CardTitle>
+                            <CardDescription>
+                              Manage pet registrations and update approval statuses. Maximum 2 pets allowed per unit.
+                            </CardDescription>
+                          </div>
+                          {petRegistrations.length > 0 && (
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => exportFormData(petRegistrations, 'pet-registration')}
+                                className="flex items-center gap-2"
+                              >
+                                <Download className="h-4 w-4" />
+                                Export CSV
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => exportFormDataAsExcel(petRegistrations, 'pet-registration')}
+                                className="flex items-center gap-2"
+                              >
+                                <Download className="h-4 w-4" />
+                                Export Excel
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {petRegistrations.length === 0 ? (
+                          <p className="text-gray-500">No pet registrations yet.</p>
+                        ) : (
+                          <div className="space-y-6">
+                            {petRegistrations.map((registration) => (
+                              <div key={registration.id} className="p-6 border rounded-lg bg-gray-50">
+                                <div className="flex justify-between items-start mb-4">
+                                  <div>
+                                    <h3 className="font-semibold text-lg">Registration #{registration.registrationId}</h3>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span className={`px-2 py-1 text-xs rounded font-medium ${
+                                        registration.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                        registration.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
+                                        registration.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                                        'bg-gray-100 text-gray-800'
+                                      }`}>
+                                        {registration.status}
                                       </span>
-                                    ) : (
-                                      <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">
-                                        Email Failed
-                                      </span>
+                                      {registration.emailSent ? (
+                                        <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                                          Email Sent
+                                        </span>
+                                      ) : (
+                                        <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">
+                                          Email Failed
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="text-sm text-gray-500">
+                                    Submitted: {new Date(registration.createdAt).toLocaleDateString()}
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                                  <div>
+                                    <h4 className="font-medium text-sm">Owner Information</h4>
+                                    <p className="text-sm"><strong>Name:</strong> {registration.ownerName}</p>
+                                    <p className="text-sm"><strong>Suite:</strong> {registration.suiteNumber}</p>
+                                    <p className="text-sm"><strong>Email:</strong> {registration.email}</p>
+                                    <p className="text-sm"><strong>Phone:</strong> {registration.phoneNumber}</p>
+                                    <p className="text-sm"><strong>Type:</strong> {registration.occupancyType === 'TENANT' ? 'Tenant' : 'Owner Occupied'}</p>
+                                  </div>
+
+                                  <div>
+                                    <h4 className="font-medium text-sm">Pet Details</h4>
+                                    <p className="text-sm"><strong>Name:</strong> {registration.petName}</p>
+                                    <p className="text-sm"><strong>Type:</strong> {registration.petType}</p>
+                                    <p className="text-sm"><strong>Breed:</strong> {registration.petBreed}</p>
+                                    <p className="text-sm"><strong>Age:</strong> {registration.petAge}</p>
+                                    <p className="text-sm"><strong>Weight:</strong> {registration.petWeight}</p>
+                                  </div>
+
+                                  <div>
+                                    <h4 className="font-medium text-sm">Physical Description</h4>
+                                    <p className="text-sm"><strong>Color:</strong> {registration.petColor}</p>
+                                    <p className="text-sm"><strong>Height:</strong> {registration.petHeight}</p>
+                                    {registration.distinguishingMarks && (
+                                      <p className="text-sm"><strong>Marks:</strong> {registration.distinguishingMarks}</p>
                                     )}
-                                    {hasChanges && (
-                                      <span className="px-2 py-1 text-xs bg-orange-100 text-orange-800 rounded">
-                                        Unsaved Changes
-                                      </span>
+                                    {registration.licenseNumber && (
+                                      <p className="text-sm"><strong>License #:</strong> {registration.licenseNumber}</p>
                                     )}
                                   </div>
                                 </div>
-                                <div className="text-sm text-gray-500">
-                                  Submitted: {new Date(registration.createdAt).toLocaleDateString()}
-                                </div>
-                              </div>
-                              
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                                <div>
-                                  <Label className="font-medium text-sm">Unit & Owner</Label>
-                                  <p className="text-sm">Unit {registration.unitNumber}</p>
-                                  <p className="text-sm">{registration.ownerNames}</p>
-                                </div>
-                                <div>
-                                  <Label className="font-medium text-sm">Contact Info</Label>
-                                  <p className="text-sm">{registration.email}</p>
-                                  <p className="text-sm">{registration.phone || 'No phone provided'}</p>
-                                </div>
-                                <div>
-                                  <Label className="font-medium text-sm">E-Scooter Details</Label>
-                                  <p className="text-sm">{registration.numberOfScooters} scooter(s)</p>
-                                  <p className="text-sm">Date: {registration.registrationDate}</p>
-                                </div>
-                              </div>
-                              
-                              <div className="mb-4">
-                                <Label className="font-medium text-sm">Description</Label>
-                                <p className="text-sm text-gray-700 mt-1">{registration.description}</p>
-                              </div>
-                              
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                                <div>
-                                  <Label htmlFor={`status-${registration.id}`} className="text-sm font-medium">Status</Label>
+
+                                {/* Pet Photos */}
+                                {registration.photos && registration.photos.length > 0 && (
+                                  <div className="mb-4">
+                                    <h4 className="font-medium text-sm mb-2">Pet Photos ({registration.photos.length})</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                      {registration.photos.map((photo, index) => (
+                                        <div key={index} className="relative">
+                                          <img
+                                            src={`/uploads/${photo}`}
+                                            alt={`${registration.petName} photo ${index + 1}`}
+                                            className="w-full h-32 object-cover rounded border"
+                                            onError={(e) => {
+                                              e.currentTarget.src = '/placeholder-pet.jpg';
+                                            }}
+                                          />
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Admin Notes */}
+                                {registration.notes && (
+                                  <div className="mb-4 p-3 bg-blue-50 rounded border border-blue-200">
+                                    <h4 className="font-medium text-sm text-blue-800 mb-1">Admin Notes:</h4>
+                                    <p className="text-sm text-blue-700">{registration.notes}</p>
+                                  </div>
+                                )}
+
+                                {/* Status Update Controls */}
+                                <div className="flex flex-wrap gap-3 pt-4 border-t">
                                   <select
-                                    id={`status-${registration.id}`}
-                                    className="w-full mt-1 p-2 border rounded text-sm"
-                                    value={editData.status}
-                                    onChange={(e) => updateScooterEdit(registration.id, 'status', e.target.value)}
+                                    value={registration.status}
+                                    onChange={async (e) => {
+                                      try {
+                                        const response = await fetch(`/api/pet-registrations/${registration.id}`, {
+                                          method: 'PATCH',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({ status: e.target.value })
+                                        });
+
+                                        if (!response.ok) throw new Error('Failed to update status');
+
+                                        toast({
+                                          title: "Status Updated",
+                                          description: `Pet registration status changed to ${e.target.value}`,
+                                        });
+
+                                        fetchData(); // Refresh data
+                                      } catch (error) {
+                                        toast({
+                                          title: "Error",
+                                          description: "Failed to update status",
+                                          variant: "destructive",
+                                        });
+                                      }
+                                    }}
+                                    className="px-3 py-1 text-sm border rounded"
                                   >
                                     <option value="PENDING">Pending</option>
                                     <option value="APPROVED">Approved</option>
                                     <option value="REJECTED">Rejected</option>
-                                    <option value="KEY_ISSUED">Key Issued</option>
-                                    <option value="DEPOSIT_PAID">Deposit Paid</option>
                                   </select>
-                                </div>
-                                <div>
-                                  <Label htmlFor={`key-${registration.id}`} className="text-sm font-medium">Key Number</Label>
-                                  <Input
-                                    id={`key-${registration.id}`}
-                                    className="mt-1 text-sm"
-                                    value={editData.keyNumber}
-                                    onChange={(e) => updateScooterEdit(registration.id, 'keyNumber', e.target.value)}
-                                    placeholder="e.g. K-001"
-                                  />
-                                </div>
-                                <div>
-                                  <Label htmlFor={`deposit-${registration.id}`} className="text-sm font-medium">Deposit Amount</Label>
-                                  <Input
-                                    id={`deposit-${registration.id}`}
-                                    type="number"
-                                    step="0.01"
-                                    className="mt-1 text-sm"
-                                    value={editData.depositAmount}
-                                    onChange={(e) => updateScooterEdit(registration.id, 'depositAmount', e.target.value)}
-                                  />
-                                </div>
-                                <div className="flex items-center space-x-2 mt-6">
-                                  <Checkbox
-                                    id={`deposit-paid-${registration.id}`}
-                                    checked={editData.depositPaid}
-                                    onCheckedChange={(checked) => updateScooterEdit(registration.id, 'depositPaid', checked)}
-                                  />
-                                  <Label htmlFor={`deposit-paid-${registration.id}`} className="text-sm">Deposit Paid</Label>
-                                </div>
-                              </div>
-                              
-                              <div className="mb-4">
-                                <Label htmlFor={`notes-${registration.id}`} className="text-sm font-medium">Admin Notes</Label>
-                                <Textarea
-                                  id={`notes-${registration.id}`}
-                                  className="mt-1 text-sm"
-                                  rows={2}
-                                  value={editData.notes}
-                                  onChange={(e) => updateScooterEdit(registration.id, 'notes', e.target.value)}
-                                  placeholder="Add any admin notes here..."
-                                />
-                              </div>
-                              
-                              <div className="flex justify-between items-center pt-4 border-t">
-                                <div className="text-sm text-gray-500">
-                                  Last updated: {new Date(registration.updatedAt).toLocaleString()}
-                                </div>
-                                <div className="flex gap-2">
-                                  {hasChanges && (
-                                    <>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => cancelScooterEdit(registration.id)}
-                                        disabled={isSaving}
-                                      >
-                                        Cancel
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        onClick={() => updateScooterRegistration(registration.id)}
-                                        disabled={isSaving}
-                                      >
-                                        {isSaving ? 'Saving...' : 'Save Changes'}
-                                      </Button>
-                                    </>
-                                  )}
+
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={async () => {
+                                      const notes = prompt('Add admin notes (optional):', registration.notes || '');
+                                      if (notes !== null) {
+                                        try {
+                                          const response = await fetch(`/api/pet-registrations/${registration.id}`, {
+                                            method: 'PATCH',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                              status: registration.status,
+                                              notes: notes || null
+                                            })
+                                          });
+
+                                          if (!response.ok) throw new Error('Failed to update notes');
+
+                                          toast({
+                                            title: "Notes Updated",
+                                            description: "Admin notes have been updated",
+                                          });
+
+                                          fetchData();
+                                        } catch (error) {
+                                          toast({
+                                            title: "Error",
+                                            description: "Failed to update notes",
+                                            variant: "destructive",
+                                          });
+                                        }
+                                      }
+                                    }}
+                                  >
+                                    <Edit2 className="h-4 w-4 mr-1" />
+                                    Add Notes
+                                  </Button>
+
                                   <Button
                                     variant="destructive"
                                     size="sm"
-                                    onClick={() => deleteScooterRegistration(registration.id)}
+                                    onClick={() => {
+                                      confirmAction(
+                                        `Are you sure you want to delete the pet registration for ${registration.petName}? This action cannot be undone.`,
+                                        async () => {
+                                          try {
+                                            const response = await fetch(`/api/pet-registrations/${registration.id}`, {
+                                              method: 'DELETE'
+                                            });
+                                            if (!response.ok) throw new Error('Failed to delete registration');
+                                            toast({
+                                              title: "Registration Deleted",
+                                              description: `Pet registration for ${registration.petName} has been deleted`,
+                                            });
+                                            fetchData();
+                                          } catch (error) {
+                                            toast({
+                                              title: "Error",
+                                              description: "Failed to delete registration",
+                                              variant: "destructive",
+                                            });
+                                          }
+                                        }
+                                      );
+                                    }}
                                   >
-                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    <Trash2 className="h-4 w-4 mr-1" />
                                     Delete
                                   </Button>
                                 </div>
                               </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
 
-              <TabsContent value="pet-registrations" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle>Pet Registration Management</CardTitle>
+                {activeSection === 'form-submissions' && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Forms Management</CardTitle>
                         <CardDescription>
-                          Manage pet registrations and update approval statuses. Maximum 2 pets allowed per unit.
+                          View and export form submissions. All form data is stored in the database and can be exported as CSV.
                         </CardDescription>
-                      </div>
-                      {petRegistrations.length > 0 && (
-                        <div className="flex gap-2">
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                          {/* Emergency Contacts */}
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="text-lg">Emergency Contacts</CardTitle>
+                              <CardDescription>{emergencyContacts.length} submissions</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-2">
+                                <Button
+                                  onClick={() => exportFormData(emergencyContacts, 'emergency-contact')}
+                                  className="w-full"
+                                  variant="outline"
+                                >
+                                  <Download className="w-4 h-4 mr-2" />
+                                  Export CSV
+                                </Button>
+                                <Button
+                                  onClick={() => exportFormDataAsExcel(emergencyContacts, 'emergency-contact')}
+                                  className="w-full"
+                                  variant="outline"
+                                >
+                                  <Download className="w-4 h-4 mr-2" />
+                                  Export Excel
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          {/* AC Inquiries */}
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="text-lg">AC Inquiries</CardTitle>
+                              <CardDescription>{acInquiries.length} submissions</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-2">
+                                <Button
+                                  onClick={() => exportFormData(acInquiries, 'ac-inquiry')}
+                                  className="w-full"
+                                  variant="outline"
+                                >
+                                  <Download className="w-4 h-4 mr-2" />
+                                  Export CSV
+                                </Button>
+                                <Button
+                                  onClick={() => exportFormDataAsExcel(acInquiries, 'ac-inquiry')}
+                                  className="w-full"
+                                  variant="outline"
+                                >
+                                  <Download className="w-4 h-4 mr-2" />
+                                  Export Excel
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          {/* Storage Rentals */}
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="text-lg">Storage Rentals</CardTitle>
+                              <CardDescription>{storageRentals.length} submissions</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-2">
+                                <Button
+                                  onClick={() => exportFormData(storageRentals, 'storage-rental')}
+                                  className="w-full"
+                                  variant="outline"
+                                >
+                                  <Download className="w-4 h-4 mr-2" />
+                                  Export CSV
+                                </Button>
+                                <Button
+                                  onClick={() => exportFormDataAsExcel(storageRentals, 'storage-rental')}
+                                  className="w-full"
+                                  variant="outline"
+                                >
+                                  <Download className="w-4 h-4 mr-2" />
+                                  Export Excel
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          {/* Pet Registrations */}
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="text-lg">Pet Registrations</CardTitle>
+                              <CardDescription>{petRegistrations.length} submissions</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-2">
+                                <Button
+                                  onClick={() => exportFormData(petRegistrations, 'pet-registration')}
+                                  className="w-full"
+                                  variant="outline"
+                                >
+                                  <Download className="w-4 h-4 mr-2" />
+                                  Export CSV
+                                </Button>
+                                <Button
+                                  onClick={() => exportFormDataAsExcel(petRegistrations, 'pet-registration')}
+                                  className="w-full"
+                                  variant="outline"
+                                >
+                                  <Download className="w-4 h-4 mr-2" />
+                                  Export Excel
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          {/* Scooter Registrations */}
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="text-lg">Scooter Registrations</CardTitle>
+                              <CardDescription>{scooterRegistrations.length} submissions</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-2">
+                                <Button
+                                  onClick={() => exportFormData(scooterRegistrations, 'scooter-registration')}
+                                  className="w-full"
+                                  variant="outline"
+                                >
+                                  <Download className="w-4 h-4 mr-2" />
+                                  Export CSV
+                                </Button>
+                                <Button
+                                  onClick={() => exportFormDataAsExcel(scooterRegistrations, 'scooter-registration')}
+                                  className="w-full"
+                                  variant="outline"
+                                >
+                                  <Download className="w-4 h-4 mr-2" />
+                                  Export Excel
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Form Details Sections */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Emergency Contacts Details */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Emergency Contacts</CardTitle>
+                          <CardDescription>Recent emergency contact submissions</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          {emergencyContacts.length === 0 ? (
+                            <p className="text-gray-500">No emergency contact submissions yet.</p>
+                          ) : (
+                            <div className="space-y-4 max-h-96 overflow-y-auto">
+                              {emergencyContacts.slice(0, 5).map((contact) => (
+                                <div key={contact.id} className="p-4 border rounded-lg bg-gray-50">
+                                  <div className="flex justify-between items-start mb-2">
+                                    <h4 className="font-semibold">Contact #{contact.contactId}</h4>
+                                    <span className="text-sm text-gray-500">
+                                      {new Date(contact.createdAt).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm"><strong>Unit:</strong> {contact.unitNumber}</p>
+                                  <p className="text-sm"><strong>Owner:</strong> {contact.registeredOwnerNames}</p>
+                                  {contact.emergencyContactName && (
+                                    <p className="text-sm"><strong>Emergency Contact:</strong> {contact.emergencyContactName}</p>
+                                  )}
+                                </div>
+                              ))}
+                              {emergencyContacts.length > 5 && (
+                                <p className="text-sm text-gray-500 text-center">
+                                  Showing 5 of {emergencyContacts.length} submissions
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {/* AC Inquiries Details */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>AC Inquiries</CardTitle>
+                          <CardDescription>Recent AC installation inquiries</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          {acInquiries.length === 0 ? (
+                            <p className="text-gray-500">No AC inquiries yet.</p>
+                          ) : (
+                            <div className="space-y-4 max-h-96 overflow-y-auto">
+                              {acInquiries.slice(0, 5).map((inquiry) => (
+                                <div key={inquiry.id} className="p-4 border rounded-lg bg-gray-50">
+                                  <div className="flex justify-between items-start mb-2">
+                                    <h4 className="font-semibold">Inquiry #{inquiry.inquiryId}</h4>
+                                    <span className="text-sm text-gray-500">
+                                      {new Date(inquiry.createdAt).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm"><strong>Owner:</strong> {inquiry.ownerName}</p>
+                                  <p className="text-sm"><strong>Unit:</strong> {inquiry.ownerUnit}</p>
+                                  <p className="text-sm"><strong>Type:</strong> {inquiry.isMultiZone ? 'Multi-Zone' : 'Single-Zone'}</p>
+                                  <p className="text-sm"><strong>Contact:</strong> {inquiry.bestContactMethod === 'EMAIL' ? 'Email' : 'Telephone'}</p>
+                                </div>
+                              ))}
+                              {acInquiries.length > 5 && (
+                                <p className="text-sm text-gray-500 text-center">
+                                  Showing 5 of {acInquiries.length} inquiries
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {/* Storage Rentals Details */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Storage Rentals</CardTitle>
+                          <CardDescription>Recent storage rental interests</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          {storageRentals.length === 0 ? (
+                            <p className="text-gray-500">No storage rental interests yet.</p>
+                          ) : (
+                            <div className="space-y-4 max-h-96 overflow-y-auto">
+                              {storageRentals.slice(0, 5).map((rental) => (
+                                <div key={rental.id} className="p-4 border rounded-lg bg-gray-50">
+                                  <div className="flex justify-between items-start mb-2">
+                                    <h4 className="font-semibold">Rental #{rental.rentalId}</h4>
+                                    <span className="text-sm text-gray-500">
+                                      {new Date(rental.createdAt).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm"><strong>Name:</strong> {rental.firstName} {rental.lastName}</p>
+                                  <p className="text-sm"><strong>Unit:</strong> {rental.unitNumber}</p>
+                                  <p className="text-sm"><strong>Contact:</strong> {rental.bestContactMethod === 'EMAIL' ? 'Email' : 'Telephone'}</p>
+                                  <p className="text-sm"><strong>Interested:</strong> {rental.interestedInInfo ? 'Yes' : 'No'}</p>
+                                </div>
+                              ))}
+                              {storageRentals.length > 5 && (
+                                <p className="text-sm text-gray-500 text-center">
+                                  Showing 5 of {storageRentals.length} interests
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {/* Scooter Registrations Details */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Scooter Registrations</CardTitle>
+                          <CardDescription>Recent scooter registration submissions</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          {scooterRegistrations.length === 0 ? (
+                            <p className="text-gray-500">No scooter registrations yet.</p>
+                          ) : (
+                            <div className="space-y-4 max-h-96 overflow-y-auto">
+                              {scooterRegistrations.slice(0, 5).map((registration) => (
+                                <div key={registration.id} className="p-4 border rounded-lg bg-gray-50">
+                                  <div className="flex justify-between items-start mb-2">
+                                    <h4 className="font-semibold">Registration #{registration.registrationId}</h4>
+                                    <span className="text-sm text-gray-500">
+                                      {new Date(registration.createdAt).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm"><strong>Unit:</strong> {registration.unitNumber}</p>
+                                  <p className="text-sm"><strong>Owners:</strong> {registration.ownerNames}</p>
+                                  <p className="text-sm"><strong>Scooters:</strong> {registration.numberOfScooters}</p>
+                                  <p className="text-sm"><strong>Status:</strong> {registration.status}</p>
+                                  <p className="text-sm"><strong>Deposit:</strong> {registration.depositPaid ? 'Paid' : 'Pending'}</p>
+                                </div>
+                              ))}
+                              {scooterRegistrations.length > 5 && (
+                                <p className="text-sm text-gray-500 text-center">
+                                  Showing 5 of {scooterRegistrations.length} registrations
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                )}
+
+                {activeSection === 'marketplace' && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Marketplace Management</CardTitle>
+                        <CardDescription>Manage user-posted marketplace items</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {marketplacePosts.length === 0 ? (
+                          <p className="text-gray-500">No marketplace posts yet.</p>
+                        ) : (
+                          <div className="space-y-4">
+                            {marketplacePosts.map((post) => (
+                              <div key={post.id} className="p-4 border rounded">
+                                <div className="flex justify-between items-start">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <h3 className="font-semibold">{post.title}</h3>
+                                      <span className={`px-2 py-1 text-xs rounded ${
+                                        post.type === 'sell' ? 'bg-green-100 text-green-800' :
+                                        post.type === 'buy' ? 'bg-blue-100 text-blue-800' :
+                                        'bg-purple-100 text-purple-800'
+                                      }`}>
+                                        {post.type.charAt(0).toUpperCase() + post.type.slice(1)}
+                                      </span>
+                                      {post.category && (
+                                        <span className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded">
+                                          {post.category}
+                                        </span>
+                                      )}
+                                      {post.price && (
+                                        <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">
+                                          ${post.price}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-gray-600 mb-2">{post.description}</p>
+                                    <div className="text-sm text-gray-500">
+                                      <p>Posted by: {post.authorName} ({post.authorEmail})</p>
+                                      <p>Date: {new Date(post.createdAt).toLocaleDateString()}</p>
+                                      {post.replies && post.replies.length > 0 && (
+                                        <p>Replies: {post.replies.length}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => deleteItem('marketplace', post.id)}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+
+                                {post.replies && post.replies.length > 0 && (
+                                  <div className="mt-4 pl-4 border-l-2 border-gray-200">
+                                    <h4 className="font-medium text-sm mb-2">Replies:</h4>
+                                    {post.replies.map((reply) => (
+                                      <div key={reply.id} className="mb-2 p-2 bg-gray-50 rounded text-sm">
+                                        <p>{reply.content}</p>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                          {reply.authorName} - {new Date(reply.createdAt).toLocaleDateString()}
+                                        </p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {activeSection === 'form-management' && (
+                  <div className="space-y-6">
+                    <FormManagement />
+                  </div>
+                )}
+
+                {activeSection === 'form-k-cleanup' && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Database className="h-5 w-5" />
+                          Form K Data Retention & Cleanup
+                        </CardTitle>
+                        <CardDescription>
+                          Manage Form K submissions with automatic 6-month expiration and data purging for compliance.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        {/* Statistics Section */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <Card>
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-muted-foreground">Total Submissions</p>
+                                  <p className="text-2xl font-bold">{formKStats?.total || 0}</p>
+                                </div>
+                                <FileText className="h-8 w-8 text-blue-500" />
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          <Card>
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-muted-foreground">Active (&lt; 6 months)</p>
+                                  <p className="text-2xl font-bold text-green-600">{formKStats?.active || 0}</p>
+                                </div>
+                                <CheckCircle className="h-8 w-8 text-green-500" />
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          <Card>
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-muted-foreground">Expired (&gt; 6 months)</p>
+                                  <p className="text-2xl font-bold text-red-600">{formKStats?.expired || 0}</p>
+                                </div>
+                                <AlertTriangle className="h-8 w-8 text-red-500" />
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+
+                        {/* Actions Section */}
+                        <div className="flex flex-col sm:flex-row gap-4">
                           <Button
+                            onClick={fetchFormKStats}
                             variant="outline"
-                            size="sm"
-                            onClick={() => exportFormData(petRegistrations, 'pet-registration')}
                             className="flex items-center gap-2"
                           >
-                            <Download className="h-4 w-4" />
-                            Export CSV
+                            <Database className="h-4 w-4" />
+                            Refresh Statistics
                           </Button>
+
                           <Button
+                            onClick={() => performFormKCleanup(true)}
                             variant="outline"
-                            size="sm"
-                            onClick={() => exportFormDataAsExcel(petRegistrations, 'pet-registration')}
+                            disabled={formKCleanupLoading}
                             className="flex items-center gap-2"
                           >
-                            <Download className="h-4 w-4" />
-                            Export Excel
+                            <CheckCircle className="h-4 w-4" />
+                            Preview Cleanup (Dry Run)
+                          </Button>
+
+                          <Button
+                            onClick={() => performFormKCleanup(false)}
+                            variant="destructive"
+                            disabled={formKCleanupLoading || (formKStats?.expired || 0) === 0}
+                            className="flex items-center gap-2"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            {formKCleanupLoading ? 'Cleaning...' : 'Purge Expired Data'}
                           </Button>
                         </div>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {petRegistrations.length === 0 ? (
-                      <p className="text-gray-500">No pet registrations yet.</p>
-                    ) : (
-                      <div className="space-y-6">
-                        {petRegistrations.map((registration) => (
-                          <div key={registration.id} className="p-6 border rounded-lg bg-gray-50">
-                            <div className="flex justify-between items-start mb-4">
-                              <div>
-                                <h3 className="font-semibold text-lg">Registration #{registration.registrationId}</h3>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <span className={`px-2 py-1 text-xs rounded font-medium ${
-                                    registration.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                                    registration.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
-                                    registration.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
-                                    'bg-gray-100 text-gray-800'
-                                  }`}>
-                                    {registration.status}
-                                  </span>
-                                  {registration.emailSent ? (
-                                    <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
-                                      Email Sent
-                                    </span>
-                                  ) : (
-                                    <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">
-                                      Email Failed
-                                    </span>
+
+                        {/* Information Section */}
+                        <Alert>
+                          <AlertTriangle className="h-4 w-4" />
+                          <AlertDescription>
+                            <strong>Data Retention Policy:</strong> Form K submissions are automatically expired after 6 months
+                            ({formKStats?.expirationMonths || 6} months) from creation date.
+                            Expired submissions can be safely purged to comply with data retention requirements.
+                            {formKStats?.expirationCutoffDate && (
+                              <><br />Current cutoff date: <strong>{new Date(formKStats.expirationCutoffDate).toLocaleDateString()}</strong></>
+                            )}
+                          </AlertDescription>
+                        </Alert>
+
+                        {/* Expired Submissions List */}
+                        {expiredFormKs.length > 0 && (
+                          <Card>
+                            <CardHeader>
+                              <CardTitle>Expired Form K Submissions ({expiredFormKs.length})</CardTitle>
+                              <CardDescription>
+                                These submissions are older than 6 months and can be purged.
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-2 max-h-60 overflow-y-auto">
+                                {expiredFormKs.map((submission) => {
+                                  const age = Math.floor((new Date() - new Date(submission.createdAt)) / (1000 * 60 * 60 * 24));
+                                  return (
+                                    <div key={submission.id} className="flex items-center justify-between p-2 border rounded">
+                                      <div>
+                                        <p className="font-medium">Unit {submission.unitNumber}</p>
+                                        <p className="text-sm text-muted-foreground">
+                                          {submission.tenant1Name}
+                                          {submission.tenant2Name && ` & ${submission.tenant2Name}`}
+                                        </p>
+                                      </div>
+                                      <div className="text-right">
+                                        <p className="text-sm font-medium">{age} days old</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {new Date(submission.createdAt).toLocaleDateString()}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {activeSection === 'users' && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Plus className="w-5 h-5" />
+                          Add New Administrator
+                        </CardTitle>
+                        <CardDescription>
+                          Password must be at least 8 characters with uppercase, lowercase, number, and special character.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <form onSubmit={createAdmin} className="space-y-4">
+                          <div>
+                            <Label htmlFor="admin-email">Email</Label>
+                            <Input
+                              id="admin-email"
+                              type="email"
+                              value={newAdmin.email}
+                              onChange={(e) => setNewAdmin({...newAdmin, email: e.target.value})}
+                              required
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="admin-password">Password</Label>
+                            <Input
+                              id="admin-password"
+                              type="password"
+                              value={newAdmin.password}
+                              onChange={(e) => setNewAdmin({...newAdmin, password: e.target.value})}
+                              required
+                            />
+                          </div>
+                          <Button type="submit">Create Administrator</Button>
+                        </form>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Current Administrators</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {adminUsers.length === 0 ? (
+                          <p className="text-gray-500">No administrators found.</p>
+                        ) : (
+                          <div className="space-y-4">
+                            {adminUsers.map((user) => (
+                              <div key={user.id} className="flex justify-between items-center p-4 border rounded">
+                                <div>
+                                  <p className="font-semibold">{user.email}</p>
+                                  <p className="text-sm text-gray-500">
+                                    Created: {new Date(user.createdAt).toLocaleDateString()}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <ChangePasswordDialog adminUserId={user.id} onPasswordChanged={onPasswordChanged} />
+                                  {adminUsers.length > 1 && user.id !== adminUser?.id && (
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={() => deleteItem('admin/users', user.id)}
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
                                   )}
                                 </div>
                               </div>
-                              <div className="text-sm text-gray-500">
-                                Submitted: {new Date(registration.createdAt).toLocaleDateString()}
-                              </div>
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                              <div>
-                                <h4 className="font-medium text-sm">Owner Information</h4>
-                                <p className="text-sm"><strong>Name:</strong> {registration.ownerName}</p>
-                                <p className="text-sm"><strong>Suite:</strong> {registration.suiteNumber}</p>
-                                <p className="text-sm"><strong>Email:</strong> {registration.email}</p>
-                                <p className="text-sm"><strong>Phone:</strong> {registration.phoneNumber}</p>
-                                <p className="text-sm"><strong>Type:</strong> {registration.occupancyType === 'TENANT' ? 'Tenant' : 'Owner Occupied'}</p>
-                              </div>
-                              
-                              <div>
-                                <h4 className="font-medium text-sm">Pet Details</h4>
-                                <p className="text-sm"><strong>Name:</strong> {registration.petName}</p>
-                                <p className="text-sm"><strong>Type:</strong> {registration.petType}</p>
-                                <p className="text-sm"><strong>Breed:</strong> {registration.petBreed}</p>
-                                <p className="text-sm"><strong>Age:</strong> {registration.petAge}</p>
-                                <p className="text-sm"><strong>Weight:</strong> {registration.petWeight}</p>
-                              </div>
-                              
-                              <div>
-                                <h4 className="font-medium text-sm">Physical Description</h4>
-                                <p className="text-sm"><strong>Color:</strong> {registration.petColor}</p>
-                                <p className="text-sm"><strong>Height:</strong> {registration.petHeight}</p>
-                                {registration.distinguishingMarks && (
-                                  <p className="text-sm"><strong>Marks:</strong> {registration.distinguishingMarks}</p>
-                                )}
-                                {registration.licenseNumber && (
-                                  <p className="text-sm"><strong>License #:</strong> {registration.licenseNumber}</p>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Pet Photos */}
-                            {registration.photos && registration.photos.length > 0 && (
-                              <div className="mb-4">
-                                <h4 className="font-medium text-sm mb-2">Pet Photos ({registration.photos.length})</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                  {registration.photos.map((photo, index) => (
-                                    <div key={index} className="relative">
-                                      <img
-                                        src={`/uploads/${photo}`}
-                                        alt={`${registration.petName} photo ${index + 1}`}
-                                        className="w-full h-32 object-cover rounded border"
-                                        onError={(e) => {
-                                          e.currentTarget.src = '/placeholder-pet.jpg';
-                                        }}
-                                      />
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Admin Notes */}
-                            {registration.notes && (
-                              <div className="mb-4 p-3 bg-blue-50 rounded border border-blue-200">
-                                <h4 className="font-medium text-sm text-blue-800 mb-1">Admin Notes:</h4>
-                                <p className="text-sm text-blue-700">{registration.notes}</p>
-                              </div>
-                            )}
-
-                            {/* Status Update Controls */}
-                            <div className="flex flex-wrap gap-3 pt-4 border-t">
-                              <select
-                                value={registration.status}
-                                onChange={async (e) => {
-                                  try {
-                                    const response = await fetch(`/api/pet-registrations/${registration.id}`, {
-                                      method: 'PATCH',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ status: e.target.value })
-                                    });
-                                    
-                                    if (!response.ok) throw new Error('Failed to update status');
-                                    
-                                    toast({
-                                      title: "Status Updated",
-                                      description: `Pet registration status changed to ${e.target.value}`,
-                                    });
-                                    
-                                    fetchData(); // Refresh data
-                                  } catch (error) {
-                                    toast({
-                                      title: "Error",
-                                      description: "Failed to update status",
-                                      variant: "destructive",
-                                    });
-                                  }
-                                }}
-                                className="px-3 py-1 text-sm border rounded"
-                              >
-                                <option value="PENDING">Pending</option>
-                                <option value="APPROVED">Approved</option>
-                                <option value="REJECTED">Rejected</option>
-                              </select>
-
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={async () => {
-                                  const notes = prompt('Add admin notes (optional):', registration.notes || '');
-                                  if (notes !== null) {
-                                    try {
-                                      const response = await fetch(`/api/pet-registrations/${registration.id}`, {
-                                        method: 'PATCH',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ 
-                                          status: registration.status,
-                                          notes: notes || null 
-                                        })
-                                      });
-                                      
-                                      if (!response.ok) throw new Error('Failed to update notes');
-                                      
-                                      toast({
-                                        title: "Notes Updated",
-                                        description: "Admin notes have been updated",
-                                      });
-                                      
-                                      fetchData();
-                                    } catch (error) {
-                                      toast({
-                                        title: "Error",
-                                        description: "Failed to update notes",
-                                        variant: "destructive",
-                                      });
-                                    }
-                                  }
-                                }}
-                              >
-                                <Edit2 className="h-4 w-4 mr-1" />
-                                Add Notes
-                              </Button>
-
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => {
-                                  confirmAction(
-                                    `Are you sure you want to delete the pet registration for ${registration.petName}? This action cannot be undone.`,
-                                    async () => {
-                                      try {
-                                        const response = await fetch(`/api/pet-registrations/${registration.id}`, {
-                                          method: 'DELETE'
-                                        });
-                                        if (!response.ok) throw new Error('Failed to delete registration');
-                                        toast({
-                                          title: "Registration Deleted",
-                                          description: `Pet registration for ${registration.petName} has been deleted`,
-                                        });
-                                        fetchData();
-                                      } catch (error) {
-                                        toast({
-                                          title: "Error",
-                                          description: "Failed to delete registration",
-                                          variant: "destructive",
-                                        });
-                                      }
-                                    }
-                                  );
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4 mr-1" />
-                                Delete
-                              </Button>
-                            </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
 
-              <TabsContent value="incident-reports" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <ShieldAlert className="h-5 w-5 text-orange-500" />
-                      Incident Reports
-                    </CardTitle>
-                    <CardDescription>
-                      Track and manage incident reports through to resolution.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <IncidentManagement
-                      initialReports={incidentReports}
-                      onReportsChange={setIncidentReports}
-                      onDeleteConfirm={confirmAction}
-                    />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-
-
-              <TabsContent value="forms" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Forms Management</CardTitle>
-                    <CardDescription>
-                      View and export form submissions. All form data is stored in the database and can be exported as CSV.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-                      {/* Emergency Contacts */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-lg">Emergency Contacts</CardTitle>
-                          <CardDescription>{emergencyContacts.length} submissions</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            <Button 
-                              onClick={() => exportFormData(emergencyContacts, 'emergency-contact')}
-                              className="w-full"
-                              variant="outline"
-                            >
-                              <Download className="w-4 h-4 mr-2" />
-                              Export CSV
-                            </Button>
-                            <Button 
-                              onClick={() => exportFormDataAsExcel(emergencyContacts, 'emergency-contact')}
-                              className="w-full"
-                              variant="outline"
-                            >
-                              <Download className="w-4 h-4 mr-2" />
-                              Export Excel
-                            </Button>
+                {activeSection === 'cleanup' && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Cleanup Options</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <form onSubmit={handleCleanupPreview} className="space-y-4">
+                          <div>
+                            <Label htmlFor="delete-older-than-days">Delete items older than (days)</Label>
+                            <Input
+                              id="delete-older-than-days"
+                              type="number"
+                              value={cleanupOptions.deleteOlderThanDays}
+                              onChange={(e) => setCleanupOptions({...cleanupOptions, deleteOlderThanDays: Number(e.target.value)})}
+                              required
+                            />
                           </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* AC Inquiries */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-lg">AC Inquiries</CardTitle>
-                          <CardDescription>{acInquiries.length} submissions</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            <Button 
-                              onClick={() => exportFormData(acInquiries, 'ac-inquiry')}
-                              className="w-full"
-                              variant="outline"
-                            >
-                              <Download className="w-4 h-4 mr-2" />
-                              Export CSV
-                            </Button>
-                            <Button 
-                              onClick={() => exportFormDataAsExcel(acInquiries, 'ac-inquiry')}
-                              className="w-full"
-                              variant="outline"
-                            >
-                              <Download className="w-4 h-4 mr-2" />
-                              Export Excel
-                            </Button>
+                          <div>
+                            <Label htmlFor="delete-sold-items">Delete sold items</Label>
+                            <Checkbox
+                              id="delete-sold-items"
+                              checked={cleanupOptions.deleteSoldItems}
+                              onCheckedChange={(value) => setCleanupOptions({...cleanupOptions, deleteSoldItems: !!value})}
+                            />
                           </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* Storage Rentals */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-lg">Storage Rentals</CardTitle>
-                          <CardDescription>{storageRentals.length} submissions</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            <Button 
-                              onClick={() => exportFormData(storageRentals, 'storage-rental')}
-                              className="w-full"
-                              variant="outline"
-                            >
-                              <Download className="w-4 h-4 mr-2" />
-                              Export CSV
-                            </Button>
-                            <Button 
-                              onClick={() => exportFormDataAsExcel(storageRentals, 'storage-rental')}
-                              className="w-full"
-                              variant="outline"
-                            >
-                              <Download className="w-4 h-4 mr-2" />
-                              Export Excel
-                            </Button>
+                          <div>
+                            <Label htmlFor="delete-inactive-posts">Delete inactive posts</Label>
+                            <Checkbox
+                              id="delete-inactive-posts"
+                              checked={cleanupOptions.deleteInactivePosts}
+                              onCheckedChange={(value) => setCleanupOptions({...cleanupOptions, deleteInactivePosts: !!value})}
+                            />
                           </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* Pet Registrations */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-lg">Pet Registrations</CardTitle>
-                          <CardDescription>{petRegistrations.length} submissions</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            <Button 
-                              onClick={() => exportFormData(petRegistrations, 'pet-registration')}
-                              className="w-full"
-                              variant="outline"
-                            >
-                              <Download className="w-4 h-4 mr-2" />
-                              Export CSV
-                            </Button>
-                            <Button 
-                              onClick={() => exportFormDataAsExcel(petRegistrations, 'pet-registration')}
-                              className="w-full"
-                              variant="outline"
-                            >
-                              <Download className="w-4 h-4 mr-2" />
-                              Export Excel
-                            </Button>
+                          <div>
+                            <Label htmlFor="delete-orphaned-images">Delete orphaned images</Label>
+                            <Checkbox
+                              id="delete-orphaned-images"
+                              checked={cleanupOptions.deleteOrphanedImages}
+                              onCheckedChange={(value) => setCleanupOptions({...cleanupOptions, deleteOrphanedImages: !!value})}
+                            />
                           </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* Scooter Registrations */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-lg">Scooter Registrations</CardTitle>
-                          <CardDescription>{scooterRegistrations.length} submissions</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            <Button 
-                              onClick={() => exportFormData(scooterRegistrations, 'scooter-registration')}
-                              className="w-full"
-                              variant="outline"
-                            >
-                              <Download className="w-4 h-4 mr-2" />
-                              Export CSV
-                            </Button>
-                            <Button 
-                              onClick={() => exportFormDataAsExcel(scooterRegistrations, 'scooter-registration')}
-                              className="w-full"
-                              variant="outline"
-                            >
-                              <Download className="w-4 h-4 mr-2" />
-                              Export Excel
-                            </Button>
+                          <div>
+                            <Label htmlFor="dry-run">Dry Run</Label>
+                            <Checkbox
+                              id="dry-run"
+                              checked={cleanupOptions.dryRun}
+                              onCheckedChange={(value) => setCleanupOptions({...cleanupOptions, dryRun: !!value})}
+                            />
                           </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </CardContent>
-                </Card>
+                          <Button type="submit">Preview Cleanup</Button>
+                        </form>
+                      </CardContent>
+                    </Card>
 
-                {/* Form Details Sections */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Emergency Contacts Details */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Emergency Contacts</CardTitle>
-                      <CardDescription>Recent emergency contact submissions</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {emergencyContacts.length === 0 ? (
-                        <p className="text-gray-500">No emergency contact submissions yet.</p>
-                      ) : (
-                        <div className="space-y-4 max-h-96 overflow-y-auto">
-                          {emergencyContacts.slice(0, 5).map((contact) => (
-                            <div key={contact.id} className="p-4 border rounded-lg bg-gray-50">
-                              <div className="flex justify-between items-start mb-2">
-                                <h4 className="font-semibold">Contact #{contact.contactId}</h4>
-                                <span className="text-sm text-gray-500">
-                                  {new Date(contact.createdAt).toLocaleDateString()}
-                                </span>
-                              </div>
-                              <p className="text-sm"><strong>Unit:</strong> {contact.unitNumber}</p>
-                              <p className="text-sm"><strong>Owner:</strong> {contact.registeredOwnerNames}</p>
-                              {contact.emergencyContactName && (
-                                <p className="text-sm"><strong>Emergency Contact:</strong> {contact.emergencyContactName}</p>
-                              )}
-                            </div>
-                          ))}
-                          {emergencyContacts.length > 5 && (
-                            <p className="text-sm text-gray-500 text-center">
-                              Showing 5 of {emergencyContacts.length} submissions
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  {/* AC Inquiries Details */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>AC Inquiries</CardTitle>
-                      <CardDescription>Recent AC installation inquiries</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {acInquiries.length === 0 ? (
-                        <p className="text-gray-500">No AC inquiries yet.</p>
-                      ) : (
-                        <div className="space-y-4 max-h-96 overflow-y-auto">
-                          {acInquiries.slice(0, 5).map((inquiry) => (
-                            <div key={inquiry.id} className="p-4 border rounded-lg bg-gray-50">
-                              <div className="flex justify-between items-start mb-2">
-                                <h4 className="font-semibold">Inquiry #{inquiry.inquiryId}</h4>
-                                <span className="text-sm text-gray-500">
-                                  {new Date(inquiry.createdAt).toLocaleDateString()}
-                                </span>
-                              </div>
-                              <p className="text-sm"><strong>Owner:</strong> {inquiry.ownerName}</p>
-                              <p className="text-sm"><strong>Unit:</strong> {inquiry.ownerUnit}</p>
-                              <p className="text-sm"><strong>Type:</strong> {inquiry.isMultiZone ? 'Multi-Zone' : 'Single-Zone'}</p>
-                              <p className="text-sm"><strong>Contact:</strong> {inquiry.bestContactMethod === 'EMAIL' ? 'Email' : 'Telephone'}</p>
-                            </div>
-                          ))}
-                          {acInquiries.length > 5 && (
-                            <p className="text-sm text-gray-500 text-center">
-                              Showing 5 of {acInquiries.length} inquiries
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  {/* Storage Rentals Details */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Storage Rentals</CardTitle>
-                      <CardDescription>Recent storage rental interests</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {storageRentals.length === 0 ? (
-                        <p className="text-gray-500">No storage rental interests yet.</p>
-                      ) : (
-                        <div className="space-y-4 max-h-96 overflow-y-auto">
-                          {storageRentals.slice(0, 5).map((rental) => (
-                            <div key={rental.id} className="p-4 border rounded-lg bg-gray-50">
-                              <div className="flex justify-between items-start mb-2">
-                                <h4 className="font-semibold">Rental #{rental.rentalId}</h4>
-                                <span className="text-sm text-gray-500">
-                                  {new Date(rental.createdAt).toLocaleDateString()}
-                                </span>
-                              </div>
-                              <p className="text-sm"><strong>Name:</strong> {rental.firstName} {rental.lastName}</p>
-                              <p className="text-sm"><strong>Unit:</strong> {rental.unitNumber}</p>
-                              <p className="text-sm"><strong>Contact:</strong> {rental.bestContactMethod === 'EMAIL' ? 'Email' : 'Telephone'}</p>
-                              <p className="text-sm"><strong>Interested:</strong> {rental.interestedInInfo ? 'Yes' : 'No'}</p>
-                            </div>
-                          ))}
-                          {storageRentals.length > 5 && (
-                            <p className="text-sm text-gray-500 text-center">
-                              Showing 5 of {storageRentals.length} interests
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  {/* Scooter Registrations Details */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Scooter Registrations</CardTitle>
-                      <CardDescription>Recent scooter registration submissions</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {scooterRegistrations.length === 0 ? (
-                        <p className="text-gray-500">No scooter registrations yet.</p>
-                      ) : (
-                        <div className="space-y-4 max-h-96 overflow-y-auto">
-                          {scooterRegistrations.slice(0, 5).map((registration) => (
-                            <div key={registration.id} className="p-4 border rounded-lg bg-gray-50">
-                              <div className="flex justify-between items-start mb-2">
-                                <h4 className="font-semibold">Registration #{registration.registrationId}</h4>
-                                <span className="text-sm text-gray-500">
-                                  {new Date(registration.createdAt).toLocaleDateString()}
-                                </span>
-                              </div>
-                              <p className="text-sm"><strong>Unit:</strong> {registration.unitNumber}</p>
-                              <p className="text-sm"><strong>Owners:</strong> {registration.ownerNames}</p>
-                              <p className="text-sm"><strong>Scooters:</strong> {registration.numberOfScooters}</p>
-                              <p className="text-sm"><strong>Status:</strong> {registration.status}</p>
-                              <p className="text-sm"><strong>Deposit:</strong> {registration.depositPaid ? 'Paid' : 'Pending'}</p>
-                            </div>
-                          ))}
-                          {scooterRegistrations.length > 5 && (
-                            <p className="text-sm text-gray-500 text-center">
-                              Showing 5 of {scooterRegistrations.length} registrations
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="cleanup" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Cleanup Options</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <form onSubmit={handleCleanupPreview} className="space-y-4">
-                      <div>
-                        <Label htmlFor="delete-older-than-days">Delete items older than (days)</Label>
-                        <Input
-                          id="delete-older-than-days"
-                          type="number"
-                          value={cleanupOptions.deleteOlderThanDays}
-                          onChange={(e) => setCleanupOptions({...cleanupOptions, deleteOlderThanDays: Number(e.target.value)})}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="delete-sold-items">Delete sold items</Label>
-                        <Checkbox
-                          id="delete-sold-items"
-                          checked={cleanupOptions.deleteSoldItems}
-                          onCheckedChange={(value) => setCleanupOptions({...cleanupOptions, deleteSoldItems: !!value})}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="delete-inactive-posts">Delete inactive posts</Label>
-                        <Checkbox
-                          id="delete-inactive-posts"
-                          checked={cleanupOptions.deleteInactivePosts}
-                          onCheckedChange={(value) => setCleanupOptions({...cleanupOptions, deleteInactivePosts: !!value})}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="delete-orphaned-images">Delete orphaned images</Label>
-                        <Checkbox
-                          id="delete-orphaned-images"
-                          checked={cleanupOptions.deleteOrphanedImages}
-                          onCheckedChange={(value) => setCleanupOptions({...cleanupOptions, deleteOrphanedImages: !!value})}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="dry-run">Dry Run</Label>
-                        <Checkbox
-                          id="dry-run"
-                          checked={cleanupOptions.dryRun}
-                          onCheckedChange={(value) => setCleanupOptions({...cleanupOptions, dryRun: !!value})}
-                        />
-                      </div>
-                      <Button type="submit">Preview Cleanup</Button>
-                    </form>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Cleanup Preview</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {cleanupPreview && (
-                      <div className="space-y-4">
-                        <p>Items to be deleted: {cleanupPreview.itemsToDelete}</p>
-                        <p>Items to be kept: {cleanupPreview.itemsToKeep}</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Execute Cleanup</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Button onClick={handleCleanupExecute}>Execute Cleanup</Button>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="users" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Plus className="w-5 h-5" />
-                      Add New Administrator
-                    </CardTitle>
-                    <CardDescription>
-                      Password must be at least 8 characters with uppercase, lowercase, number, and special character.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <form onSubmit={createAdmin} className="space-y-4">
-                      <div>
-                        <Label htmlFor="admin-email">Email</Label>
-                        <Input
-                          id="admin-email"
-                          type="email"
-                          value={newAdmin.email}
-                          onChange={(e) => setNewAdmin({...newAdmin, email: e.target.value})}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="admin-password">Password</Label>
-                        <Input
-                          id="admin-password"
-                          type="password"
-                          value={newAdmin.password}
-                          onChange={(e) => setNewAdmin({...newAdmin, password: e.target.value})}
-                          required
-                        />
-                      </div>
-                      <Button type="submit">Create Administrator</Button>
-                    </form>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Current Administrators</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {adminUsers.length === 0 ? (
-                      <p className="text-gray-500">No administrators found.</p>
-                    ) : (
-                      <div className="space-y-4">
-                        {adminUsers.map((user) => (
-                          <div key={user.id} className="flex justify-between items-center p-4 border rounded">
-                            <div>
-                              <p className="font-semibold">{user.email}</p>
-                              <p className="text-sm text-gray-500">
-                                Created: {new Date(user.createdAt).toLocaleDateString()}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <ChangePasswordDialog adminUserId={user.id} onPasswordChanged={onPasswordChanged} />
-                              {adminUsers.length > 1 && user.id !== adminUser?.id && (
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() => deleteItem('admin/users', user.id)}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              )}
-                            </div>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Cleanup Preview</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {cleanupPreview && (
+                          <div className="space-y-4">
+                            <p>Items to be deleted: {cleanupPreview.itemsToDelete}</p>
+                            <p>Items to be kept: {cleanupPreview.itemsToKeep}</p>
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Execute Cleanup</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Button onClick={handleCleanupExecute}>Execute Cleanup</Button>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+              </div>
+            </SidebarInset>
           </div>
-        </div>
+        </SidebarProvider>
         <Footer />
-        
+
         {/* Edit Page Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -2109,7 +2184,7 @@ const AdminDashboard = () => {
                 Edit the page content using the rich text editor below.
               </DialogDescription>
             </DialogHeader>
-            
+
             {editingPage && (
               <form onSubmit={updatePage} className="space-y-4">
                 <div>
@@ -2143,7 +2218,7 @@ const AdminDashboard = () => {
                     />
                   </div>
                 </div>
-                
+
                 <div className="flex justify-end gap-2 pt-4">
                   <Button
                     type="button"
