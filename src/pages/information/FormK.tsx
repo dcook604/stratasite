@@ -145,6 +145,19 @@ const FormK = () => {
     return () => subscription.unsubscribe();
   }, [form]);
 
+  // Auto-populate tenant signature dates when "present" method is selected
+  React.useEffect(() => {
+    if (tenantSigningMethod === 'present') {
+      const today = new Date().toLocaleDateString();
+      if (!form.getValues('tenant1SignatureDate')) {
+        form.setValue('tenant1SignatureDate', today);
+      }
+      if (!form.getValues('tenant2SignatureDate')) {
+        form.setValue('tenant2SignatureDate', today);
+      }
+    }
+  }, [tenantSigningMethod, form]);
+
   const onSubmit = async (data: FormKValues) => {
     if (!captchaToken) {
       toast({
@@ -528,7 +541,7 @@ const FormK = () => {
               <CardContent>
                 <div className="space-y-4">
                   <p className="text-sm text-gray-600">Tenancy commencing this:</p>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <FormField
                       control={form.control}
                       name="tenancyCommencingDay"

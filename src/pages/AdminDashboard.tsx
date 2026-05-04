@@ -763,7 +763,7 @@ const AdminDashboard = () => {
 
             {/* Main content */}
             <SidebarInset className="flex-1 overflow-auto">
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <div className="flex justify-between items-center mb-6">
                   <div className="flex items-center gap-3">
                     <SidebarTrigger className="md:hidden" />

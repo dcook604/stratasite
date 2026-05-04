@@ -2,6 +2,18 @@ import puppeteer from 'puppeteer';
 import path from 'path';
 import fs from 'fs';
 
+// Safely parse a date string into a Date object.
+// Handles "YYYY-MM-DD", "M/D/YYYY", "D/M/YYYY", and other common formats.
+const parseDate = (dateStr) => {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (!isNaN(d.getTime())) return d;
+  // Try parsing ISO-like format without timezone
+  const isoMatch = dateStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (isoMatch) return new Date(parseInt(isoMatch[1]), parseInt(isoMatch[2]) - 1, parseInt(isoMatch[3]));
+  return null;
+};
+
 const generateFormKPdf = async (formData) => {
   let browser;
   
@@ -93,6 +105,12 @@ const generateFormKHtml = (data) => {
     ownerCellular,
     ownerEmail
   } = data;
+
+  // Parse landlord signature date for the date-signature section
+  const parsedSigDate = parseDate(landlordSignatureDate);
+  const sigDay = parsedSigDate ? parsedSigDate.getDate() : '';
+  const sigMonth = parsedSigDate ? parsedSigDate.toLocaleDateString('en-US', { month: 'long' }) : '';
+  const sigYear = parsedSigDate ? parsedSigDate.getFullYear().toString().slice(-2) : '';
 
   return `
     <!DOCTYPE html>
@@ -340,11 +358,11 @@ const generateFormKHtml = (data) => {
       <div class="date-signature">
         <div class="form-row">
           <span class="label">Dated this</span>
-          <span class="field field-short">${landlordSignatureDate ? new Date(landlordSignatureDate).getDate() : ''}</span>
+          <span class="field field-short">${sigDay}</span>
           <span class="label">day of</span>
-          <span class="field field-medium">${landlordSignatureDate ? new Date(landlordSignatureDate).toLocaleDateString('en-US', { month: 'long' }) : ''}</span>
+          <span class="field field-medium">${sigMonth}</span>
           <span>, 20</span>
-          <span class="field field-very-short">${landlordSignatureDate ? new Date(landlordSignatureDate).getFullYear().toString().substr(-2) : ''}</span>
+          <span class="field field-very-short">${sigYear}</span>
           <span>.</span>
         </div>
       </div>

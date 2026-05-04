@@ -571,8 +571,8 @@ const sendDynamicFormEmail = async (formName, formData) => {
   try {
     // Get form configuration from database
     const db = getPrismaClient();
-    const formConfig = await db.formConfiguration.findUnique({
-      where: { 
+    const formConfig = await db.formConfiguration.findFirst({
+      where: {
         formName,
         isActive: true
       },
@@ -636,7 +636,14 @@ const sendDynamicFormEmail = async (formName, formData) => {
     
     // Use custom subject from config if available, otherwise use template subject
     // Interpolate {{placeholder}} tokens with actual form data values
-    let subject = formConfig.emailConfig?.subject || emailContent.subject;
+    // For form-k completion notifications, use the template subject (which includes completion status)
+    // rather than the generic DB config subject
+    let subject;
+    if (formName === 'form-k' && (formData.formStatus === 'COMPLETE' || formData.formStatus === 'COMPLETE_ALL_SIGNATURES')) {
+      subject = emailContent.subject;
+    } else {
+      subject = formConfig.emailConfig?.subject || emailContent.subject;
+    }
     subject = subject.replace(/\{\{(\w+)\}\}/g, (match, key) => formData[key] != null ? formData[key] : match);
     
     // Create transporter

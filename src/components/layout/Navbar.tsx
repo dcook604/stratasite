@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Home, Book, Mail, Menu, X, LogIn, ChevronDown, ShoppingCart, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 import {
   DropdownMenu,
@@ -16,7 +15,6 @@ export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [formsOpen, setFormsOpen] = React.useState(false);
   const [infoOpen, setInfoOpen] = React.useState(false);
-  const isMobile = useIsMobile();
   const { adminUser } = useAdminAuth();
 
   const informationItems = [
@@ -51,8 +49,7 @@ export const Navbar = () => {
           </div>
 
           {/* Desktop nav */}
-          {!isMobile && (
-            <div className="hidden sm:flex sm:items-center sm:gap-1">
+          <div className="hidden sm:flex sm:items-center sm:gap-1">
               {/* Core links */}
               <Button variant="ghost" className="text-gray-700 hover:text-primary" asChild>
                 <Link to="/" className="flex items-center">
@@ -140,10 +137,9 @@ export const Navbar = () => {
                 </Button>
               )}
             </div>
-          )}
 
           {/* Mobile hamburger */}
-          {isMobile && (
+          <div className="flex sm:hidden items-center">
             <div className="flex items-center">
               <Button
                 variant="ghost"
@@ -157,7 +153,7 @@ export const Navbar = () => {
                 {isMenuOpen ? <X className="h-6 w-6" aria-hidden="true" /> : <Menu className="h-6 w-6" aria-hidden="true" />}
               </Button>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
@@ -168,7 +164,7 @@ export const Navbar = () => {
         role="navigation"
         aria-label="Mobile navigation"
       >
-        <div className="px-2 pt-2 pb-3 space-y-1">
+        <div className="px-2 pt-2 pb-3 space-y-1 overflow-y-auto max-h-[calc(100vh-4rem)]">
           {/* Core links */}
           <Link
             to="/"

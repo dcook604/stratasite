@@ -2975,20 +2975,29 @@ app.post('/api/form-k-submission', async (req, res) => {
         };
 
         const { sendDynamicFormEmail } = await import('./server/utils/dynamicEmailService.js');
-        await sendDynamicFormEmail('form-k', emailData);
-        
-        // Update email sent status
-        await db.formKSubmission.update({
-          where: { id: formKSubmission.id },
-          data: { emailSent: true }
-        });
+        const emailResult = await sendDynamicFormEmail('form-k', emailData);
 
-        logger.info('Form K completion notification email sent', { 
-          submissionId: formKSubmission.id,
-          unitNumber,
-          tenant1Name,
-          allSignaturesComplete: true
-        });
+        if (emailResult?.success) {
+          // Update email sent status
+          await db.formKSubmission.update({
+            where: { id: formKSubmission.id },
+            data: { emailSent: true }
+          });
+
+          logger.info('Form K completion notification email sent', {
+            submissionId: formKSubmission.id,
+            unitNumber,
+            tenant1Name,
+            allSignaturesComplete: true,
+            pdfAttached: emailResult.pdfAttached
+          });
+        } else {
+          logger.warn('Form K completion notification email returned unsuccessful', {
+            submissionId: formKSubmission.id,
+            unitNumber,
+            error: emailResult?.error || 'unknown'
+          });
+        }
       } catch (emailError) {
         logger.error('Failed to send Form K completion notification email', emailError);
         // Continue with success response even if email fails
@@ -3255,18 +3264,27 @@ app.post('/api/tenant-signature/:submissionId/:token', async (req, res) => {
         };
 
         const { sendDynamicFormEmail } = await import('./server/utils/dynamicEmailService.js');
-        await sendDynamicFormEmail('form-k', emailData);
-        
-        // Update email sent status
-        await db.formKSubmission.update({
-          where: { id: submissionId },
-          data: { emailSent: true }
-        });
+        const emailResult = await sendDynamicFormEmail('form-k', emailData);
 
-        logger.info('Form K completion notification sent after final signature', {
-          submissionId,
-          unitNumber: updatedSubmission.unitNumber
-        });
+        if (emailResult?.success) {
+          // Update email sent status
+          await db.formKSubmission.update({
+            where: { id: submissionId },
+            data: { emailSent: true }
+          });
+
+          logger.info('Form K completion notification sent after final signature', {
+            submissionId,
+            unitNumber: updatedSubmission.unitNumber,
+            pdfAttached: emailResult.pdfAttached
+          });
+        } else {
+          logger.warn('Form K completion notification email returned unsuccessful', {
+            submissionId,
+            unitNumber: updatedSubmission.unitNumber,
+            error: emailResult?.error || 'unknown'
+          });
+        }
       } catch (emailError) {
         logger.error('Failed to send Form K completion notification', emailError);
       }
