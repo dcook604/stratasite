@@ -571,7 +571,7 @@ const sendDynamicFormEmail = async (formName, formData) => {
   try {
     // Get form configuration from database
     const db = getPrismaClient();
-    const formConfig = await db.formConfiguration.findFirst({
+    let formConfig = await db.formConfiguration.findFirst({
       where: {
         formName,
         isActive: true
@@ -584,21 +584,47 @@ const sendDynamicFormEmail = async (formName, formData) => {
       }
     });
 
-    if (!formConfig) {
-      console.warn(`No form configuration found for: ${formName}`);
-      return { success: false, error: 'Form configuration not found' };
-    }
-
-    if (!formConfig.recipients || formConfig.recipients.length === 0) {
-      console.warn(`No recipients configured for form: ${formName}`);
-      return { success: false, error: 'No recipients configured' };
-    }
-
     // Get email template
     const template = emailTemplates[formName];
     if (!template) {
       console.warn(`No email template found for form: ${formName}`);
       return { success: false, error: 'Email template not found' };
+    }
+
+    // Auto-create form configuration if it doesn't exist yet
+    if (!formConfig) {
+      try {
+        const displayNameMap = {
+          'form-k': 'Form K - Notice of Tenant\'s Responsibilities',
+          'scooter-registration': 'E-Scooter Registration',
+          'ac-inquiry': 'AC Installation Inquiry',
+          'storage-rental': 'Storage Rental Interest',
+          'emergency-contact': 'Emergency Contact Information',
+          'pet-registration': 'Pet Registration',
+          'contact': 'Contact Form',
+          'marketplace': 'Marketplace Post',
+          'incident-report': 'Incident Report'
+        };
+        const created = await db.formConfiguration.create({
+          data: {
+            formName,
+            displayName: displayNameMap[formName] || formName,
+            description: `Auto-created configuration for ${formName}`,
+            isActive: true,
+            emailConfig: {
+              subject: `New ${displayNameMap[formName] || formName} Submission`,
+              fromName: process.env.SMTP_FROM_NAME || 'Spectrum 4',
+              template: formName
+            }
+          }
+        });
+        // Re-assign formConfig so downstream code uses the new config
+        formConfig = { ...created, recipients: [] };
+        console.log(`Auto-created form configuration for: ${formName}`);
+      } catch (createError) {
+        // Ignore if creation fails (e.g., race condition where another request created it)
+        console.warn(`Could not auto-create form config for ${formName}:`, createError.message);
+      }
     }
 
     // Build evidence attachments for incident reports (inline CID images + video attachments)
@@ -633,7 +659,7 @@ const sendDynamicFormEmail = async (formName, formData) => {
 
     // Generate email content
     const emailContent = template(enrichedFormData);
-    
+
     // Use custom subject from config if available, otherwise use template subject
     // Interpolate {{placeholder}} tokens with actual form data values
     // For form-k completion notifications, use the template subject (which includes completion status)
@@ -642,24 +668,77 @@ const sendDynamicFormEmail = async (formName, formData) => {
     if (formName === 'form-k' && (formData.formStatus === 'COMPLETE' || formData.formStatus === 'COMPLETE_ALL_SIGNATURES')) {
       subject = emailContent.subject;
     } else {
-      subject = formConfig.emailConfig?.subject || emailContent.subject;
+      subject = formConfig?.emailConfig?.subject || emailContent.subject;
     }
     subject = subject.replace(/\{\{(\w+)\}\}/g, (match, key) => formData[key] != null ? formData[key] : match);
-    
+
     // Create transporter
     const transporter = createTransporter();
 
-    // Prepare recipients
-    const recipients = formConfig.recipients.map(r => r.email).join(', ');
+    // Build recipient list
     const fromName = process.env.SMTP_FROM_NAME || 'Spectrum 4';
     const fromAddress = process.env.SMTP_FROM || `${process.env.SMTP_USER}@spectrum4.ca`;
 
+    // Admin recipients from DB config
+    const adminRecipients = formConfig?.recipients
+      ? formConfig.recipients.map(r => r.email).filter(Boolean)
+      : [];
+
+    // For form-k completion emails, auto-include the submitter (owner) as BCC
+    let bccList = [];
+    if (formName === 'form-k' && formData.ownerEmail) {
+      bccList.push(formData.ownerEmail);
+    }
+
+    // If no admin recipients configured, try to send to submitter only
+    if (adminRecipients.length === 0) {
+      if (bccList.length > 0) {
+        console.log(`No admin recipients configured for ${formName}, sending to submitter only: ${bccList[0]}`);
+        const mailOptions = {
+          from: `"${fromName}" <${fromAddress}>`,
+          to: bccList[0],
+          subject: subject,
+          html: emailContent.html
+        };
+
+        // Generate and attach PDF for Form K completions
+        if (formName === 'form-k' && (formData.formStatus === 'COMPLETE' || formData.formStatus === 'COMPLETE_ALL_SIGNATURES')) {
+          try {
+            const pdfBuffer = await generateFormKPdf(formData);
+            mailOptions.attachments = [{
+              filename: `Form_K_Unit_${formData.unitNumber}_${formData.submissionId}.pdf`,
+              content: pdfBuffer,
+              contentType: 'application/pdf'
+            }];
+          } catch (pdfError) {
+            console.error('Error generating Form K PDF:', pdfError);
+          }
+        }
+
+        const info = await transporter.sendMail(mailOptions);
+        return {
+          success: true,
+          messageId: info.messageId,
+          recipients: bccList[0],
+          pdfAttached: !!(mailOptions.attachments?.length)
+        };
+      }
+
+      console.warn(`No recipients configured for form: ${formName}`);
+      return { success: false, error: 'No recipients configured' };
+    }
+
     const mailOptions = {
       from: `"${fromName}" <${fromAddress}>`,
-      to: recipients,
+      to: adminRecipients.join(', '),
       subject: subject,
       html: emailContent.html
     };
+
+    // Add submitter as BCC for form-k
+    if (bccList.length > 0) {
+      mailOptions.bcc = bccList.join(', ');
+    }
 
     // Attach evidence files for incident reports
     if (formName === 'incident-report' && evidenceAttachments.length > 0) {
@@ -688,25 +767,26 @@ const sendDynamicFormEmail = async (formName, formData) => {
 
     // Send email
     const info = await transporter.sendMail(mailOptions);
-    
+
     console.log(`Dynamic email sent successfully for form: ${formName}`, {
       messageId: info.messageId,
-      recipients: recipients,
+      recipients: adminRecipients.join(', '),
+      bcc: bccList.length > 0 ? bccList.join(', ') : 'none',
       formName: formName
     });
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       messageId: info.messageId,
-      recipients: recipients,
+      recipients: adminRecipients.join(', '),
       pdfAttached: formName === 'form-k' && mailOptions.attachments?.length > 0
     };
 
   } catch (error) {
     console.error(`Error sending dynamic email for form ${formName}:`, error);
-    return { 
-      success: false, 
-      error: error.message 
+    return {
+      success: false,
+      error: error.message
     };
   }
 };

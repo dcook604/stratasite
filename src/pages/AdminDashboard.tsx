@@ -75,6 +75,8 @@ const AdminDashboard = () => {
   const [formKStats, setFormKStats] = useState(null);
   const [expiredFormKs, setExpiredFormKs] = useState([]);
   const [formKCleanupLoading, setFormKCleanupLoading] = useState(false);
+  const [formKSubmissions, setFormKSubmissions] = useState([]);
+  const [formKSubmissionsLoading, setFormKSubmissionsLoading] = useState(false);
 
   // Form states
   const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' });
@@ -330,6 +332,30 @@ const AdminDashboard = () => {
       setFormKCleanupLoading(false);
     }
   };
+
+  const fetchFormKSubmissions = async () => {
+    setFormKSubmissionsLoading(true);
+    try {
+      const response = await fetch('/api/form-k-submissions');
+      if (response.ok) {
+        const data = await response.json();
+        setFormKSubmissions(data);
+      }
+    } catch (error) {
+      console.error('Error fetching Form K submissions:', error);
+    } finally {
+      setFormKSubmissionsLoading(false);
+    }
+  };
+
+  // Fetch Form K submissions when section becomes active
+  useEffect(() => {
+    if (activeSection === 'form-k-cleanup') {
+      fetchFormKStats();
+      fetchExpiredFormKs();
+      fetchFormKSubmissions();
+    }
+  }, [activeSection]);
 
   useEffect(() => {
     fetchData();
@@ -1878,6 +1904,110 @@ const AdminDashboard = () => {
 
                 {activeSection === 'form-k-cleanup' && (
                   <div className="space-y-6">
+                    {/* Submissions List */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <FileText className="h-5 w-5" />
+                          Form K Submissions
+                        </CardTitle>
+                        <CardDescription>
+                          All Form K submissions ({formKSubmissions.length} total)
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex justify-end mb-4">
+                          <Button
+                            onClick={fetchFormKSubmissions}
+                            variant="outline"
+                            size="sm"
+                            disabled={formKSubmissionsLoading}
+                          >
+                            <Database className="h-4 w-4 mr-2" />
+                            Refresh
+                          </Button>
+                        </div>
+
+                        {formKSubmissionsLoading ? (
+                          <div className="flex justify-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                          </div>
+                        ) : formKSubmissions.length === 0 ? (
+                          <Alert>
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertDescription>
+                              No Form K submissions found. Submissions will appear here once residents complete the Form K.
+                            </AlertDescription>
+                          </Alert>
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="border-b text-left">
+                                  <th className="pb-2 font-medium">Unit</th>
+                                  <th className="pb-2 font-medium">Strata Plan</th>
+                                  <th className="pb-2 font-medium">Tenant</th>
+                                  <th className="pb-2 font-medium">Landlord</th>
+                                  <th className="pb-2 font-medium">Method</th>
+                                  <th className="pb-2 font-medium">Status</th>
+                                  <th className="pb-2 font-medium">Email Sent</th>
+                                  <th className="pb-2 font-medium">Submitted</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {formKSubmissions.map((sub) => {
+                                  const isComplete = sub.landlordSignatureCompleted &&
+                                    sub.tenant1SignatureCompleted &&
+                                    (!sub.tenant2Name || sub.tenant2SignatureCompleted);
+                                  return (
+                                    <tr key={sub.id} className="border-b hover:bg-gray-50">
+                                      <td className="py-2 pr-4 font-medium">{sub.unitNumber}</td>
+                                      <td className="py-2 pr-4">{sub.strataPlan}</td>
+                                      <td className="py-2 pr-4">
+                                        {sub.tenant1Name}
+                                        {sub.tenant2Name ? ` & ${sub.tenant2Name}` : ''}
+                                      </td>
+                                      <td className="py-2 pr-4">{sub.landlordName}</td>
+                                      <td className="py-2 pr-4">
+                                        <span className={`px-2 py-0.5 text-xs rounded ${
+                                          sub.tenantSigningMethod === 'present'
+                                            ? 'bg-blue-100 text-blue-700'
+                                            : 'bg-purple-100 text-purple-700'
+                                        }`}>
+                                          {sub.tenantSigningMethod === 'present' ? 'In-Person' : 'Email'}
+                                        </span>
+                                      </td>
+                                      <td className="py-2 pr-4">
+                                        <span className={`px-2 py-0.5 text-xs rounded font-medium ${
+                                          isComplete
+                                            ? 'bg-green-100 text-green-700'
+                                            : 'bg-yellow-100 text-yellow-700'
+                                        }`}>
+                                          {isComplete ? 'Complete' : 'Pending'}
+                                        </span>
+                                      </td>
+                                      <td className="py-2 pr-4">
+                                        {sub.emailSent ? (
+                                          <span className="text-green-600 text-xs flex items-center gap-1">
+                                            <CheckCircle className="h-3 w-3" /> Sent
+                                          </span>
+                                        ) : (
+                                          <span className="text-gray-400 text-xs">No</span>
+                                        )}
+                                      </td>
+                                      <td className="py-2 text-gray-500 text-xs whitespace-nowrap">
+                                        {new Date(sub.createdAt).toLocaleDateString()}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
                     <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -1931,7 +2061,7 @@ const AdminDashboard = () => {
                         {/* Actions Section */}
                         <div className="flex flex-col sm:flex-row gap-4">
                           <Button
-                            onClick={fetchFormKStats}
+                            onClick={() => { fetchFormKStats(); fetchFormKSubmissions(); }}
                             variant="outline"
                             className="flex items-center gap-2"
                           >
