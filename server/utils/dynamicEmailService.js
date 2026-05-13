@@ -566,7 +566,7 @@ const emailTemplates = {
   },
 
   'storage-locker-application': (data) => {
-    const { applicationId, lockerNumber, location, dimensions, monthlyRent, firstName, lastName, address, unitNumber, telephone, email } = data;
+    const { applicationId, lockerNumber, location, dimensions, monthlyRent, firstName, lastName, address, unitNumber, telephone, email, onWaitingList } = data;
     return {
       subject: `New Storage Locker Application – Locker #${lockerNumber} (Unit ${unitNumber})`,
       html: `
@@ -588,6 +588,7 @@ const emailTemplates = {
           <li><strong>Address:</strong> ${address}</li>
           <li><strong>Telephone:</strong> ${telephone}</li>
           <li><strong>Email:</strong> ${email}</li>
+          <li><strong>Previously on waiting list:</strong> ${onWaitingList ? 'Yes' : 'No'}</li>
         </ul>
 
         <h3>Rental Terms Reminder:</h3>

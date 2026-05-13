@@ -47,6 +47,7 @@ const formSchema = z.object({
     'Please enter a valid phone number'
   ),
   email: z.string().email('Please enter a valid email address'),
+  onWaitingList: z.boolean(),
   consentGiven: z.boolean().refine((val) => val === true, {
     message: 'You must consent to be contacted by strata',
   }),
@@ -86,6 +87,7 @@ const StorageLockerSignup = () => {
       unitNumber: '',
       telephone: '',
       email: '',
+      onWaitingList: false,
       consentGiven: false,
     },
   });
@@ -345,6 +347,22 @@ const StorageLockerSignup = () => {
                     </FormItem>
                   )} />
                 </div>
+
+                <FormField control={form.control} name="onWaitingList" render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 bg-gray-50 border-gray-200">
+                    <FormControl>
+                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="text-sm font-medium">
+                        I have previously signed up to be on the storage locker waiting list
+                      </FormLabel>
+                      <FormDescription className="text-xs text-gray-500">
+                        Check this if you submitted an interest form for storage rental before this signup page was available.
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )} />
 
                 <FormField control={form.control} name="consentGiven" render={({ field }) => (
                   <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 bg-amber-50 border-amber-200">

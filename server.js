@@ -2443,7 +2443,7 @@ app.get('/api/storage-lockers', async (req, res) => {
 app.post('/api/storage-locker-application', async (req, res) => {
   try {
     const db = await getPrisma();
-    const { lockerId, firstName, lastName, address, unitNumber, telephone, email, consentGiven, turnstileToken } = req.body;
+    const { lockerId, firstName, lastName, address, unitNumber, telephone, email, consentGiven, onWaitingList, turnstileToken } = req.body;
 
     const isTurnstileValid = await verifyTurnstile(turnstileToken);
     if (!isTurnstileValid) {
@@ -2473,7 +2473,7 @@ app.post('/api/storage-locker-application', async (req, res) => {
 
     const applicationId = `SLA-${Date.now()}`;
     const application = await db.storageLockerApplication.create({
-      data: { applicationId, lockerId, firstName, lastName, address, unitNumber, telephone, email, consentGiven }
+      data: { applicationId, lockerId, firstName, lastName, address, unitNumber, telephone, email, consentGiven, onWaitingList: !!onWaitingList }
     });
 
     const { sendDynamicFormEmail, sendFormEmailFallback } = await import('./server/utils/dynamicEmailService.js');
@@ -2484,7 +2484,7 @@ app.post('/api/storage-locker-application', async (req, res) => {
         location: locker.location,
         dimensions: locker.dimensions,
         monthlyRent: locker.monthlyRent,
-        firstName, lastName, address, unitNumber, telephone, email
+        firstName, lastName, address, unitNumber, telephone, email, onWaitingList: !!onWaitingList
       });
       if (result.success) {
         await db.storageLockerApplication.update({ where: { id: application.id }, data: { emailSent: true } });
