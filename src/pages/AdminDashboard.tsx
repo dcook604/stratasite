@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { RequireAdminAuth } from '@/components/hoc/RequireAdminAuth';
-import { Plus, Trash2, Edit2, Users, FileText, Megaphone, ShoppingCart, Save, X, Database, AlertTriangle, CheckCircle, Zap, PawPrint, Download, ClipboardList, Settings, ShieldAlert } from 'lucide-react';
+import { Plus, Trash2, Edit2, Users, FileText, Megaphone, ShoppingCart, Save, X, Database, AlertTriangle, CheckCircle, Zap, PawPrint, Download, ClipboardList, Settings, ShieldAlert, Package, Lock } from 'lucide-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { cleanupMarketplaceData, getCleanupPreview, formatCleanupStats, CleanupOptions } from '@/utils/databaseCleanup';
@@ -43,6 +43,7 @@ const sectionTitles: Record<string, string> = {
   'incident-reports': 'Incident Reports',
   'scooter-registrations': 'Scooter Registrations',
   'pet-registrations': 'Pet Registrations',
+  'storage-lockers': 'Storage Locker Applications',
   'form-submissions': 'Form Submissions',
   marketplace: 'Marketplace',
   'form-management': 'Form Email Config',
@@ -69,6 +70,7 @@ const AdminDashboard = () => {
   const [emergencyContacts, setEmergencyContacts] = useState([]);
   const [acInquiries, setACInquiries] = useState([]);
   const [storageRentals, setStorageRentals] = useState([]);
+  const [storageLockerApplications, setStorageLockerApplications] = useState([]);
   const [incidentReports, setIncidentReports] = useState([]);
 
   // Form K cleanup states
@@ -136,7 +138,8 @@ const AdminDashboard = () => {
         emergencyContactsRes,
         acInquiriesRes,
         storageRentalsRes,
-        incidentReportsRes
+        incidentReportsRes,
+        storageLockerApplicationsRes
       ] = await Promise.all([
         fetch('/api/announcements').catch(err => err),
         fetch('/api/pages').catch(err => err),
@@ -148,7 +151,8 @@ const AdminDashboard = () => {
         fetch('/api/emergency-contacts').catch(err => err),
         fetch('/api/ac-inquiries').catch(err => err),
         fetch('/api/storage-rentals').catch(err => err),
-        fetch('/api/incident-reports').catch(err => err)
+        fetch('/api/incident-reports').catch(err => err),
+        fetch('/api/storage-locker-applications').catch(err => err)
       ]);
 
       console.log('AdminDashboard: API responses received');
@@ -261,6 +265,14 @@ const AdminDashboard = () => {
       } else {
         console.error('AdminDashboard: Failed to load incident reports:', incidentReportsRes);
         setIncidentReports([]);
+      }
+
+      // Handle storage locker applications
+      if (storageLockerApplicationsRes instanceof Response && storageLockerApplicationsRes.ok) {
+        const data = await storageLockerApplicationsRes.json();
+        setStorageLockerApplications(data);
+      } else {
+        setStorageLockerApplications([]);
       }
     } catch (error) {
       console.error('AdminDashboard: Error fetching data:', error);
@@ -725,6 +737,12 @@ const AdminDashboard = () => {
                         <SidebarMenuButton isActive={activeSection === 'pet-registrations'} onClick={() => setActiveSection('pet-registrations')}>
                           <PawPrint className="w-4 h-4" />
                           <span>Pet Registrations</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton isActive={activeSection === 'storage-lockers'} onClick={() => setActiveSection('storage-lockers')}>
+                          <Package className="w-4 h-4" />
+                          <span>Storage Lockers</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                       <SidebarMenuItem>
@@ -1508,6 +1526,165 @@ const AdminDashboard = () => {
                                   >
                                     <Trash2 className="h-4 w-4 mr-1" />
                                     Delete
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+
+                {activeSection === 'storage-lockers' && (
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <CardTitle className="flex items-center gap-2">
+                              <Package className="h-5 w-5 text-purple-600" />
+                              Storage Locker Applications
+                            </CardTitle>
+                            <CardDescription>
+                              Review and approve/reject locker applications. Approved lockers are immediately marked as assigned and no longer selectable by residents.
+                            </CardDescription>
+                          </div>
+                          {storageLockerApplications.length > 0 && (
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="sm" onClick={() => exportFormData(storageLockerApplications, 'storage-locker-application')} className="flex items-center gap-2">
+                                <Download className="h-4 w-4" />Export CSV
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => exportFormDataAsExcel(storageLockerApplications, 'storage-locker-application')} className="flex items-center gap-2">
+                                <Download className="h-4 w-4" />Export Excel
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {storageLockerApplications.length === 0 ? (
+                          <p className="text-gray-500">No storage locker applications yet.</p>
+                        ) : (
+                          <div className="space-y-4">
+                            {storageLockerApplications.map((app: any) => (
+                              <div key={app.id} className="p-5 border rounded-lg bg-gray-50">
+                                <div className="flex justify-between items-start mb-3">
+                                  <div>
+                                    <h3 className="font-semibold">Application #{app.applicationId}</h3>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span className={`px-2 py-1 text-xs rounded font-medium ${
+                                        app.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                        app.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
+                                        'bg-red-100 text-red-800'
+                                      }`}>
+                                        {app.status}
+                                      </span>
+                                      {app.emailSent ? (
+                                        <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">Email Sent</span>
+                                      ) : (
+                                        <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded">Email Failed</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="text-sm text-gray-500">
+                                    {new Date(app.createdAt).toLocaleDateString()}
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                  <div>
+                                    <h4 className="font-medium text-sm mb-1">Applicant</h4>
+                                    <p className="text-sm"><strong>Name:</strong> {app.firstName} {app.lastName}</p>
+                                    <p className="text-sm"><strong>Unit:</strong> {app.unitNumber}</p>
+                                    <p className="text-sm"><strong>Address:</strong> {app.address}</p>
+                                    <p className="text-sm"><strong>Phone:</strong> {app.telephone}</p>
+                                    <p className="text-sm"><strong>Email:</strong> {app.email}</p>
+                                  </div>
+                                  <div>
+                                    <h4 className="font-medium text-sm mb-1">Selected Locker</h4>
+                                    {app.locker ? (
+                                      <>
+                                        <p className="text-sm"><strong>Locker #:</strong> {app.locker.lockerNumber}</p>
+                                        <p className="text-sm"><strong>Location:</strong> {app.locker.location}</p>
+                                        <p className="text-sm"><strong>Dimensions:</strong> {app.locker.dimensions}</p>
+                                        <p className="text-sm"><strong>Rent:</strong> ${app.locker.monthlyRent}/month</p>
+                                        <p className="text-sm">
+                                          <strong>Locker Status:</strong>{' '}
+                                          <span className={app.locker.status === 'ASSIGNED' ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}>
+                                            {app.locker.status}
+                                          </span>
+                                        </p>
+                                        {app.locker.notes && <p className="text-xs text-amber-600">{app.locker.notes}</p>}
+                                      </>
+                                    ) : <p className="text-sm text-gray-400">Locker data unavailable</p>}
+                                  </div>
+                                </div>
+
+                                {app.adminNotes && (
+                                  <div className="mb-3 p-3 bg-blue-50 rounded border border-blue-200">
+                                    <h4 className="font-medium text-sm text-blue-800 mb-1">Admin Notes:</h4>
+                                    <p className="text-sm text-blue-700">{app.adminNotes}</p>
+                                  </div>
+                                )}
+
+                                <div className="flex flex-wrap gap-3 pt-3 border-t">
+                                  <select
+                                    value={app.status}
+                                    onChange={async (e) => {
+                                      try {
+                                        const r = await fetch(`/api/storage-locker-applications/${app.id}`, {
+                                          method: 'PATCH',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({ status: e.target.value })
+                                        });
+                                        if (!r.ok) throw new Error('Failed');
+                                        toast({ title: 'Status Updated', description: `Application ${e.target.value.toLowerCase()}` });
+                                        fetchData();
+                                      } catch {
+                                        toast({ title: 'Error', description: 'Failed to update status', variant: 'destructive' });
+                                      }
+                                    }}
+                                    className="px-3 py-1 text-sm border rounded"
+                                  >
+                                    <option value="PENDING">Pending</option>
+                                    <option value="APPROVED">Approved</option>
+                                    <option value="REJECTED">Rejected</option>
+                                  </select>
+
+                                  <Button variant="outline" size="sm" onClick={async () => {
+                                    const notes = prompt('Admin notes (optional):', app.adminNotes || '');
+                                    if (notes !== null) {
+                                      try {
+                                        await fetch(`/api/storage-locker-applications/${app.id}`, {
+                                          method: 'PATCH',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({ adminNotes: notes || null })
+                                        });
+                                        toast({ title: 'Notes Saved' });
+                                        fetchData();
+                                      } catch {
+                                        toast({ title: 'Error', description: 'Failed to save notes', variant: 'destructive' });
+                                      }
+                                    }
+                                  }}>
+                                    <Edit2 className="h-3 w-3 mr-1" />Add Notes
+                                  </Button>
+
+                                  <Button variant="destructive" size="sm" onClick={() => confirmAction(
+                                    `Delete application ${app.applicationId}? This cannot be undone.`,
+                                    async () => {
+                                      try {
+                                        await fetch(`/api/storage-locker-applications/${app.id}`, { method: 'DELETE' });
+                                        toast({ title: 'Deleted', description: 'Application removed' });
+                                        fetchData();
+                                      } catch {
+                                        toast({ title: 'Error', description: 'Failed to delete', variant: 'destructive' });
+                                      }
+                                    }
+                                  )}>
+                                    <Trash2 className="h-3 w-3 mr-1" />Delete
                                   </Button>
                                 </div>
                               </div>

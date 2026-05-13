@@ -423,6 +423,61 @@ model FormKSubmission {
   @@map("form_k_submissions")
 }
 
+enum StorageLockerStatus {
+  AVAILABLE
+  ASSIGNED
+}
+
+enum StorageLockerApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model StorageLocker {
+  id           String              @id @default(cuid())
+  lockerNumber String              @unique @map("locker_number")
+  location     String
+  dimensions   String
+  monthlyRent  Float               @map("monthly_rent")
+  notes        String?
+  status       StorageLockerStatus @default(AVAILABLE)
+  isActive     Boolean             @default(true) @map("is_active")
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+
+  applications StorageLockerApplication[]
+
+  @@map("storage_lockers")
+}
+
+model StorageLockerApplication {
+  id            String                         @id @default(cuid())
+  applicationId String                         @unique @map("application_id")
+
+  lockerId      String                         @map("locker_id")
+
+  firstName     String                         @map("first_name")
+  lastName      String                         @map("last_name")
+  address       String
+  unitNumber    String                         @map("unit_number")
+  telephone     String
+  email         String
+  consentGiven  Boolean                        @map("consent_given")
+
+  status        StorageLockerApplicationStatus @default(PENDING)
+  adminNotes    String?                        @map("admin_notes")
+
+  emailSent     Boolean                        @default(false) @map("email_sent")
+  isActive      Boolean                        @default(true) @map("is_active")
+  createdAt     DateTime                       @default(now()) @map("created_at")
+  updatedAt     DateTime                       @updatedAt @map("updated_at")
+
+  locker        StorageLocker                  @relation(fields: [lockerId], references: [id])
+
+  @@map("storage_locker_applications")
+}
+
 enum IncidentStatus {
   NEW
   UNDER_REVIEW

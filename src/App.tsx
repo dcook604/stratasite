@@ -25,6 +25,7 @@ import {
   EmergencyContact,
   ACInquiry,
   StorageRental,
+  StorageLockerSignup,
   FormK,
   TenantSignature,
   Marketplace,
@@ -112,6 +113,12 @@ const App = () => (
                 <Route path="/storage-rental" element={
                   <Suspense fallback={<LazyLoadingFallback />}>
                     <StorageRental />
+                  </Suspense>
+                } />
+                {/* Storage Locker Signup */}
+                <Route path="/storage-locker-signup" element={
+                  <Suspense fallback={<LazyLoadingFallback />}>
+                    <StorageLockerSignup />
                   </Suspense>
                 } />
                 {/* Pet Registration page */}

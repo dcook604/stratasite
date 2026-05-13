@@ -56,8 +56,14 @@ export const ACInquiry = lazy(() =>
   }))
 );
 
-export const StorageRental = lazy(() => 
+export const StorageRental = lazy(() =>
   import('@/pages/information/StorageRental').then(module => ({
+    default: module.default
+  }))
+);
+
+export const StorageLockerSignup = lazy(() =>
+  import('@/pages/information/StorageLockerSignup').then(module => ({
     default: module.default
   }))
 );

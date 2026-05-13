@@ -2380,6 +2380,218 @@ app.get('/api/storage-rentals', async (req, res) => {
   }
 });
 
+// ─── Storage Locker System ─────────────────────────────────────────────────
+
+const STORAGE_LOCKERS_SEED = [
+  { lockerNumber: '1',    location: 'P1 - Locker Room 27A',                  dimensions: "7'1\" × 3'7\" × 6'",  monthlyRent: 155 },
+  { lockerNumber: '2',    location: 'P1 - Locker Room 27A',                  dimensions: "7'1\" × 3'7\" × 6'",  monthlyRent: 155 },
+  { lockerNumber: '3',    location: 'P1 - Locker Room 27A',                  dimensions: "7'1\" × 3'7\" × 6'",  monthlyRent: 155 },
+  { lockerNumber: '4',    location: 'P1 - Locker Room 27A',                  dimensions: "2'8\" × 4'8\" × 6'",  monthlyRent: 85  },
+  { lockerNumber: '5',    location: 'P1 - Locker Room 27A',                  dimensions: "7'1\" × 3'7\" × 6'",  monthlyRent: 155 },
+  { lockerNumber: '6',    location: 'P1 - Locker Room 27A',                  dimensions: "7'1\" × 3'7\" × 6'",  monthlyRent: 155 },
+  { lockerNumber: '7',    location: 'P1 - Locker Room 27A',                  dimensions: "7'1\" × 3'7\" × 6'",  monthlyRent: 155 },
+  { lockerNumber: '8',    location: 'P1 - Locker Room 27A',                  dimensions: "3'1\" × 3'8\" × 6'",  monthlyRent: 105 },
+  { lockerNumber: '9',    location: 'P1 - Locker Room 27A',                  dimensions: "3'1\" × 3'8\" × 6'",  monthlyRent: 105 },
+  { lockerNumber: '10',   location: 'P1 - Locker Room 27A',                  dimensions: "3'1\" × 3'8\" × 6'",  monthlyRent: 105 },
+  { lockerNumber: '11',   location: 'P1 - Locker Room 27A',                  dimensions: "3'1\" × 3'8\" × 6'",  monthlyRent: 105 },
+  { lockerNumber: '12',   location: 'P1 - Locker Room 27A',                  dimensions: "3'1\" × 3'8\" × 6'",  monthlyRent: 105 },
+  { lockerNumber: '13',   location: 'P1 - Locker Room 27A',                  dimensions: "3'1\" × 3'8\" × 6'",  monthlyRent: 105 },
+  { lockerNumber: '14',   location: 'P1 - Locker Room 27A',                  dimensions: "3'1\" × 3'8\" × 6'",  monthlyRent: 105 },
+  { lockerNumber: '15',   location: 'P1 - Locker Room 27A',                  dimensions: "3'1\" × 3'8\" × 6'",  monthlyRent: 95  },
+  { lockerNumber: '16',   location: 'P1 - Locker Room 27A',                  dimensions: "7'6\" × 3'6\" × 6'",  monthlyRent: 95  },
+  { lockerNumber: '17',   location: 'P1 - Locker Room 27A',                  dimensions: "7'6\" × 3'6\" × 6'",  monthlyRent: 140 },
+  { lockerNumber: '18',   location: 'P1 - Locker Room 27A',                  dimensions: "7'6\" × 3'6\" × 6'",  monthlyRent: 155 },
+  { lockerNumber: '19',   location: 'P1 - Locker Room 27A',                  dimensions: "5'1\" × 4'2\" × 6'",  monthlyRent: 155 },
+  { lockerNumber: '20',   location: 'P1 - Locker Room 27A',                  dimensions: "7'8\" × 4'10\" × 6'", monthlyRent: 200 },
+  { lockerNumber: '116',  location: 'Locker Room #7 - Citadel Townhouse Hallway', dimensions: "7'5\" × 3'8\" × 6'",  monthlyRent: 160 },
+  { lockerNumber: '109A', location: 'Locker Room #7 - Citadel Townhouse Hallway', dimensions: "7'5\" × 3'1\" × 6'",  monthlyRent: 110, notes: 'Reduced space due to Vent' },
+  { lockerNumber: '110A', location: 'Locker Room #7 - Citadel Townhouse Hallway', dimensions: "7'5\" × 3'1\" × 6'",  monthlyRent: 110, notes: 'Reduced space due to Vent' },
+];
+
+const seedStorageLockers = async () => {
+  try {
+    const db = await getPrisma();
+    const count = await db.storageLocker.count();
+    if (count === 0) {
+      await db.storageLocker.createMany({ data: STORAGE_LOCKERS_SEED });
+      logger.info('Storage lockers seeded successfully');
+    }
+  } catch (error) {
+    logger.error('Failed to seed storage lockers', error);
+  }
+};
+
+// Seed lockers on startup
+seedStorageLockers();
+
+// Public: list all lockers with availability
+app.get('/api/storage-lockers', async (req, res) => {
+  try {
+    const db = await getPrisma();
+    const lockers = await db.storageLocker.findMany({
+      where: { isActive: true },
+      orderBy: [{ location: 'asc' }, { lockerNumber: 'asc' }]
+    });
+    res.json(lockers);
+  } catch (error) {
+    logger.error('Error fetching storage lockers', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Public: submit a storage locker application
+app.post('/api/storage-locker-application', async (req, res) => {
+  try {
+    const db = await getPrisma();
+    const { lockerId, firstName, lastName, address, unitNumber, telephone, email, consentGiven, turnstileToken } = req.body;
+
+    const isTurnstileValid = await verifyTurnstile(turnstileToken);
+    if (!isTurnstileValid) {
+      return res.status(400).json({ error: 'Invalid CAPTCHA. Please try again.' });
+    }
+
+    if (!lockerId || !firstName || !lastName || !address || !unitNumber || !telephone || !email || !consentGiven) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    if (consentGiven !== true) {
+      return res.status(400).json({ error: 'You must consent to be contacted by strata' });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email address' });
+    }
+
+    const locker = await db.storageLocker.findUnique({ where: { id: lockerId } });
+    if (!locker) {
+      return res.status(404).json({ error: 'Locker not found' });
+    }
+    if (locker.status === 'ASSIGNED') {
+      return res.status(409).json({ error: 'This locker has already been assigned. Please select another.' });
+    }
+
+    const applicationId = `SLA-${Date.now()}`;
+    const application = await db.storageLockerApplication.create({
+      data: { applicationId, lockerId, firstName, lastName, address, unitNumber, telephone, email, consentGiven }
+    });
+
+    const { sendDynamicFormEmail, sendFormEmailFallback } = await import('./server/utils/dynamicEmailService.js');
+    try {
+      const result = await sendDynamicFormEmail('storage-locker-application', {
+        applicationId,
+        lockerNumber: locker.lockerNumber,
+        location: locker.location,
+        dimensions: locker.dimensions,
+        monthlyRent: locker.monthlyRent,
+        firstName, lastName, address, unitNumber, telephone, email
+      });
+      if (result.success) {
+        await db.storageLockerApplication.update({ where: { id: application.id }, data: { emailSent: true } });
+      }
+    } catch (emailError) {
+      logger.error('Failed to send storage locker application email', emailError);
+    }
+
+    res.status(201).json({ success: true, applicationId, message: 'Application submitted successfully' });
+  } catch (error) {
+    logger.error('Error processing storage locker application', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin: list all applications
+app.get('/api/storage-locker-applications', async (req, res) => {
+  try {
+    const db = await getPrisma();
+    const applications = await db.storageLockerApplication.findMany({
+      where: { isActive: true },
+      include: { locker: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(applications);
+  } catch (error) {
+    logger.error('Error fetching storage locker applications', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin: update application status
+app.patch('/api/storage-locker-applications/:id', async (req, res) => {
+  try {
+    const db = await getPrisma();
+    const { id } = req.params;
+    const { status, adminNotes } = req.body;
+
+    if (status && !['PENDING', 'APPROVED', 'REJECTED'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    const application = await db.storageLockerApplication.findUnique({ where: { id } });
+    if (!application) return res.status(404).json({ error: 'Application not found' });
+
+    const updated = await db.storageLockerApplication.update({
+      where: { id },
+      data: { ...(status && { status }), ...(adminNotes !== undefined && { adminNotes }) },
+      include: { locker: true }
+    });
+
+    if (status === 'APPROVED') {
+      await db.storageLocker.update({ where: { id: application.lockerId }, data: { status: 'ASSIGNED' } });
+      // Reject all other PENDING applications for the same locker
+      await db.storageLockerApplication.updateMany({
+        where: { lockerId: application.lockerId, id: { not: id }, status: 'PENDING', isActive: true },
+        data: { status: 'REJECTED' }
+      });
+    } else if (status === 'REJECTED' || status === 'PENDING') {
+      // If reverting an approval, check if any other approved app exists for this locker
+      const otherApproved = await db.storageLockerApplication.findFirst({
+        where: { lockerId: application.lockerId, id: { not: id }, status: 'APPROVED', isActive: true }
+      });
+      if (!otherApproved) {
+        await db.storageLocker.update({ where: { id: application.lockerId }, data: { status: 'AVAILABLE' } });
+      }
+    }
+
+    res.json(updated);
+  } catch (error) {
+    logger.error('Error updating storage locker application', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin: delete application (soft)
+app.delete('/api/storage-locker-applications/:id', async (req, res) => {
+  try {
+    const db = await getPrisma();
+    const { id } = req.params;
+    await db.storageLockerApplication.update({ where: { id }, data: { isActive: false } });
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Error deleting storage locker application', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Public: check if email/unit is on old storage-rental waiting list
+app.get('/api/storage-waitlist-check', async (req, res) => {
+  try {
+    const db = await getPrisma();
+    const { email, unitNumber } = req.query;
+    if (!email && !unitNumber) return res.json({ onWaitlist: false });
+    const where = {};
+    if (email) where.email = { equals: email, mode: 'insensitive' };
+    else if (unitNumber) where.unitNumber = unitNumber;
+    const existing = await db.storageRental.findFirst({ where: { ...where, isActive: true } });
+    res.json({ onWaitlist: !!existing, record: existing ? { firstName: existing.firstName, lastName: existing.lastName, unitNumber: existing.unitNumber } : null });
+  } catch (error) {
+    logger.error('Error checking storage waitlist', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ─── End Storage Locker System ─────────────────────────────────────────────
+
 // Update an event request status (for admin)
 app.put('/api/event-requests/:id', async (req, res) => {
   const { id } = req.params;

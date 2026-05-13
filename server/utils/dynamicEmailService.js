@@ -563,6 +563,48 @@ const emailTemplates = {
         <p><em>Form completed electronically on ${new Date().toLocaleString()}</em></p>
       `
     };
+  },
+
+  'storage-locker-application': (data) => {
+    const { applicationId, lockerNumber, location, dimensions, monthlyRent, firstName, lastName, address, unitNumber, telephone, email } = data;
+    return {
+      subject: `New Storage Locker Application – Locker #${lockerNumber} (Unit ${unitNumber})`,
+      html: `
+        <h2>New Storage Locker Application Submitted</h2>
+
+        <h3>Selected Locker:</h3>
+        <ul>
+          <li><strong>Application ID:</strong> ${applicationId}</li>
+          <li><strong>Locker #:</strong> ${lockerNumber}</li>
+          <li><strong>Location:</strong> ${location}</li>
+          <li><strong>Dimensions:</strong> ${dimensions}</li>
+          <li><strong>Monthly Rent:</strong> $${monthlyRent}/month</li>
+        </ul>
+
+        <h3>Applicant Information:</h3>
+        <ul>
+          <li><strong>Name:</strong> ${firstName} ${lastName}</li>
+          <li><strong>Unit Number:</strong> ${unitNumber}</li>
+          <li><strong>Address:</strong> ${address}</li>
+          <li><strong>Telephone:</strong> ${telephone}</li>
+          <li><strong>Email:</strong> ${email}</li>
+        </ul>
+
+        <h3>Rental Terms Reminder:</h3>
+        <ul>
+          <li>$50 non-refundable admin fee applies</li>
+          <li>$50 refundable key fee applies</li>
+          <li>$300 refundable damage deposit payable upon signing</li>
+          <li>Rent due on the 1st of every month by EFT</li>
+          <li>Must sign Strata Rental Contract</li>
+          <li>10% discount for 12 months prepaid rent</li>
+        </ul>
+
+        <hr>
+        <p><strong>Consent given:</strong> Yes – Applicant has consented to be contacted by strata.</p>
+        <p><em>Submitted on ${new Date().toLocaleString()}</em></p>
+      `
+    };
   }
 };
 
@@ -599,6 +641,7 @@ const sendDynamicFormEmail = async (formName, formData) => {
           'scooter-registration': 'E-Scooter Registration',
           'ac-inquiry': 'AC Installation Inquiry',
           'storage-rental': 'Storage Rental Interest',
+          'storage-locker-application': 'Storage Locker Application',
           'emergency-contact': 'Emergency Contact Information',
           'pet-registration': 'Pet Registration',
           'contact': 'Contact Form',
