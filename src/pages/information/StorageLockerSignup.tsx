@@ -48,6 +48,7 @@ const formSchema = z.object({
   ),
   email: z.string().email('Please enter a valid email address'),
   onWaitingList: z.boolean(),
+  prepayYear: z.boolean(),
   consentGiven: z.boolean().refine((val) => val === true, {
     message: 'You must consent to be contacted by strata',
   }),
@@ -88,6 +89,7 @@ const StorageLockerSignup = () => {
       telephone: '',
       email: '',
       onWaitingList: false,
+      prepayYear: false,
       consentGiven: false,
     },
   });
@@ -359,6 +361,22 @@ const StorageLockerSignup = () => {
                       </FormLabel>
                       <FormDescription className="text-xs text-gray-500">
                         Check this if you submitted an interest form for storage rental before this signup page was available.
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )} />
+
+                <FormField control={form.control} name="prepayYear" render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 bg-green-50 border-green-200">
+                    <FormControl>
+                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="text-sm font-medium">
+                        I am interested in prepaying 12 months to receive the 10% discount
+                      </FormLabel>
+                      <FormDescription className="text-xs text-gray-500">
+                        Prepaying 12 months upfront qualifies you for a 10% discount on the monthly rate. Strata will include payment details when they contact you.
                       </FormDescription>
                     </div>
                   </FormItem>

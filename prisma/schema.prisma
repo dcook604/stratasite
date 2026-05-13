@@ -465,6 +465,7 @@ model StorageLockerApplication {
   email         String
   consentGiven  Boolean                        @map("consent_given")
   onWaitingList Boolean                        @default(false) @map("on_waiting_list")
+  prepayYear    Boolean                        @default(false) @map("prepay_year")
 
   status        StorageLockerApplicationStatus @default(PENDING)
   adminNotes    String?                        @map("admin_notes")

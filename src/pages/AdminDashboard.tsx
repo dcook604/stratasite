@@ -1602,6 +1602,7 @@ const AdminDashboard = () => {
                                     <p className="text-sm"><strong>Phone:</strong> {app.telephone}</p>
                                     <p className="text-sm"><strong>Email:</strong> {app.email}</p>
                                     <p className="text-sm"><strong>On Waiting List:</strong> {app.onWaitingList ? 'Yes' : 'No'}</p>
+                                    <p className="text-sm"><strong>Prepay 12 Months:</strong> {app.prepayYear ? 'Yes – wants 10% discount' : 'No'}</p>
                                   </div>
                                   <div>
                                     <h4 className="font-medium text-sm mb-1">Selected Locker</h4>

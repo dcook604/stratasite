@@ -2443,7 +2443,7 @@ app.get('/api/storage-lockers', async (req, res) => {
 app.post('/api/storage-locker-application', async (req, res) => {
   try {
     const db = await getPrisma();
-    const { lockerId, firstName, lastName, address, unitNumber, telephone, email, consentGiven, onWaitingList, turnstileToken } = req.body;
+    const { lockerId, firstName, lastName, address, unitNumber, telephone, email, consentGiven, onWaitingList, prepayYear, turnstileToken } = req.body;
 
     const isTurnstileValid = await verifyTurnstile(turnstileToken);
     if (!isTurnstileValid) {
@@ -2473,24 +2473,76 @@ app.post('/api/storage-locker-application', async (req, res) => {
 
     const applicationId = `SLA-${Date.now()}`;
     const application = await db.storageLockerApplication.create({
-      data: { applicationId, lockerId, firstName, lastName, address, unitNumber, telephone, email, consentGiven, onWaitingList: !!onWaitingList }
+      data: {
+        applicationId, lockerId, firstName, lastName, address, unitNumber,
+        telephone, email, consentGiven,
+        onWaitingList: !!onWaitingList,
+        prepayYear: !!prepayYear
+      }
     });
 
-    const { sendDynamicFormEmail, sendFormEmailFallback } = await import('./server/utils/dynamicEmailService.js');
+    const emailData = {
+      applicationId,
+      lockerNumber: locker.lockerNumber,
+      location: locker.location,
+      dimensions: locker.dimensions,
+      monthlyRent: locker.monthlyRent,
+      firstName, lastName, address, unitNumber, telephone, email,
+      onWaitingList: !!onWaitingList,
+      prepayYear: !!prepayYear
+    };
+
+    const { sendDynamicFormEmail } = await import('./server/utils/dynamicEmailService.js');
+
+    // Send admin notification (recipients configured in dashboard)
     try {
-      const result = await sendDynamicFormEmail('storage-locker-application', {
-        applicationId,
-        lockerNumber: locker.lockerNumber,
-        location: locker.location,
-        dimensions: locker.dimensions,
-        monthlyRent: locker.monthlyRent,
-        firstName, lastName, address, unitNumber, telephone, email, onWaitingList: !!onWaitingList
-      });
+      const result = await sendDynamicFormEmail('storage-locker-application', emailData);
       if (result.success) {
         await db.storageLockerApplication.update({ where: { id: application.id }, data: { emailSent: true } });
+        logger.info('Storage locker admin notification sent', { applicationId });
+      } else {
+        logger.warn('Storage locker admin notification failed', { error: result.error });
       }
     } catch (emailError) {
-      logger.error('Failed to send storage locker application email', emailError);
+      logger.error('Failed to send storage locker admin notification', emailError);
+    }
+
+    // Send applicant confirmation email directly
+    try {
+      const fromName = process.env.SMTP_FROM_NAME || 'Spectrum 4';
+      const fromAddress = process.env.SMTP_FROM || `${process.env.SMTP_USER}@spectrum4.ca`;
+      const discountNote = prepayYear
+        ? `<p>You indicated interest in prepaying 12 months for the <strong>10% discount</strong>. Our team will include details about this option when they contact you.</p>`
+        : '';
+      await transporter.sendMail({
+        from: `"${fromName}" <${fromAddress}>`,
+        to: email,
+        subject: `Storage Locker Application Received – Locker #${locker.lockerNumber} (${applicationId})`,
+        html: `
+          <p>Dear ${firstName} ${lastName},</p>
+          <p>Thank you for submitting your storage locker application. We have received your request and it is now under review.</p>
+          <h3>Your Application Summary</h3>
+          <ul>
+            <li><strong>Application ID:</strong> ${applicationId}</li>
+            <li><strong>Locker #:</strong> ${locker.lockerNumber}</li>
+            <li><strong>Location:</strong> ${locker.location}</li>
+            <li><strong>Dimensions:</strong> ${locker.dimensions}</li>
+            <li><strong>Monthly Rent:</strong> $${locker.monthlyRent}/month</li>
+          </ul>
+          ${discountNote}
+          <h3>What Happens Next</h3>
+          <p>Ascent Property Management and Strata Council will review your application. Requests are prioritized based on the current waiting list and submission date. You can expect a reply within <strong>24–48 hours</strong>.</p>
+          <p>If you have any questions in the meantime, please contact:</p>
+          <ul>
+            <li>Concierge: <a href="mailto:spectrumconcierge@rservice.ca">spectrumconcierge@rservice.ca</a></li>
+            <li>Ascent Property Management: <a href="mailto:bcs2611@ascentpm.com">bcs2611@ascentpm.com</a></li>
+          </ul>
+          <p>Thank you,<br>Spectrum 4 Strata BCS2611</p>
+        `
+      });
+      logger.info('Storage locker applicant confirmation sent', { applicationId, email });
+    } catch (confirmError) {
+      logger.error('Failed to send storage locker applicant confirmation', confirmError);
     }
 
     res.status(201).json({ success: true, applicationId, message: 'Application submitted successfully' });
@@ -2580,7 +2632,7 @@ app.get('/api/storage-waitlist-check', async (req, res) => {
     const { email, unitNumber } = req.query;
     if (!email && !unitNumber) return res.json({ onWaitlist: false });
     const where = {};
-    if (email) where.email = { equals: email, mode: 'insensitive' };
+    if (email) where.email = email;
     else if (unitNumber) where.unitNumber = unitNumber;
     const existing = await db.storageRental.findFirst({ where: { ...where, isActive: true } });
     res.json({ onWaitlist: !!existing, record: existing ? { firstName: existing.firstName, lastName: existing.lastName, unitNumber: existing.unitNumber } : null });

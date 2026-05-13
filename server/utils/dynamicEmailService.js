@@ -566,7 +566,7 @@ const emailTemplates = {
   },
 
   'storage-locker-application': (data) => {
-    const { applicationId, lockerNumber, location, dimensions, monthlyRent, firstName, lastName, address, unitNumber, telephone, email, onWaitingList } = data;
+    const { applicationId, lockerNumber, location, dimensions, monthlyRent, firstName, lastName, address, unitNumber, telephone, email, onWaitingList, prepayYear } = data;
     return {
       subject: `New Storage Locker Application – Locker #${lockerNumber} (Unit ${unitNumber})`,
       html: `
@@ -589,6 +589,7 @@ const emailTemplates = {
           <li><strong>Telephone:</strong> ${telephone}</li>
           <li><strong>Email:</strong> ${email}</li>
           <li><strong>Previously on waiting list:</strong> ${onWaitingList ? 'Yes' : 'No'}</li>
+          <li><strong>Interested in 12-month prepay (10% discount):</strong> ${prepayYear ? 'Yes' : 'No'}</li>
         </ul>
 
         <h3>Rental Terms Reminder:</h3>
@@ -649,6 +650,13 @@ const sendDynamicFormEmail = async (formName, formData) => {
           'marketplace': 'Marketplace Post',
           'incident-report': 'Incident Report'
         };
+        const defaultRecipientsByForm = {
+          'storage-locker-application': [
+            { email: 'spectrumconcierge@rservice.ca', name: 'Concierge', isPrimary: true, isActive: true },
+            { email: 'bcs2611@ascentpm.com', name: 'Ascent Property Management', isPrimary: false, isActive: true }
+          ]
+        };
+
         const created = await db.formConfiguration.create({
           data: {
             formName,
@@ -659,11 +667,15 @@ const sendDynamicFormEmail = async (formName, formData) => {
               subject: `New ${displayNameMap[formName] || formName} Submission`,
               fromName: process.env.SMTP_FROM_NAME || 'Spectrum 4',
               template: formName
-            }
-          }
+            },
+            ...(defaultRecipientsByForm[formName] && {
+              recipients: { create: defaultRecipientsByForm[formName] }
+            })
+          },
+          include: { recipients: true }
         });
         // Re-assign formConfig so downstream code uses the new config
-        formConfig = { ...created, recipients: [] };
+        formConfig = created;
         console.log(`Auto-created form configuration for: ${formName}`);
       } catch (createError) {
         // Ignore if creation fails (e.g., race condition where another request created it)
