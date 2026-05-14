@@ -70,7 +70,6 @@ const FormManagement = () => {
   const allWebsiteForms = [
     { formName: 'scooter-registration', displayName: 'E-Scooter Registration', description: 'Registration form for e-scooter storage in the parkade', path: '/scooter-registration' },
     { formName: 'ac-inquiry', displayName: 'AC Installation Inquiry', description: 'Inquiry form for air conditioning installation', path: '/ac-inquiry' },
-    { formName: 'storage-rental', displayName: 'Storage Rental Interest', description: 'Interest form for storage rental inquiries', path: '/storage-rental' },
     { formName: 'storage-locker-application', displayName: 'Storage Locker Application', description: 'Locker selection and signup form for residents', path: '/storage-locker-signup' },
     { formName: 'emergency-contact', displayName: 'Emergency Contact Information', description: 'Emergency contact information form for residents', path: '/emergency-contact' },
     { formName: 'pet-registration', displayName: 'Pet Registration', description: 'Pet registration form for residents', path: '/pet-registration' },

@@ -102,27 +102,6 @@ export function formatACInquiryForCSV(data: any[]): any[] {
 }
 
 /**
- * Format Storage Rental data for CSV export
- */
-export function formatStorageRentalForCSV(data: any[]): any[] {
-  return data.map(item => ({
-    'Rental ID': item.rentalId,
-    'First Name': item.firstName,
-    'Last Name': item.lastName,
-    'Full Name': `${item.firstName} ${item.lastName}`,
-    'Phone Number': item.phoneNumber,
-    'Email': item.email,
-    'Unit Number': item.unitNumber,
-    'Best Contact Method': item.bestContactMethod === 'EMAIL' ? 'Email' : 'Telephone',
-    'Interested in Information': item.interestedInInfo ? 'Yes' : 'No',
-    'Consent Given': item.consentGiven ? 'Yes' : 'No',
-    'Notes': item.notes || '',
-    'Submitted Date': new Date(item.createdAt).toLocaleDateString(),
-    'Status': item.isActive ? 'Active' : 'Inactive'
-  }));
-}
-
-/**
  * Format Pet Registration data for CSV export
  */
 export function formatPetRegistrationForCSV(data: any[]): any[] {
@@ -179,7 +158,7 @@ export function formatScooterRegistrationForCSV(data: any[]): any[] {
  */
 export function exportFormData(
   data: any[], 
-  formType: 'emergency-contact' | 'ac-inquiry' | 'storage-rental' | 'pet-registration' | 'scooter-registration',
+  formType: 'emergency-contact' | 'ac-inquiry' | 'pet-registration' | 'scooter-registration',
   options: CSVExportOptions = {}
 ): void {
   let formattedData: any[];
@@ -193,10 +172,6 @@ export function exportFormData(
     case 'ac-inquiry':
       formattedData = formatACInquiryForCSV(data);
       defaultFilename = `ac-inquiries-${new Date().toISOString().split('T')[0]}.csv`;
-      break;
-    case 'storage-rental':
-      formattedData = formatStorageRentalForCSV(data);
-      defaultFilename = `storage-rentals-${new Date().toISOString().split('T')[0]}.csv`;
       break;
     case 'pet-registration':
       formattedData = formatPetRegistrationForCSV(data);

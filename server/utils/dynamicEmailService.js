@@ -125,46 +125,6 @@ const emailTemplates = {
     };
   },
 
-  'storage-rental': (data) => {
-    const {
-      firstName, lastName, phoneNumber, email, unitNumber,
-      bestContactMethod, interestedInInfo, notes, rentalId
-    } = data;
-
-    const contactMethodDisplay = bestContactMethod === 'EMAIL' ? 'Email' : 'Telephone';
-
-    return {
-      subject: `New Storage Rental Interest - Unit ${unitNumber}`,
-      html: `
-        <h2>New Storage Rental Interest Submitted</h2>
-        
-        <h3>Contact Information:</h3>
-        <ul>
-          <li><strong>Rental ID:</strong> ${rentalId}</li>
-          <li><strong>Name:</strong> ${firstName} ${lastName}</li>
-          <li><strong>Unit Number:</strong> ${unitNumber}</li>
-          <li><strong>Phone Number:</strong> ${phoneNumber}</li>
-          <li><strong>Email Address:</strong> ${email}</li>
-          <li><strong>Preferred Contact Method:</strong> ${contactMethodDisplay}</li>
-        </ul>
-        
-        <h3>Interest Details:</h3>
-        <ul>
-          <li><strong>Interested in Information:</strong> ${interestedInInfo ? 'Yes' : 'No'}</li>
-          <li><strong>Consent Given:</strong> Yes - Customer has consented to receiving information</li>
-        </ul>
-        
-        ${notes ? `
-        <h3>Additional Notes:</h3>
-        <p>${notes}</p>
-        ` : ''}
-        
-        <hr>
-        <p><em>Submitted on ${new Date().toLocaleString()}</em></p>
-      `
-    };
-  },
-
   'emergency-contact': (data) => {
     const {
       unitNumber, strataLotNumber, registeredOwnerNames, ownerEmail,
@@ -642,7 +602,6 @@ const sendDynamicFormEmail = async (formName, formData) => {
           'form-k': 'Form K - Notice of Tenant\'s Responsibilities',
           'scooter-registration': 'E-Scooter Registration',
           'ac-inquiry': 'AC Installation Inquiry',
-          'storage-rental': 'Storage Rental Interest',
           'storage-locker-application': 'Storage Locker Application',
           'emergency-contact': 'Emergency Contact Information',
           'pet-registration': 'Pet Registration',

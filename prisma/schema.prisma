@@ -205,29 +205,6 @@ model ACInquiry {
   @@map("ac_inquiries")
 }
 
-model StorageRental {
-  id                    String        @id @default(cuid())
-  rentalId              String        @unique @map("rental_id") // SR-timestamp format
-  
-  // Form data
-  firstName             String        @map("first_name")
-  lastName              String        @map("last_name")
-  phoneNumber           String        @map("phone_number")
-  email                 String
-  unitNumber            String        @map("unit_number")
-  bestContactMethod     ContactMethod @map("best_contact_method")
-  interestedInInfo      Boolean       @map("interested_in_info") // Interest checkbox
-  consentGiven          Boolean       @map("consent_given") // Required consent checkbox
-  notes                 String?       // Optional notes/comments
-  
-  // Metadata
-  isActive              Boolean       @default(true) @map("is_active")
-  createdAt             DateTime      @default(now()) @map("created_at")
-  updatedAt             DateTime      @updatedAt @map("updated_at")
-  
-  @@map("storage_rentals")
-}
-
 enum PetOwnerOccupancyType {
   TENANT
   OWNER_OCCUPIED

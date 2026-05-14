@@ -34,23 +34,6 @@ const formConfigurations = [
     ]
   },
   {
-    formName: 'storage-rental',
-    displayName: 'Storage Rental Interest',
-    description: 'Interest form for storage rental inquiries',
-    isActive: true,
-    emailConfig: {
-      subject: 'New Storage Rental Interest - Unit {{unitNumber}}',
-      fromName: 'Spectrum 4 Storage Rental',
-      template: 'storage-rental'
-    },
-    recipients: [
-      { email: 'dcook@spectrum4.ca', name: 'David Cook', isPrimary: true, isActive: true },
-      { email: 'abrajlovic@ascentpm.com', name: 'Ascent PM', isPrimary: false, isActive: true },
-      { email: 'jennifer.danczak@spectrum4.ca', name: 'Jennifer Danczak', isPrimary: false, isActive: true },
-      { email: 'hercules@spectrum4.ca', name: 'Hercules', isPrimary: false, isActive: true }
-    ]
-  },
-  {
     formName: 'emergency-contact',
     displayName: 'Emergency Contact Information',
     description: 'Emergency contact information form for residents',

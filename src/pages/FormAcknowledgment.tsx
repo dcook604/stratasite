@@ -41,8 +41,6 @@ const FormAcknowledgment = () => {
         return '📞';
       case 'ac-inquiry':
         return '❄️';
-      case 'storage-rental':
-        return '📦';
       case 'contact':
         return '💬';
       case 'marketplace':
@@ -98,16 +96,6 @@ const FormAcknowledgment = () => {
             'Management will review your inquiry and contact you regarding next steps.',
             'Please ensure you have all required documentation ready.',
             'Keep this confirmation for your records.'
-          ]
-        };
-      case 'storage-rental':
-        return {
-          title: 'Storage Rental Interest Submitted Successfully!',
-          message: 'Your storage locker interest has been submitted and is being processed.',
-          nextSteps: [
-            'You will receive a confirmation email with your interest details.',
-            'Management will contact you regarding availability and pricing.',
-            'Please keep this confirmation for your records.'
           ]
         };
       case 'contact':

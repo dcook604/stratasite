@@ -156,37 +156,13 @@ export function formatACInquiryForExcel(data: Record<string, unknown>[]): Record
   }));
 }
 
-/**
- * Format Storage Rental data for Excel export
- */
-export function formatStorageRentalForExcel(data: Record<string, unknown>[]): Record<string, unknown>[] {
-  return data.map(item => ({
-    'Rental ID': item.rentalId,
-    'First Name': item.firstName,
-    'Last Name': item.lastName,
-    'Full Name': `${item.firstName} ${item.lastName}`,
-    'Phone Number': item.phoneNumber,
-    'Email Address': item.email,
-    'Unit Number': item.unitNumber,
-    'Best Contact Method': item.bestContactMethod === 'EMAIL' ? 'Email' : 'Telephone',
-    'Interested in Information': item.interestedInInfo ? 'Yes' : 'No',
-    'Consent Given': item.consentGiven ? 'Yes' : 'No',
-    'Notes': item.notes || 'N/A',
-    'Submitted Date': new Date(item.createdAt as string).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    }),
-    'Status': item.isActive ? 'Active' : 'Inactive'
-  }));
-}
 
 /**
  * Export form data as Excel
  */
 export async function exportFormDataAsExcel(
   data: Record<string, unknown>[],
-  formType: 'emergency-contact' | 'ac-inquiry' | 'storage-rental' | 'pet-registration' | 'scooter-registration',
+  formType: 'emergency-contact' | 'ac-inquiry' | 'pet-registration' | 'scooter-registration',
   options: ExcelExportOptions = {}
 ): Promise<void> {
   let formattedData: Record<string, unknown>[];
@@ -203,11 +179,6 @@ export async function exportFormDataAsExcel(
       formattedData = formatACInquiryForExcel(data);
       defaultFilename = `ac-inquiries-${new Date().toISOString().split('T')[0]}.xlsx`;
       defaultSheetName = 'AC Inquiries';
-      break;
-    case 'storage-rental':
-      formattedData = formatStorageRentalForExcel(data);
-      defaultFilename = `storage-rentals-${new Date().toISOString().split('T')[0]}.xlsx`;
-      defaultSheetName = 'Storage Rentals';
       break;
     case 'pet-registration':
       formattedData = formatPetRegistrationForExcel(data);
@@ -231,7 +202,7 @@ export async function exportFormDataAsExcel(
  */
 export async function exportMultipleFormsAsExcel(
   formsData: {
-    type: 'emergency-contact' | 'ac-inquiry' | 'storage-rental' | 'pet-registration' | 'scooter-registration';
+    type: 'emergency-contact' | 'ac-inquiry' | 'pet-registration' | 'scooter-registration';
     data: Record<string, unknown>[];
     sheetName?: string;
   }[],
@@ -251,10 +222,6 @@ export async function exportMultipleFormsAsExcel(
       case 'ac-inquiry':
         formattedData = formatACInquiryForExcel(data);
         defaultSheetName = 'AC Inquiries';
-        break;
-      case 'storage-rental':
-        formattedData = formatStorageRentalForExcel(data);
-        defaultSheetName = 'Storage Rentals';
         break;
       case 'pet-registration':
         formattedData = formatPetRegistrationForExcel(data);

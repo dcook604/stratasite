@@ -69,7 +69,6 @@ const AdminDashboard = () => {
   const [petRegistrations, setPetRegistrations] = useState([]);
   const [emergencyContacts, setEmergencyContacts] = useState([]);
   const [acInquiries, setACInquiries] = useState([]);
-  const [storageRentals, setStorageRentals] = useState([]);
   const [storageLockerApplications, setStorageLockerApplications] = useState([]);
   const [incidentReports, setIncidentReports] = useState([]);
 
@@ -137,7 +136,6 @@ const AdminDashboard = () => {
         petRegistrationsRes,
         emergencyContactsRes,
         acInquiriesRes,
-        storageRentalsRes,
         incidentReportsRes,
         storageLockerApplicationsRes
       ] = await Promise.all([
@@ -150,7 +148,6 @@ const AdminDashboard = () => {
         fetch('/api/pet-registrations').catch(err => err),
         fetch('/api/emergency-contacts').catch(err => err),
         fetch('/api/ac-inquiries').catch(err => err),
-        fetch('/api/storage-rentals').catch(err => err),
         fetch('/api/incident-reports').catch(err => err),
         fetch('/api/storage-locker-applications').catch(err => err)
       ]);
@@ -247,15 +244,6 @@ const AdminDashboard = () => {
         setACInquiries([]);
       }
 
-      // Handle storage rentals
-      if (storageRentalsRes instanceof Response && storageRentalsRes.ok) {
-        const storageRentalsData = await storageRentalsRes.json();
-        console.log('AdminDashboard: Storage rentals loaded:', storageRentalsData.length);
-        setStorageRentals(storageRentalsData);
-      } else {
-        console.error('AdminDashboard: Failed to load storage rentals:', storageRentalsRes);
-        setStorageRentals([]);
-      }
 
       // Handle incident reports
       if (incidentReportsRes instanceof Response && incidentReportsRes.ok) {
@@ -1765,34 +1753,6 @@ const AdminDashboard = () => {
                             </CardContent>
                           </Card>
 
-                          {/* Storage Rentals */}
-                          <Card>
-                            <CardHeader>
-                              <CardTitle className="text-lg">Storage Rentals</CardTitle>
-                              <CardDescription>{storageRentals.length} submissions</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="space-y-2">
-                                <Button
-                                  onClick={() => exportFormData(storageRentals, 'storage-rental')}
-                                  className="w-full"
-                                  variant="outline"
-                                >
-                                  <Download className="w-4 h-4 mr-2" />
-                                  Export CSV
-                                </Button>
-                                <Button
-                                  onClick={() => exportFormDataAsExcel(storageRentals, 'storage-rental')}
-                                  className="w-full"
-                                  variant="outline"
-                                >
-                                  <Download className="w-4 h-4 mr-2" />
-                                  Export Excel
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-
                           {/* Pet Registrations */}
                           <Card>
                             <CardHeader>
@@ -1918,41 +1878,6 @@ const AdminDashboard = () => {
                               {acInquiries.length > 5 && (
                                 <p className="text-sm text-gray-500 text-center">
                                   Showing 5 of {acInquiries.length} inquiries
-                                </p>
-                              )}
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-
-                      {/* Storage Rentals Details */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Storage Rentals</CardTitle>
-                          <CardDescription>Recent storage rental interests</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          {storageRentals.length === 0 ? (
-                            <p className="text-gray-500">No storage rental interests yet.</p>
-                          ) : (
-                            <div className="space-y-4 max-h-96 overflow-y-auto">
-                              {storageRentals.slice(0, 5).map((rental) => (
-                                <div key={rental.id} className="p-4 border rounded-lg bg-gray-50">
-                                  <div className="flex justify-between items-start mb-2">
-                                    <h4 className="font-semibold">Rental #{rental.rentalId}</h4>
-                                    <span className="text-sm text-gray-500">
-                                      {new Date(rental.createdAt).toLocaleDateString()}
-                                    </span>
-                                  </div>
-                                  <p className="text-sm"><strong>Name:</strong> {rental.firstName} {rental.lastName}</p>
-                                  <p className="text-sm"><strong>Unit:</strong> {rental.unitNumber}</p>
-                                  <p className="text-sm"><strong>Contact:</strong> {rental.bestContactMethod === 'EMAIL' ? 'Email' : 'Telephone'}</p>
-                                  <p className="text-sm"><strong>Interested:</strong> {rental.interestedInInfo ? 'Yes' : 'No'}</p>
-                                </div>
-                              ))}
-                              {storageRentals.length > 5 && (
-                                <p className="text-sm text-gray-500 text-center">
-                                  Showing 5 of {storageRentals.length} interests
                                 </p>
                               )}
                             </div>

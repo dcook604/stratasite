@@ -45,10 +45,6 @@ CREATE INDEX IF NOT EXISTS idx_emergency_contacts_active ON emergency_contacts(i
 CREATE INDEX IF NOT EXISTS idx_ac_inquiries_created_at ON ac_inquiries(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_ac_inquiries_active ON ac_inquiries(is_active);
 
--- Storage Rentals - admin management
-CREATE INDEX IF NOT EXISTS idx_storage_rentals_created_at ON storage_rentals(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_storage_rentals_active ON storage_rentals(is_active);
-
 -- Event Requests - admin processing
 CREATE INDEX IF NOT EXISTS idx_event_requests_status ON event_requests(status);
 CREATE INDEX IF NOT EXISTS idx_event_requests_created_at ON event_requests(created_at DESC);

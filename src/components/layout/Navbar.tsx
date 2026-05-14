@@ -32,7 +32,6 @@ export const Navbar = () => {
     { name: 'Scooter Registration', path: '/scooter-registration' },
     { name: 'Emergency Contact', path: '/emergency-contact' },
     { name: 'AC Inquiry', path: '/ac-inquiry' },
-    { name: 'Storage Rental', path: '/storage-rental' },
     { name: 'Storage Locker Signup', path: '/storage-locker-signup' },
     { name: 'Pet Registration', path: '/pet-registration' },
     { name: 'Form K', path: '/form-k' },

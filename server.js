@@ -1375,37 +1375,6 @@ const sendACInquiryEmail = async (inquiryData) => {
   }
 };
 
-// Function to send storage rental interest email (now using dynamic service)
-const sendStorageRentalEmail = async (rentalData) => {
-  const { sendDynamicFormEmail, sendFormEmailFallback } = await import('./server/utils/dynamicEmailService.js');
-  
-  try {
-    // Try dynamic email service first
-    const result = await sendDynamicFormEmail('storage-rental', rentalData);
-    
-    if (result.success) {
-      logger.info('Storage rental email sent successfully via dynamic service', { 
-        rentalId: rentalData.rentalId, 
-        recipients: result.recipients 
-      });
-      return true;
-    } else {
-      // Fallback to original method if dynamic service fails
-      logger.warn('Dynamic email service failed, using fallback', { error: result.error });
-      return await sendFormEmailFallback('storage-rental', rentalData);
-    }
-  } catch (error) {
-    logger.error('Failed to send storage rental email', error);
-    // Try fallback as last resort
-    try {
-      return await sendFormEmailFallback('storage-rental', rentalData);
-    } catch (fallbackError) {
-      logger.error('Fallback email sending also failed', fallbackError);
-      throw error;
-    }
-  }
-};
-
 // Function to send emergency contact email (now using dynamic service)
 const sendEmergencyContactEmail = async (emergencyData) => {
   const { sendDynamicFormEmail, sendFormEmailFallback } = await import('./server/utils/dynamicEmailService.js');
@@ -2285,101 +2254,6 @@ app.get('/api/ac-inquiries', async (req, res) => {
   }
 });
 
-// --- Storage Rental API Routes ---
-// Submit a new storage rental interest
-app.post('/api/storage-rental', async (req, res) => {
-  try {
-    const db = await getPrisma();
-    const {
-      firstName, lastName, phoneNumber, email, unitNumber, bestContactMethod,
-      interestedInInfo, consentGiven, notes, turnstileToken
-    } = req.body;
-
-    // Verify Turnstile CAPTCHA
-    const isTurnstileValid = await verifyTurnstile(turnstileToken);
-    if (!isTurnstileValid) {
-      return res.status(400).json({ error: 'Invalid CAPTCHA. Please try again.' });
-    }
-
-    // Basic validation
-    if (!firstName || !lastName || !phoneNumber || !email || !unitNumber || !bestContactMethod || !interestedInInfo || !consentGiven) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ error: 'Invalid email address' });
-    }
-
-    // Phone validation
-    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-    if (!phoneRegex.test(phoneNumber.replace(/[\s\-\(\)]/g, ''))) {
-      return res.status(400).json({ error: 'Invalid phone number' });
-    }
-
-    // Contact method validation
-    if (!['EMAIL', 'TELEPHONE'].includes(bestContactMethod)) {
-      return res.status(400).json({ error: 'Invalid contact method' });
-    }
-
-    // Interest validation
-    if (!interestedInInfo || interestedInInfo !== true) {
-      return res.status(400).json({ error: 'You must indicate interest to obtain more information' });
-    }
-
-    // Consent validation
-    if (!consentGiven || consentGiven !== true) {
-      return res.status(400).json({ error: 'You must consent to receiving information from Spectrum 4 BCS2611' });
-    }
-
-    // Generate rental ID
-    const rentalId = `SR-${Date.now()}`;
-
-    // Save to database
-    const storageRental = await db.storageRental.create({
-      data: {
-        rentalId,
-        firstName,
-        lastName,
-        phoneNumber,
-        email,
-        unitNumber,
-        bestContactMethod,
-        interestedInInfo,
-        consentGiven,
-        notes: notes || null
-      }
-    });
-
-    // Send success response
-    res.status(201).json({
-      success: true,
-      message: 'Storage rental interest submitted successfully',
-      rentalId
-    });
-
-  } catch (error) {
-    logger.error('Error processing storage rental interest', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Get all storage rental interests (for admin)
-app.get('/api/storage-rentals', async (req, res) => {
-  try {
-    const db = await getPrisma();
-    const rentals = await db.storageRental.findMany({
-      where: { isActive: true },
-      orderBy: { createdAt: 'desc' }
-    });
-    res.json(rentals);
-  } catch (error) {
-    logger.error('Error fetching storage rental interests', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
 // ─── Storage Locker System ─────────────────────────────────────────────────
 
 const STORAGE_LOCKERS_SEED = [
@@ -2626,20 +2500,9 @@ app.delete('/api/storage-locker-applications/:id', async (req, res) => {
 });
 
 // Public: check if email/unit is on old storage-rental waiting list
+// Note: old storage_rentals table has been removed; always returns false
 app.get('/api/storage-waitlist-check', async (req, res) => {
-  try {
-    const db = await getPrisma();
-    const { email, unitNumber } = req.query;
-    if (!email && !unitNumber) return res.json({ onWaitlist: false });
-    const where = {};
-    if (email) where.email = email;
-    else if (unitNumber) where.unitNumber = unitNumber;
-    const existing = await db.storageRental.findFirst({ where: { ...where, isActive: true } });
-    res.json({ onWaitlist: !!existing, record: existing ? { firstName: existing.firstName, lastName: existing.lastName, unitNumber: existing.unitNumber } : null });
-  } catch (error) {
-    logger.error('Error checking storage waitlist', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+  res.json({ onWaitlist: false, record: null });
 });
 
 // ─── End Storage Locker System ─────────────────────────────────────────────
@@ -3089,21 +2952,6 @@ app.get('/api/ac-inquiries', async (req, res) => {
     res.json(acInquiries);
   } catch (error) {
     logger.error('Error fetching AC inquiries:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Get all storage rentals (admin only)
-app.get('/api/storage-rentals', async (req, res) => {
-  try {
-    const db = await getPrisma();
-    const storageRentals = await db.storageRental.findMany({
-      where: { isActive: true },
-      orderBy: { createdAt: 'desc' }
-    });
-    res.json(storageRentals);
-  } catch (error) {
-    logger.error('Error fetching storage rentals:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
