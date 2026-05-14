@@ -38,16 +38,6 @@ export const formSubmissionLimiter = rateLimit({
   },
 });
 
-// Marketplace posting rate limiting
-export const marketplaceLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5, // Limit each IP to 5 marketplace posts per hour
-  message: {
-    error: 'You can only post 5 items per hour. Please try again later.',
-    retryAfter: '1 hour'
-  },
-});
-
 // File upload rate limiting
 export const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes

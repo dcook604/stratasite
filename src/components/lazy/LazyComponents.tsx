@@ -74,13 +74,6 @@ export const TenantSignature = lazy(() =>
   }))
 );
 
-// Marketplace - rich feature set, can be lazy loaded
-export const Marketplace = lazy(() => 
-  import('@/pages/information/Marketplace').then(module => ({
-    default: module.default
-  }))
-);
-
 // Documents page with file handling
 export const Documents = lazy(() => 
   import('@/pages/information/Documents').then(module => ({
@@ -142,5 +135,4 @@ export const preloadContentComponents = () => {
   Bylaws.preload?.();
   Documents.preload?.();
   WelcomePackage.preload?.();
-  Marketplace.preload?.();
 };

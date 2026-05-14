@@ -92,7 +92,6 @@ export const features = {
   enableRateLimiting: process.env.ENABLE_RATE_LIMITING !== 'false',
   enableEmailNotifications: process.env.ENABLE_EMAIL_NOTIFICATIONS !== 'false',
   enableFileUploads: process.env.ENABLE_FILE_UPLOADS !== 'false',
-  enableMarketplace: process.env.ENABLE_MARKETPLACE !== 'false',
   enableRegistrations: process.env.ENABLE_REGISTRATIONS !== 'false',
 };
 

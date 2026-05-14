@@ -1,16 +1,6 @@
 -- Database Performance Optimization for Spectrum 4
 -- Add these indexes to improve query performance
 
--- Marketplace Posts - frequently queried by date and status
-CREATE INDEX IF NOT EXISTS idx_marketplace_posts_created_at ON marketplace_posts(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_marketplace_posts_is_sold ON marketplace_posts(is_sold);
-CREATE INDEX IF NOT EXISTS idx_marketplace_posts_category ON marketplace_posts(category);
-CREATE INDEX IF NOT EXISTS idx_marketplace_posts_active_recent ON marketplace_posts(is_active, created_at DESC);
-
--- Marketplace Replies - queried by post
-CREATE INDEX IF NOT EXISTS idx_marketplace_replies_post_id ON marketplace_replies(post_id);
-CREATE INDEX IF NOT EXISTS idx_marketplace_replies_created_at ON marketplace_replies(created_at);
-
 -- Scooter Registrations - admin dashboard queries
 CREATE INDEX IF NOT EXISTS idx_scooter_registrations_status ON scooter_registrations(status);
 CREATE INDEX IF NOT EXISTS idx_scooter_registrations_created_at ON scooter_registrations(created_at DESC);
@@ -57,16 +47,9 @@ CREATE INDEX IF NOT EXISTS idx_form_config_name ON form_configurations(form_name
 CREATE INDEX IF NOT EXISTS idx_form_recipients_config ON form_email_recipients(form_config_id) WHERE is_active = true;
 
 -- Compound indexes for common queries
-CREATE INDEX IF NOT EXISTS idx_marketplace_active_sold_date ON marketplace_posts(is_active, is_sold, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_scooter_active_status_date ON scooter_registrations(is_active, status, created_at DESC);
 
--- Cleanup old data (run periodically)
--- DELETE FROM marketplace_posts WHERE created_at < date('now', '-2 years') AND is_sold = true;
--- DELETE FROM marketplace_replies WHERE created_at < date('now', '-2 years');
-
 -- Analyze tables for query optimization
-ANALYZE marketplace_posts;
-ANALYZE marketplace_replies;
 ANALYZE scooter_registrations;
 ANALYZE pet_registrations;
 ANALYZE events;

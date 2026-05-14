@@ -27,7 +27,6 @@ import {
   StorageLockerSignup,
   FormK,
   TenantSignature,
-  Marketplace,
   Documents,
   WelcomePackage,
   IncidentReport,
@@ -152,22 +151,11 @@ const App = () => (
                 } />
                 {/* Form Acknowledgment page */}
                 <Route path="/form-acknowledgment" element={<FormAcknowledgment />} />
-                {/* Interactive Marketplace */}
-                <Route path="/marketplace" element={
-                  <Suspense fallback={<LazyLoadingFallback />}>
-                    <Marketplace />
-                  </Suspense>
-                } />
                 {/* Legacy information routes - redirect to new slugs */}
                 <Route path="/information/recycling" element={<DynamicPage />} />
                 <Route path="/information/organics" element={<DynamicPage />} />
                 <Route path="/information/fees" element={<DynamicPage />} />
                 <Route path="/information/renovations" element={<DynamicPage />} />
-                <Route path="/information/marketplace" element={
-                  <Suspense fallback={<LazyLoadingFallback />}>
-                    <Marketplace />
-                  </Suspense>
-                } />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="/not-found" element={<NotFound />} />
                 <Route path="*" element={<NotFound />} />

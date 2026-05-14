@@ -212,33 +212,6 @@ Residents are welcome to submit photos of building events and amenities. Please 
 
 *Photo gallery content will be updated regularly with resident submissions and professional photography.*`
   },
-  {
-    slug: 'marketplace',
-    title: 'Strata Marketplace',
-    content: `# Strata Marketplace
-
-Connect with your neighbors through our online marketplace! Buy, sell, or trade items within our building community.
-
-## How It Works
-1. Browse current listings below
-2. Contact sellers directly using the provided information
-3. Arrange pickup/delivery within the building
-4. Complete transactions safely and securely
-
-## Posting Guidelines
-- Items must be legal and appropriate for our community
-- Include clear descriptions and fair pricing
-- Provide accurate contact information
-- Remove listings once items are sold
-
-## Safety Tips
-- Meet in common areas when possible
-- Bring a friend for valuable item exchanges
-- Use cash or verified payment methods
-- Trust your instincts
-
-*The interactive marketplace feature allows residents to post and browse listings. Access the full marketplace functionality through the main navigation.*`
-  }
 ];
 
 async function main() {

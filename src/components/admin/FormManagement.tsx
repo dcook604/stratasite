@@ -75,7 +75,6 @@ const FormManagement = () => {
     { formName: 'pet-registration', displayName: 'Pet Registration', description: 'Pet registration form for residents', path: '/pet-registration' },
     { formName: 'form-k', displayName: 'Form K - Notice of Tenant\'s Responsibilities', description: 'Strata Property Act Form K for tenant notification', path: '/form-k' },
     { formName: 'contact', displayName: 'Contact Form', description: 'General contact form for inquiries', path: '/contact' },
-    { formName: 'marketplace', displayName: 'Marketplace Post', description: 'Marketplace item posting form', path: '/marketplace' },
     { formName: 'incident-report', displayName: 'Incident Report', description: 'Report incidents occurring on the strata property', path: '/incident-report' },
   ];
 

@@ -606,7 +606,6 @@ const sendDynamicFormEmail = async (formName, formData) => {
           'emergency-contact': 'Emergency Contact Information',
           'pet-registration': 'Pet Registration',
           'contact': 'Contact Form',
-          'marketplace': 'Marketplace Post',
           'incident-report': 'Incident Report'
         };
         const defaultRecipientsByForm = {

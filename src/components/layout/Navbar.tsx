@@ -66,13 +66,6 @@ export const Navbar = () => {
               </Button>
 
               <Button variant="ghost" className="text-gray-700 hover:text-primary" asChild>
-                <Link to="/marketplace" className="flex items-center">
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  Marketplace
-                </Link>
-              </Button>
-
-              <Button variant="ghost" className="text-gray-700 hover:text-primary" asChild>
                 <Link to="/contact" className="flex items-center">
                   <Mail className="h-4 w-4 mr-2" />
                   Contact
@@ -182,15 +175,6 @@ export const Navbar = () => {
           >
             <Book className="h-4 w-4 mr-2" />
             Bylaws
-          </Link>
-
-          <Link
-            to="/marketplace"
-            className="flex items-center text-gray-700 hover:bg-gray-100 hover:text-primary px-3 py-2 rounded-md text-base font-medium"
-            onClick={() => setIsMenuOpen(false)}
-          >
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            Marketplace
           </Link>
 
           <Link

@@ -50,21 +50,6 @@ export const generateMockPetRegistration = (overrides = {}) => ({
   ...overrides
 });
 
-export const generateMockMarketplacePost = (overrides = {}) => ({
-  id: `test-${Date.now()}`,
-  title: 'Test Item for Sale',
-  description: 'This is a test marketplace item.',
-  price: 25.50,
-  authorName: 'Test User',
-  authorEmail: 'test@example.com',
-  authorPhone: '604-555-0000',
-  images: [],
-  isSold: false,
-  createdAt: new Date().toISOString(),
-  replies: [],
-  ...overrides
-});
-
 // API testing helpers
 export const apiTestHelpers = {
   // Test if API endpoint is responsive
@@ -106,11 +91,6 @@ export const apiTestHelpers = {
     return this.testEndpoint('pet-registration', 'POST', mockData);
   },
 
-  // Test marketplace functionality
-  async testMarketplacePost() {
-    const mockData = generateMockMarketplacePost();
-    return this.testEndpoint('marketplace/posts', 'POST', mockData);
-  }
 };
 
 // UI testing helpers

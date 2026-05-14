@@ -43,8 +43,6 @@ const FormAcknowledgment = () => {
         return '❄️';
       case 'contact':
         return '💬';
-      case 'marketplace':
-        return '🛒';
       case 'event-request':
         return '📅';
       default:
@@ -105,17 +103,6 @@ const FormAcknowledgment = () => {
           nextSteps: [
             'You will receive a confirmation email shortly.',
             'Our team will review your message and respond within 2 business days.',
-            'Keep this confirmation for your records.'
-          ]
-        };
-      case 'marketplace':
-        return {
-          title: 'Marketplace Post Submitted Successfully!',
-          message: 'Your marketplace item has been posted and is now visible to residents.',
-          nextSteps: [
-            'Your item is now live on the marketplace.',
-            'Residents can contact you directly about your item.',
-            'You can manage your posting through the marketplace.',
             'Keep this confirmation for your records.'
           ]
         };

@@ -6,7 +6,7 @@ import Footer from '@/components/layout/Footer';
 import RecentAnnouncements from '@/components/widgets/RecentAnnouncements';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Image, Book, Mail, Edit, Save, X, ShoppingCart, Loader2, Paintbrush, Wind, Hammer } from 'lucide-react';
+import { Image, Book, Mail, Edit, Save, X, Loader2, Paintbrush, Wind, Hammer } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -349,21 +349,6 @@ Use our platform to stay updated on events, announcements, and community activit
             {/* Feature Cards */}
             <section className="strata-section">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <Card className="bg-gradient-to-br from-green-50 to-green-100 border-none shadow-md">
-                  <CardContent className="p-6 flex flex-col items-center text-center">
-                    <div className="h-12 w-12 bg-green-500 rounded-full flex items-center justify-center mb-4">
-                      <ShoppingCart className="h-6 w-6 text-white" />
-                    </div>
-                    <h3 className="font-semibold text-lg mb-2">Strata Marketplace</h3>
-                    <p className="text-gray-600 mb-4">
-                      Buy, sell, or trade items with others in the community.
-                    </p>
-                    <Button variant="ghost" asChild className="mt-auto">
-                      <Link to="/marketplace">Visit Marketplace</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-                
                 <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-none shadow-md">
                   <CardContent className="p-6 flex flex-col items-center text-center">
                     <div className="h-12 w-12 bg-amber-500 rounded-full flex items-center justify-center mb-4">

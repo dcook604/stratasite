@@ -13,10 +13,9 @@ import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { RequireAdminAuth } from '@/components/hoc/RequireAdminAuth';
-import { Plus, Trash2, Edit2, Users, FileText, Megaphone, ShoppingCart, Save, X, Database, AlertTriangle, CheckCircle, Zap, PawPrint, Download, ClipboardList, Settings, ShieldAlert, Package, Lock } from 'lucide-react';
+import { Plus, Trash2, Edit2, Users, FileText, Megaphone, Save, X, Database, AlertTriangle, CheckCircle, Zap, PawPrint, Download, ClipboardList, Settings, ShieldAlert, Package, Lock, PanelLeft } from 'lucide-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { cleanupMarketplaceData, getCleanupPreview, formatCleanupStats, CleanupOptions } from '@/utils/databaseCleanup';
 import ChangePasswordDialog from '@/components/shared/ChangePasswordDialog';
 import { exportFormData } from '@/utils/csvExport';
 import { exportFormDataAsExcel } from '@/utils/excelExport';
@@ -34,6 +33,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
+  useSidebar,
 } from '@/components/ui/sidebar';
 
 const sectionTitles: Record<string, string> = {
@@ -45,24 +45,22 @@ const sectionTitles: Record<string, string> = {
   'pet-registrations': 'Pet Registrations',
   'storage-lockers': 'Storage Locker Applications',
   'form-submissions': 'Form Submissions',
-  marketplace: 'Marketplace',
   'form-management': 'Form Email Config',
   'form-k-cleanup': 'Form K Management',
   users: 'Admin Users',
-  cleanup: 'DB Cleanup',
 };
 
 const AdminDashboard = () => {
   const { adminUser, logout } = useAdminAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { toggleSidebar } = useSidebar();
 
   const [activeSection, setActiveSection] = React.useState('announcements');
 
   const [announcements, setAnnouncements] = useState([]);
   const [pages, setPages] = useState([]);
   const [adminUsers, setAdminUsers] = useState([]);
-  const [marketplacePosts, setMarketplacePosts] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [scooterRegistrations, setScooterRegistrations] = useState([]);
@@ -106,17 +104,6 @@ const AdminDashboard = () => {
     setDeleteConfirm({ open: true, message, onConfirm });
   };
 
-  // Cleanup state
-  const [cleanupOptions, setCleanupOptions] = useState<CleanupOptions>({
-    deleteOlderThanDays: 90,
-    deleteSoldItems: false,
-    deleteInactivePosts: true,
-    deleteOrphanedImages: true,
-    dryRun: false
-  });
-  const [cleanupPreview, setCleanupPreview] = useState(null);
-  const [cleanupInProgress, setCleanupInProgress] = useState(false);
-
   const handleLogout = async () => {
     await logout();
     navigate('/');
@@ -130,7 +117,6 @@ const AdminDashboard = () => {
       const [
         announcementsRes,
         pagesRes,
-        marketplaceRes,
         adminUsersRes,
         documentsRes,
         scooterRegistrationsRes,
@@ -143,7 +129,6 @@ const AdminDashboard = () => {
       ] = await Promise.all([
         fetch('/api/announcements').catch(err => err),
         fetch('/api/pages').catch(err => err),
-        fetch('/api/marketplace').catch(err => err),
         fetch('/api/admin/users').catch(err => err),
         fetch('/api/documents').catch(err => err),
         fetch('/api/scooter-registrations').catch(err => err),
@@ -175,16 +160,6 @@ const AdminDashboard = () => {
       } else {
         console.error('AdminDashboard: Failed to load pages:', pagesRes);
         setPages([]);
-      }
-
-      // Handle marketplace
-      if (marketplaceRes instanceof Response && marketplaceRes.ok) {
-        const marketplaceData = await marketplaceRes.json();
-        console.log('AdminDashboard: Marketplace posts loaded:', marketplaceData.length);
-        setMarketplacePosts(marketplaceData);
-      } else {
-        console.error('AdminDashboard: Failed to load marketplace posts:', marketplaceRes);
-        setMarketplacePosts([]);
       }
 
       // Handle admin users
@@ -538,47 +513,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Cleanup functions
-  const handleCleanupPreview = async () => {
-    try {
-      setCleanupInProgress(true);
-      const preview = await getCleanupPreview(cleanupOptions);
-      setCleanupPreview(preview);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to generate cleanup preview",
-        variant: "destructive"
-      });
-    } finally {
-      setCleanupInProgress(false);
-    }
-  };
-
-  const handleCleanupExecute = async () => {
-    try {
-      setCleanupInProgress(true);
-      const result = await cleanupMarketplaceData({ ...cleanupOptions, dryRun: false });
-
-      toast({
-        title: "Cleanup Complete",
-        description: formatCleanupStats(result)
-      });
-
-      // Refresh marketplace data
-      fetchData();
-      setCleanupPreview(null);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to execute cleanup",
-        variant: "destructive"
-      });
-    } finally {
-      setCleanupInProgress(false);
-    }
-  };
-
   const onPasswordChanged = () => {
     // For enhanced security, you might want to force a re-login.
     // For now, we just give a notification.
@@ -774,21 +708,6 @@ const AdminDashboard = () => {
                 </SidebarGroupContent>
               </SidebarGroup>
 
-              {/* Marketplace group */}
-              <SidebarGroup>
-                <SidebarGroupLabel>Marketplace</SidebarGroupLabel>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton isActive={activeSection === 'marketplace'} onClick={() => setActiveSection('marketplace')}>
-                        <ShoppingCart className="w-4 h-4" />
-                        <span>Marketplace</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-
               {/* Settings group */}
               <SidebarGroup>
                 <SidebarGroupLabel>Settings</SidebarGroupLabel>
@@ -812,12 +731,6 @@ const AdminDashboard = () => {
                         <span>Admin Users</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton isActive={activeSection === 'cleanup'} onClick={() => setActiveSection('cleanup')}>
-                        <Trash2 className="w-4 h-4" />
-                        <span>DB Cleanup</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
                   </SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>
@@ -830,7 +743,15 @@ const AdminDashboard = () => {
             <div className="flex-1 p-4 sm:p-6 overflow-auto">
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-3">
-                  <SidebarTrigger className="md:hidden" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="md:hidden flex items-center gap-1.5"
+                    onClick={toggleSidebar}
+                  >
+                    <PanelLeft className="h-4 w-4" />
+                    <span>Menu</span>
+                  </Button>
                   <h1 className="text-2xl font-bold">{sectionTitles[activeSection]}</h1>
                 </div>
                 <Button variant="outline" onClick={handleLogout}>Log Out</Button>
@@ -2001,82 +1922,6 @@ const AdminDashboard = () => {
                   </div>
                 )}
 
-                {activeSection === 'marketplace' && (
-                  <div className="space-y-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Marketplace Management</CardTitle>
-                        <CardDescription>Manage user-posted marketplace items</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        {marketplacePosts.length === 0 ? (
-                          <p className="text-gray-500">No marketplace posts yet.</p>
-                        ) : (
-                          <div className="space-y-4">
-                            {marketplacePosts.map((post) => (
-                              <div key={post.id} className="p-4 border rounded">
-                                <div className="flex justify-between items-start">
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <h3 className="font-semibold">{post.title}</h3>
-                                      <span className={`px-2 py-1 text-xs rounded ${
-                                        post.type === 'sell' ? 'bg-green-100 text-green-800' :
-                                        post.type === 'buy' ? 'bg-blue-100 text-blue-800' :
-                                        'bg-purple-100 text-purple-800'
-                                      }`}>
-                                        {post.type.charAt(0).toUpperCase() + post.type.slice(1)}
-                                      </span>
-                                      {post.category && (
-                                        <span className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded">
-                                          {post.category}
-                                        </span>
-                                      )}
-                                      {post.price && (
-                                        <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">
-                                          ${post.price}
-                                        </span>
-                                      )}
-                                    </div>
-                                    <p className="text-gray-600 mb-2">{post.description}</p>
-                                    <div className="text-sm text-gray-500">
-                                      <p>Posted by: {post.authorName} ({post.authorEmail})</p>
-                                      <p>Date: {new Date(post.createdAt).toLocaleDateString()}</p>
-                                      {post.replies && post.replies.length > 0 && (
-                                        <p>Replies: {post.replies.length}</p>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() => deleteItem('marketplace', post.id)}
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </div>
-
-                                {post.replies && post.replies.length > 0 && (
-                                  <div className="mt-4 pl-4 border-l-2 border-gray-200">
-                                    <h4 className="font-medium text-sm mb-2">Replies:</h4>
-                                    {post.replies.map((reply) => (
-                                      <div key={reply.id} className="mb-2 p-2 bg-gray-50 rounded text-sm">
-                                        <p>{reply.content}</p>
-                                        <p className="text-xs text-gray-500 mt-1">
-                                          {reply.authorName} - {new Date(reply.createdAt).toLocaleDateString()}
-                                        </p>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
-
                 {activeSection === 'form-management' && (
                   <div className="space-y-6">
                     <FormManagement />
@@ -2396,86 +2241,6 @@ const AdminDashboard = () => {
                             ))}
                           </div>
                         )}
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
-
-                {activeSection === 'cleanup' && (
-                  <div className="space-y-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Cleanup Options</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <form onSubmit={handleCleanupPreview} className="space-y-4">
-                          <div>
-                            <Label htmlFor="delete-older-than-days">Delete items older than (days)</Label>
-                            <Input
-                              id="delete-older-than-days"
-                              type="number"
-                              value={cleanupOptions.deleteOlderThanDays}
-                              onChange={(e) => setCleanupOptions({...cleanupOptions, deleteOlderThanDays: Number(e.target.value)})}
-                              required
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="delete-sold-items">Delete sold items</Label>
-                            <Checkbox
-                              id="delete-sold-items"
-                              checked={cleanupOptions.deleteSoldItems}
-                              onCheckedChange={(value) => setCleanupOptions({...cleanupOptions, deleteSoldItems: !!value})}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="delete-inactive-posts">Delete inactive posts</Label>
-                            <Checkbox
-                              id="delete-inactive-posts"
-                              checked={cleanupOptions.deleteInactivePosts}
-                              onCheckedChange={(value) => setCleanupOptions({...cleanupOptions, deleteInactivePosts: !!value})}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="delete-orphaned-images">Delete orphaned images</Label>
-                            <Checkbox
-                              id="delete-orphaned-images"
-                              checked={cleanupOptions.deleteOrphanedImages}
-                              onCheckedChange={(value) => setCleanupOptions({...cleanupOptions, deleteOrphanedImages: !!value})}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="dry-run">Dry Run</Label>
-                            <Checkbox
-                              id="dry-run"
-                              checked={cleanupOptions.dryRun}
-                              onCheckedChange={(value) => setCleanupOptions({...cleanupOptions, dryRun: !!value})}
-                            />
-                          </div>
-                          <Button type="submit">Preview Cleanup</Button>
-                        </form>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Cleanup Preview</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {cleanupPreview && (
-                          <div className="space-y-4">
-                            <p>Items to be deleted: {cleanupPreview.itemsToDelete}</p>
-                            <p>Items to be kept: {cleanupPreview.itemsToKeep}</p>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Execute Cleanup</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <Button onClick={handleCleanupExecute}>Execute Cleanup</Button>
                       </CardContent>
                     </Card>
                   </div>

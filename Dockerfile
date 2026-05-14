@@ -67,7 +67,7 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma/
 COPY --from=builder /app/public/documents ./public/documents/
 
 # Create data directories for persistence
-RUN mkdir -p /app/data/uploads/documents /app/data/uploads/marketplace /app/public/uploads
+RUN mkdir -p /app/data/uploads/documents /app/public/uploads
 
 # Set production environment variables
 ENV NODE_ENV=production
