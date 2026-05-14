@@ -20,6 +20,9 @@ RUN npm install --legacy-peer-deps --include=dev --no-audit && npm cache clean -
 # Copy all source files
 COPY . .
 
+# Set DATABASE_URL for Prisma 7 config (prisma generate only needs the env var set, doesn't connect)
+ENV DATABASE_URL="file:/app/data/database.db"
+
 # Generate Prisma client
 RUN npm run db:generate
 
