@@ -70,6 +70,7 @@ const AdminDashboard = () => {
   const [emergencyContacts, setEmergencyContacts] = useState([]);
   const [acInquiries, setACInquiries] = useState([]);
   const [storageLockerApplications, setStorageLockerApplications] = useState([]);
+  const [allLockers, setAllLockers] = useState<any[]>([]);
   const [incidentReports, setIncidentReports] = useState([]);
 
   // Form K cleanup states
@@ -137,7 +138,8 @@ const AdminDashboard = () => {
         emergencyContactsRes,
         acInquiriesRes,
         incidentReportsRes,
-        storageLockerApplicationsRes
+        storageLockerApplicationsRes,
+        allLockersRes
       ] = await Promise.all([
         fetch('/api/announcements').catch(err => err),
         fetch('/api/pages').catch(err => err),
@@ -149,7 +151,8 @@ const AdminDashboard = () => {
         fetch('/api/emergency-contacts').catch(err => err),
         fetch('/api/ac-inquiries').catch(err => err),
         fetch('/api/incident-reports').catch(err => err),
-        fetch('/api/storage-locker-applications').catch(err => err)
+        fetch('/api/storage-locker-applications').catch(err => err),
+        fetch('/api/storage-lockers').catch(err => err)
       ]);
 
       console.log('AdminDashboard: API responses received');
@@ -261,6 +264,11 @@ const AdminDashboard = () => {
         setStorageLockerApplications(data);
       } else {
         setStorageLockerApplications([]);
+      }
+
+      // Handle all lockers (for reassignment dropdown)
+      if (allLockersRes instanceof Response && allLockersRes.ok) {
+        setAllLockers(await allLockersRes.json());
       }
     } catch (error) {
       console.error('AdminDashboard: Error fetching data:', error);
@@ -1620,7 +1628,7 @@ const AdminDashboard = () => {
                                     <p className="text-sm"><strong>Prepay 12 Months:</strong> {app.prepayYear ? 'Yes – wants 10% discount' : 'No'}</p>
                                   </div>
                                   <div>
-                                    <h4 className="font-medium text-sm mb-1">Selected Locker</h4>
+                                    <h4 className="font-medium text-sm mb-1">Assigned Locker</h4>
                                     {app.locker ? (
                                       <>
                                         <p className="text-sm"><strong>Locker #:</strong> {app.locker.lockerNumber}</p>
@@ -1629,13 +1637,55 @@ const AdminDashboard = () => {
                                         <p className="text-sm"><strong>Rent:</strong> ${app.locker.monthlyRent}/month</p>
                                         <p className="text-sm">
                                           <strong>Locker Status:</strong>{' '}
-                                          <span className={app.locker.status === 'ASSIGNED' ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}>
+                                          <span className={
+                                            app.locker.status === 'ASSIGNED' ? 'text-red-600 font-medium' :
+                                            app.locker.status === 'PENDING' ? 'text-yellow-600 font-medium' :
+                                            'text-green-600 font-medium'
+                                          }>
                                             {app.locker.status}
                                           </span>
                                         </p>
                                         {app.locker.notes && <p className="text-xs text-amber-600">{app.locker.notes}</p>}
                                       </>
                                     ) : <p className="text-sm text-gray-400">Locker data unavailable</p>}
+                                    <div className="mt-2">
+                                      <label className="text-xs text-gray-500 block mb-1">Reassign locker:</label>
+                                      <select
+                                        defaultValue=""
+                                        onChange={async (e) => {
+                                          if (!e.target.value) return;
+                                          const newId = e.target.value;
+                                          e.target.value = '';
+                                          try {
+                                            const r = await fetch(`/api/storage-locker-applications/${app.id}`, {
+                                              method: 'PATCH',
+                                              headers: { 'Content-Type': 'application/json' },
+                                              body: JSON.stringify({ lockerId: newId })
+                                            });
+                                            if (!r.ok) {
+                                              const err = await r.json();
+                                              throw new Error(err.error || 'Failed');
+                                            }
+                                            toast({ title: 'Locker Reassigned', description: 'Locker assignment updated' });
+                                            fetchData();
+                                          } catch (err: any) {
+                                            toast({ title: 'Error', description: err.message || 'Failed to reassign locker', variant: 'destructive' });
+                                          }
+                                        }}
+                                        className="px-2 py-1 text-xs border rounded w-full"
+                                      >
+                                        <option value="">— select to reassign —</option>
+                                        {allLockers
+                                          .filter(l => l.status === 'AVAILABLE' && l.id !== app.lockerId)
+                                          .sort((a: any, b: any) => a.lockerNumber.localeCompare(b.lockerNumber, undefined, { numeric: true }))
+                                          .map((l: any) => (
+                                            <option key={l.id} value={l.id}>
+                                              #{l.lockerNumber} — {l.location} (${l.monthlyRent}/mo)
+                                            </option>
+                                          ))
+                                        }
+                                      </select>
+                                    </div>
                                   </div>
                                 </div>
 

@@ -2348,8 +2348,11 @@ app.post('/api/storage-locker-application', async (req, res) => {
     if (!locker) {
       return res.status(404).json({ error: 'Locker not found' });
     }
-    if (locker.status === 'ASSIGNED') {
-      return res.status(409).json({ error: 'This locker has already been assigned. Please select another.' });
+    if (locker.status !== 'AVAILABLE') {
+      const msg = locker.status === 'ASSIGNED'
+        ? 'This locker has already been assigned. Please select another.'
+        : 'This locker already has a pending application. Please select another.';
+      return res.status(409).json({ error: msg });
     }
 
     const applicationId = `SLA-${Date.now()}`;
@@ -2361,6 +2364,9 @@ app.post('/api/storage-locker-application', async (req, res) => {
         prepayYear: !!prepayYear
       }
     });
+
+    // Mark locker as pending so no other resident can claim it
+    await db.storageLocker.update({ where: { id: lockerId }, data: { status: 'PENDING' } });
 
     const emailData = {
       applicationId,
@@ -2449,12 +2455,12 @@ app.get('/api/storage-locker-applications', async (req, res) => {
   }
 });
 
-// Admin: update application status
+// Admin: update application status and/or reassign locker
 app.patch('/api/storage-locker-applications/:id', async (req, res) => {
   try {
     const db = await getPrisma();
     const { id } = req.params;
-    const { status, adminNotes } = req.body;
+    const { status, adminNotes, lockerId: newLockerId } = req.body;
 
     if (status && !['PENDING', 'APPROVED', 'REJECTED'].includes(status)) {
       return res.status(400).json({ error: 'Invalid status' });
@@ -2463,26 +2469,63 @@ app.patch('/api/storage-locker-applications/:id', async (req, res) => {
     const application = await db.storageLockerApplication.findUnique({ where: { id } });
     if (!application) return res.status(404).json({ error: 'Application not found' });
 
+    const effectiveStatus = status || application.status;
+    let effectiveLockerId = application.lockerId;
+
+    // Handle locker reassignment
+    if (newLockerId && newLockerId !== application.lockerId) {
+      const newLocker = await db.storageLocker.findUnique({ where: { id: newLockerId } });
+      if (!newLocker) return res.status(404).json({ error: 'Target locker not found' });
+      if (newLocker.status !== 'AVAILABLE') {
+        return res.status(409).json({ error: 'That locker is not available for reassignment' });
+      }
+
+      // Release the old locker if no other active non-rejected application holds it
+      const otherActive = await db.storageLockerApplication.findFirst({
+        where: { lockerId: application.lockerId, id: { not: id }, status: { not: 'REJECTED' }, isActive: true }
+      });
+      if (!otherActive) {
+        await db.storageLocker.update({ where: { id: application.lockerId }, data: { status: 'AVAILABLE' } });
+      }
+
+      // Claim the new locker
+      const newLockerStatus = effectiveStatus === 'APPROVED' ? 'ASSIGNED' : 'PENDING';
+      await db.storageLocker.update({ where: { id: newLockerId }, data: { status: newLockerStatus } });
+      effectiveLockerId = newLockerId;
+    }
+
     const updated = await db.storageLockerApplication.update({
       where: { id },
-      data: { ...(status && { status }), ...(adminNotes !== undefined && { adminNotes }) },
+      data: {
+        ...(status && { status }),
+        ...(adminNotes !== undefined && { adminNotes }),
+        ...(newLockerId && newLockerId !== application.lockerId && { lockerId: newLockerId })
+      },
       include: { locker: true }
     });
 
+    // Sync locker status based on application status (when no reassignment, or after reassignment)
     if (status === 'APPROVED') {
-      await db.storageLocker.update({ where: { id: application.lockerId }, data: { status: 'ASSIGNED' } });
+      await db.storageLocker.update({ where: { id: effectiveLockerId }, data: { status: 'ASSIGNED' } });
       // Reject all other PENDING applications for the same locker
       await db.storageLockerApplication.updateMany({
-        where: { lockerId: application.lockerId, id: { not: id }, status: 'PENDING', isActive: true },
+        where: { lockerId: effectiveLockerId, id: { not: id }, status: 'PENDING', isActive: true },
         data: { status: 'REJECTED' }
       });
     } else if (status === 'REJECTED' || status === 'PENDING') {
-      // If reverting an approval, check if any other approved app exists for this locker
+      // Revert locker to AVAILABLE if no approved application holds it
       const otherApproved = await db.storageLockerApplication.findFirst({
-        where: { lockerId: application.lockerId, id: { not: id }, status: 'APPROVED', isActive: true }
+        where: { lockerId: effectiveLockerId, id: { not: id }, status: 'APPROVED', isActive: true }
       });
       if (!otherApproved) {
-        await db.storageLocker.update({ where: { id: application.lockerId }, data: { status: 'AVAILABLE' } });
+        // If there are still PENDING applications (other than this one), keep it PENDING
+        const otherPending = await db.storageLockerApplication.findFirst({
+          where: { lockerId: effectiveLockerId, id: { not: id }, status: 'PENDING', isActive: true }
+        });
+        await db.storageLocker.update({
+          where: { id: effectiveLockerId },
+          data: { status: otherPending ? 'PENDING' : 'AVAILABLE' }
+        });
       }
     }
 
@@ -2516,12 +2559,24 @@ app.post('/api/storage-locker-applications/export/pdf', async (req, res) => {
   }
 });
 
-// Admin: delete application (soft)
+// Admin: delete application (soft) — release locker if nothing else holds it
 app.delete('/api/storage-locker-applications/:id', async (req, res) => {
   try {
     const db = await getPrisma();
     const { id } = req.params;
+    const application = await db.storageLockerApplication.findUnique({ where: { id } });
+    if (!application) return res.status(404).json({ error: 'Application not found' });
+
     await db.storageLockerApplication.update({ where: { id }, data: { isActive: false } });
+
+    // Release the locker if no other active non-rejected application holds it
+    const otherActive = await db.storageLockerApplication.findFirst({
+      where: { lockerId: application.lockerId, id: { not: id }, status: { not: 'REJECTED' }, isActive: true }
+    });
+    if (!otherActive) {
+      await db.storageLocker.update({ where: { id: application.lockerId }, data: { status: 'AVAILABLE' } });
+    }
+
     res.json({ success: true });
   } catch (error) {
     logger.error('Error deleting storage locker application', error);

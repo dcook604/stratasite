@@ -402,6 +402,7 @@ model FormKSubmission {
 
 enum StorageLockerStatus {
   AVAILABLE
+  PENDING
   ASSIGNED
 }
 

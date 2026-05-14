@@ -34,7 +34,7 @@ interface StorageLocker {
   dimensions: string;
   monthlyRent: number;
   notes: string | null;
-  status: 'AVAILABLE' | 'ASSIGNED';
+  status: 'AVAILABLE' | 'PENDING' | 'ASSIGNED';
 }
 
 const formSchema = z.object({
@@ -209,7 +209,7 @@ const StorageLockerSignup = () => {
               Select a Locker
             </CardTitle>
             <p className="text-sm text-gray-500">
-              Green = available · Grey = already assigned. Click a locker to select it.
+              Green = available · Grey = assigned or pending review. Click a locker to select it.
             </p>
           </CardHeader>
           <CardContent>
@@ -441,17 +441,17 @@ const LockerGroup = ({ title, lockers, selectedId, onSelect }: LockerGroupProps)
     </h3>
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
       {lockers.map((locker) => {
-        const isAssigned = locker.status === 'ASSIGNED';
+        const isUnavailable = locker.status !== 'AVAILABLE';
         const isSelected = selectedId === locker.id;
         return (
           <button
             key={locker.id}
             type="button"
-            disabled={isAssigned}
-            onClick={() => !isAssigned && onSelect(locker.id)}
+            disabled={isUnavailable}
+            onClick={() => !isUnavailable && onSelect(locker.id)}
             className={`
               relative rounded-lg border-2 p-3 text-left transition-all
-              ${isAssigned
+              ${isUnavailable
                 ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-60'
                 : isSelected
                   ? 'border-purple-500 bg-purple-50 text-purple-900 shadow-md ring-2 ring-purple-300'
@@ -462,7 +462,7 @@ const LockerGroup = ({ title, lockers, selectedId, onSelect }: LockerGroupProps)
             <div className="flex items-center justify-between mb-1">
               <span className="font-bold text-sm">#{locker.lockerNumber}</span>
               {isSelected && <CheckCircle2 className="h-4 w-4 text-purple-600" />}
-              {isAssigned && <Lock className="h-3.5 w-3.5 text-gray-400" />}
+              {isUnavailable && <Lock className="h-3.5 w-3.5 text-gray-400" />}
             </div>
             <div className="flex items-center gap-1 text-xs mb-1">
               <Ruler className="h-3 w-3 flex-shrink-0" />
@@ -475,8 +475,8 @@ const LockerGroup = ({ title, lockers, selectedId, onSelect }: LockerGroupProps)
             {locker.notes && (
               <div className="text-xs text-amber-600 mt-1 leading-tight">{locker.notes}</div>
             )}
-            <div className={`text-xs mt-1 font-medium ${isAssigned ? 'text-gray-400' : 'text-green-600'}`}>
-              {isAssigned ? 'Assigned' : 'Available'}
+            <div className={`text-xs mt-1 font-medium ${isUnavailable ? 'text-gray-400' : 'text-green-600'}`}>
+              {locker.status === 'ASSIGNED' ? 'Assigned' : locker.status === 'PENDING' ? 'Pending review' : 'Available'}
             </div>
           </button>
         );
