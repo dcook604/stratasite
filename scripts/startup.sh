@@ -5,6 +5,10 @@ echo "🚀 Starting Spectrum 4 Application..."
 # Don't exit on errors at the shell level — we handle them explicitly
 set +e
 
+# Ensure DATABASE_URL is always set before any Prisma command or node process
+export DATABASE_URL="${DATABASE_URL:-file:/app/data/database.db}"
+echo "📦 DATABASE_URL=${DATABASE_URL}"
+
 # ----------------------------------------------------------------
 # Step 1: Generate Prisma client (always safe, no DB needed)
 # ----------------------------------------------------------------
