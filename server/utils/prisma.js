@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { PrismaLibSQL } from '@prisma/adapter-libsql';
+import { PrismaLibSql } from '@prisma/adapter-libsql';
 import { createClient } from '@libsql/client';
 
 let prisma = null;
@@ -9,7 +9,7 @@ export function getPrisma() {
     const libsql = createClient({
       url: process.env.DATABASE_URL,
     });
-    const adapter = new PrismaLibSQL(libsql);
+    const adapter = new PrismaLibSql(libsql);
     prisma = new PrismaClient({ adapter });
   }
   return prisma;
