@@ -2311,9 +2311,23 @@ app.get('/api/storage-lockers', async (req, res) => {
     const db = await getPrisma();
     const lockers = await db.storageLocker.findMany({
       where: { isActive: true },
+      include: {
+        applications: {
+          where: { status: { in: ['PENDING', 'APPROVED'] }, isActive: true },
+          select: { status: true }
+        }
+      },
       orderBy: [{ location: 'asc' }, { lockerNumber: 'asc' }]
     });
-    res.json(lockers);
+    // Derive status from live application data so pre-existing applications
+    // are reflected correctly regardless of what is stored on the locker row.
+    const result = lockers.map(({ applications, ...locker }) => {
+      const hasApproved = applications.some(a => a.status === 'APPROVED');
+      const hasPending  = applications.some(a => a.status === 'PENDING');
+      const derivedStatus = hasApproved ? 'ASSIGNED' : hasPending ? 'PENDING' : 'AVAILABLE';
+      return { ...locker, status: derivedStatus };
+    });
+    res.json(result);
   } catch (error) {
     logger.error('Error fetching storage lockers', error);
     res.status(500).json({ error: 'Internal server error' });
