@@ -670,143 +670,142 @@ const AdminDashboard = () => {
 
   return (
     <RequireAdminAuth>
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <SidebarProvider>
-          <div className="flex flex-1 w-full">
-            {/* Sidebar */}
-            <Sidebar collapsible="offcanvas" className="border-r">
-              <SidebarContent>
-                {/* Content Management group */}
-                <SidebarGroup>
-                  <SidebarGroupLabel>Content Management</SidebarGroupLabel>
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton isActive={activeSection === 'announcements'} onClick={() => setActiveSection('announcements')}>
-                          <Megaphone className="w-4 h-4" />
-                          <span>Announcements</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton isActive={activeSection === 'pages'} onClick={() => setActiveSection('pages')}>
-                          <FileText className="w-4 h-4" />
-                          <span>Pages</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton isActive={activeSection === 'documents'} onClick={() => setActiveSection('documents')}>
-                          <FileText className="w-4 h-4" />
-                          <span>Documents</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </SidebarGroup>
+      <SidebarProvider>
+        <div className="flex flex-1 w-full">
+          {/* Sidebar */}
+          <Sidebar collapsible="offcanvas" className="border-r">
+            <SidebarContent>
+              {/* Content Management group */}
+              <SidebarGroup>
+                <SidebarGroupLabel>Content Management</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton isActive={activeSection === 'announcements'} onClick={() => setActiveSection('announcements')}>
+                        <Megaphone className="w-4 h-4" />
+                        <span>Announcements</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton isActive={activeSection === 'pages'} onClick={() => setActiveSection('pages')}>
+                        <FileText className="w-4 h-4" />
+                        <span>Pages</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton isActive={activeSection === 'documents'} onClick={() => setActiveSection('documents')}>
+                        <FileText className="w-4 h-4" />
+                        <span>Documents</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
 
-                {/* Submissions group */}
-                <SidebarGroup>
-                  <SidebarGroupLabel>Submissions</SidebarGroupLabel>
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton isActive={activeSection === 'incident-reports'} onClick={() => setActiveSection('incident-reports')}>
-                          <ShieldAlert className="w-4 h-4" />
-                          <span>Incident Reports</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton isActive={activeSection === 'scooter-registrations'} onClick={() => setActiveSection('scooter-registrations')}>
-                          <Zap className="w-4 h-4" />
-                          <span>Scooter Registrations</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton isActive={activeSection === 'pet-registrations'} onClick={() => setActiveSection('pet-registrations')}>
-                          <PawPrint className="w-4 h-4" />
-                          <span>Pet Registrations</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton isActive={activeSection === 'storage-lockers'} onClick={() => setActiveSection('storage-lockers')}>
-                          <Package className="w-4 h-4" />
-                          <span>Storage Lockers</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton isActive={activeSection === 'form-submissions'} onClick={() => setActiveSection('form-submissions')}>
-                          <ClipboardList className="w-4 h-4" />
-                          <span>Form Submissions</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </SidebarGroup>
+              {/* Submissions group */}
+              <SidebarGroup>
+                <SidebarGroupLabel>Submissions</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton isActive={activeSection === 'incident-reports'} onClick={() => setActiveSection('incident-reports')}>
+                        <ShieldAlert className="w-4 h-4" />
+                        <span>Incident Reports</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton isActive={activeSection === 'scooter-registrations'} onClick={() => setActiveSection('scooter-registrations')}>
+                        <Zap className="w-4 h-4" />
+                        <span>Scooter Registrations</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton isActive={activeSection === 'pet-registrations'} onClick={() => setActiveSection('pet-registrations')}>
+                        <PawPrint className="w-4 h-4" />
+                        <span>Pet Registrations</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton isActive={activeSection === 'storage-lockers'} onClick={() => setActiveSection('storage-lockers')}>
+                        <Package className="w-4 h-4" />
+                        <span>Storage Lockers</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton isActive={activeSection === 'form-submissions'} onClick={() => setActiveSection('form-submissions')}>
+                        <ClipboardList className="w-4 h-4" />
+                        <span>Form Submissions</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
 
-                {/* Marketplace group */}
-                <SidebarGroup>
-                  <SidebarGroupLabel>Marketplace</SidebarGroupLabel>
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton isActive={activeSection === 'marketplace'} onClick={() => setActiveSection('marketplace')}>
-                          <ShoppingCart className="w-4 h-4" />
-                          <span>Marketplace</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </SidebarGroup>
+              {/* Marketplace group */}
+              <SidebarGroup>
+                <SidebarGroupLabel>Marketplace</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton isActive={activeSection === 'marketplace'} onClick={() => setActiveSection('marketplace')}>
+                        <ShoppingCart className="w-4 h-4" />
+                        <span>Marketplace</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
 
-                {/* Settings group */}
-                <SidebarGroup>
-                  <SidebarGroupLabel>Settings</SidebarGroupLabel>
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton isActive={activeSection === 'form-management'} onClick={() => setActiveSection('form-management')}>
-                          <Settings className="w-4 h-4" />
-                          <span>Form Email Config</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton isActive={activeSection === 'form-k-cleanup'} onClick={() => setActiveSection('form-k-cleanup')}>
-                          <Database className="w-4 h-4" />
-                          <span>Form K Management</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton isActive={activeSection === 'users'} onClick={() => setActiveSection('users')}>
-                          <Users className="w-4 h-4" />
-                          <span>Admin Users</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton isActive={activeSection === 'cleanup'} onClick={() => setActiveSection('cleanup')}>
-                          <Trash2 className="w-4 h-4" />
-                          <span>DB Cleanup</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </SidebarGroup>
-              </SidebarContent>
-            </Sidebar>
+              {/* Settings group */}
+              <SidebarGroup>
+                <SidebarGroupLabel>Settings</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton isActive={activeSection === 'form-management'} onClick={() => setActiveSection('form-management')}>
+                        <Settings className="w-4 h-4" />
+                        <span>Form Email Config</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton isActive={activeSection === 'form-k-cleanup'} onClick={() => setActiveSection('form-k-cleanup')}>
+                        <Database className="w-4 h-4" />
+                        <span>Form K Management</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton isActive={activeSection === 'users'} onClick={() => setActiveSection('users')}>
+                        <Users className="w-4 h-4" />
+                        <span>Admin Users</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton isActive={activeSection === 'cleanup'} onClick={() => setActiveSection('cleanup')}>
+                        <Trash2 className="w-4 h-4" />
+                        <span>DB Cleanup</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            </SidebarContent>
+          </Sidebar>
 
-            {/* Main content */}
-            <SidebarInset className="flex-1 overflow-auto">
-              <div className="p-4 sm:p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <div className="flex items-center gap-3">
-                    <SidebarTrigger className="md:hidden" />
-                    <h1 className="text-2xl font-bold">{sectionTitles[activeSection]}</h1>
-                  </div>
-                  <Button variant="outline" onClick={handleLogout}>Log Out</Button>
+          {/* Main content */}
+          <SidebarInset className="flex-1">
+            <Navbar />
+            <div className="flex-1 p-4 sm:p-6 overflow-auto">
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-3">
+                  <SidebarTrigger className="md:hidden" />
+                  <h1 className="text-2xl font-bold">{sectionTitles[activeSection]}</h1>
                 </div>
+                <Button variant="outline" onClick={handleLogout}>Log Out</Button>
+              </div>
 
-                <Alert className="mb-6">
-                  <AlertDescription>Welcome back, {adminUser?.email}!</AlertDescription>
-                </Alert>
+              <Alert className="mb-6">
+                <AlertDescription>Welcome back, {adminUser?.email}!</AlertDescription>
+              </Alert>
 
                 {activeSection === 'announcements' && (
                   <div className="space-y-6">
@@ -2404,10 +2403,10 @@ const AdminDashboard = () => {
                   </div>
                 )}
               </div>
+              <Footer />
             </SidebarInset>
           </div>
         </SidebarProvider>
-        <Footer />
 
         {/* Edit Page Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
@@ -2502,7 +2501,6 @@ const AdminDashboard = () => {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
     </RequireAdminAuth>
   );
 };
