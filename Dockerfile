@@ -15,7 +15,7 @@ COPY prisma ./prisma/
 # Install ALL dependencies (including dev) for building
 # Using npm install instead of ci to handle lock file updates
 # Force install all dependencies including devDependencies
-RUN npm install --legacy-peer-deps --include=dev && npm cache clean --force
+RUN npm install --legacy-peer-deps --include=dev --no-audit && npm cache clean --force
 
 # Copy all source files
 COPY . .
@@ -51,7 +51,7 @@ COPY package*.json ./
 
 # Install only production dependencies
 # Using npm install to handle potential lock file mismatches
-RUN npm install --omit=dev --legacy-peer-deps
+RUN npm install --omit=dev --legacy-peer-deps --no-audit
 
 # Copy built application and necessary files
 COPY --from=builder /app/dist ./dist
