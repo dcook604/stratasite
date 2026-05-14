@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { RequireAdminAuth } from '@/components/hoc/RequireAdminAuth';
-import { Plus, Trash2, Edit2, Users, FileText, Megaphone, Save, X, Database, AlertTriangle, CheckCircle, Zap, PawPrint, Download, ClipboardList, Settings, ShieldAlert, Package, Lock, PanelLeft } from 'lucide-react';
+import { Plus, Trash2, Edit2, Users, FileText, Megaphone, Save, X, Database, AlertTriangle, CheckCircle, Zap, PawPrint, Download, ClipboardList, Settings, ShieldAlert, Package, Lock } from 'lucide-react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import ChangePasswordDialog from '@/components/shared/ChangePasswordDialog';
@@ -33,7 +33,6 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
-  useSidebar,
 } from '@/components/ui/sidebar';
 
 const sectionTitles: Record<string, string> = {
@@ -54,8 +53,6 @@ const AdminDashboard = () => {
   const { adminUser, logout } = useAdminAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { toggleSidebar } = useSidebar();
-
   const [activeSection, setActiveSection] = React.useState('announcements');
 
   const [announcements, setAnnouncements] = useState([]);
@@ -743,15 +740,7 @@ const AdminDashboard = () => {
             <div className="flex-1 p-4 sm:p-6 overflow-auto">
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="md:hidden flex items-center gap-1.5"
-                    onClick={toggleSidebar}
-                  >
-                    <PanelLeft className="h-4 w-4" />
-                    <span>Menu</span>
-                  </Button>
+                  <SidebarTrigger className="md:hidden" />
                   <h1 className="text-2xl font-bold">{sectionTitles[activeSection]}</h1>
                 </div>
                 <Button variant="outline" onClick={handleLogout}>Log Out</Button>
