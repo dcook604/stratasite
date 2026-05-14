@@ -1,11 +1,11 @@
 import nodemailer from 'nodemailer';
-import { PrismaClient } from '@prisma/client';
+import { getPrisma } from './prisma.js';
 
 // Lazy initialization of Prisma client
 let prisma = null;
 const getPrismaClient = () => {
   if (!prisma) {
-    prisma = new PrismaClient();
+    prisma = getPrisma();
   }
   return prisma;
 };

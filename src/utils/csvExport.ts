@@ -154,16 +154,41 @@ export function formatScooterRegistrationForCSV(data: any[]): any[] {
 }
 
 /**
+ * Format Storage Locker Application data for CSV export
+ */
+export function formatStorageLockerForCSV(data: any[]): any[] {
+  return data.map((app: any) => ({
+    'Application ID': app.applicationId,
+    'First Name': app.firstName,
+    'Last Name': app.lastName,
+    'Unit Number': app.unitNumber,
+    'Address': app.address,
+    'Telephone': app.telephone,
+    'Email': app.email,
+    'Status': app.status,
+    'On Waiting List': app.onWaitingList ? 'Yes' : 'No',
+    'Prepay 12 Months': app.prepayYear ? 'Yes' : 'No',
+    'Locker Number': app.locker?.lockerNumber || '',
+    'Locker Location': app.locker?.location || '',
+    'Monthly Rent': app.locker?.monthlyRent ? `$${app.locker.monthlyRent}` : '',
+    'Consent Given': app.consentGiven ? 'Yes' : 'No',
+    'Admin Notes': app.adminNotes || '',
+    'Email Sent': app.emailSent ? 'Yes' : 'No',
+    'Submitted Date': new Date(app.createdAt).toLocaleDateString()
+  }));
+}
+
+/**
  * Export form data as CSV
  */
 export function exportFormData(
-  data: any[], 
-  formType: 'emergency-contact' | 'ac-inquiry' | 'pet-registration' | 'scooter-registration',
+  data: any[],
+  formType: 'emergency-contact' | 'ac-inquiry' | 'pet-registration' | 'scooter-registration' | 'storage-locker-application',
   options: CSVExportOptions = {}
 ): void {
   let formattedData: any[];
   let defaultFilename: string;
-  
+
   switch (formType) {
     case 'emergency-contact':
       formattedData = formatEmergencyContactForCSV(data);
@@ -181,12 +206,16 @@ export function exportFormData(
       formattedData = formatScooterRegistrationForCSV(data);
       defaultFilename = `scooter-registrations-${new Date().toISOString().split('T')[0]}.csv`;
       break;
+    case 'storage-locker-application':
+      formattedData = formatStorageLockerForCSV(data);
+      defaultFilename = `storage-locker-applications-${new Date().toISOString().split('T')[0]}.csv`;
+      break;
     default:
       throw new Error(`Unknown form type: ${formType}`);
   }
-  
+
   const csvData = convertToCSV(formattedData, options);
   const filename = options.filename || defaultFilename;
-  
+
   downloadCSV(csvData, filename);
 } 

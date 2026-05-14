@@ -9,7 +9,7 @@ ENV DOCKER_BUILD=true
 ENV PATH="/app/node_modules/.bin:${PATH}"
 
 # Copy package files first for better Docker layer caching
-COPY package*.json ./
+COPY package*.json prisma.config.ts ./
 COPY prisma ./prisma/
 
 # Install ALL dependencies (including dev) for building

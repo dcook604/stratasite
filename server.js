@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
-import { PrismaClient } from '@prisma/client';
+import { getPrisma as getPrismaClient } from './server/utils/prisma.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
@@ -22,7 +22,7 @@ let prisma = null;
 const initializePrisma = async () => {
   if (!prisma) {
     try {
-      prisma = new PrismaClient();
+      prisma = getPrismaClient();
       await prisma.$connect();
       console.log('✅ Prisma client initialized successfully');
     } catch (error) {
@@ -2490,6 +2490,29 @@ app.patch('/api/storage-locker-applications/:id', async (req, res) => {
   } catch (error) {
     logger.error('Error updating storage locker application', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Admin: export storage locker applications as PDF
+app.post('/api/storage-locker-applications/export/pdf', async (req, res) => {
+  try {
+    const { applications } = req.body;
+    if (!applications || !Array.isArray(applications) || applications.length === 0) {
+      return res.status(400).json({ error: 'No applications data provided' });
+    }
+
+    const { generateStorageLockerPdf } = await import('./server/utils/storageLockerPdfGenerator.js');
+    const pdfBuffer = await generateStorageLockerPdf(applications);
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="storage-locker-applications-${new Date().toISOString().split('T')[0]}.pdf"`,
+      'Content-Length': pdfBuffer.length
+    });
+    res.send(pdfBuffer);
+  } catch (error) {
+    logger.error('Error generating storage locker PDF', error);
+    res.status(500).json({ error: 'Failed to generate PDF' });
   }
 });
 

@@ -1,6 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { getPrisma } from '../server/utils/prisma.js';
 
-const prisma = new PrismaClient();
+const prisma = getPrisma();
 
 const pages = [
   {

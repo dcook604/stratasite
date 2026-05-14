@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { getPrisma } from '../server/utils/prisma.js';
 import { seedFormConfigurations } from './seed-form-configurations.js';
 
-const prisma = new PrismaClient();
+const prisma = getPrisma();
 
 async function setupFormManagement() {
   console.log('🚀 Setting up Form Management System...');

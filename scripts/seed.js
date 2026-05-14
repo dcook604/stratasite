@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { getPrisma } from '../server/utils/prisma.js';
 import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
+const prisma = getPrisma();
 
 const pages = [
   {

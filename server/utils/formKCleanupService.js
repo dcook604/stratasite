@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { getPrisma } from './prisma.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -6,7 +6,7 @@ import path from 'path';
 let prisma = null;
 const getPrismaClient = () => {
   if (!prisma) {
-    prisma = new PrismaClient();
+    prisma = getPrisma();
   }
   return prisma;
 };

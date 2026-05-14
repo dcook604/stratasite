@@ -270,6 +270,31 @@ const AdminDashboard = () => {
     }
   };
 
+  // Storage Locker PDF export
+  const exportStorageLockerPdf = async (applications: any[]) => {
+    try {
+      const response = await fetch('/api/storage-locker-applications/export/pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ applications })
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to generate PDF');
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `storage-locker-applications-${new Date().toISOString().split('T')[0]}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      toast({ title: "Export Failed", description: "Could not generate PDF export", variant: "destructive" });
+    }
+  };
+
   // Form K Cleanup Functions
   const fetchFormKStats = async () => {
     try {
@@ -1545,6 +1570,9 @@ const AdminDashboard = () => {
                               </Button>
                               <Button variant="outline" size="sm" onClick={() => exportFormDataAsExcel(storageLockerApplications, 'storage-locker-application')} className="flex items-center gap-2">
                                 <Download className="h-4 w-4" />Export Excel
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={() => exportStorageLockerPdf(storageLockerApplications)} className="flex items-center gap-2">
+                                <FileText className="h-4 w-4" />Export PDF
                               </Button>
                             </div>
                           )}

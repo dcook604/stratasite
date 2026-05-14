@@ -158,11 +158,41 @@ export function formatACInquiryForExcel(data: Record<string, unknown>[]): Record
 
 
 /**
+ * Format Storage Locker Application data for Excel export
+ */
+export function formatStorageLockerForExcel(data: Record<string, unknown>[]): Record<string, unknown>[] {
+  return data.map((app: any) => ({
+    'Application ID': app.applicationId,
+    'First Name': app.firstName,
+    'Last Name': app.lastName,
+    'Unit Number': app.unitNumber,
+    'Address': app.address,
+    'Telephone': app.telephone,
+    'Email': app.email,
+    'Status': app.status,
+    'On Waiting List': app.onWaitingList ? 'Yes' : 'No',
+    'Prepay 12 Months': app.prepayYear ? 'Yes' : 'No',
+    'Locker Number': app.locker?.lockerNumber || '',
+    'Locker Location': app.locker?.location || '',
+    'Monthly Rent': app.locker?.monthlyRent ? `$${app.locker.monthlyRent}` : '',
+    'Consent Given': app.consentGiven ? 'Yes' : 'No',
+    'Admin Notes': app.adminNotes || '',
+    'Email Sent': app.emailSent ? 'Yes' : 'No',
+    'Submitted Date': new Date(app.createdAt).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  }));
+}
+
+
+/**
  * Export form data as Excel
  */
 export async function exportFormDataAsExcel(
   data: Record<string, unknown>[],
-  formType: 'emergency-contact' | 'ac-inquiry' | 'pet-registration' | 'scooter-registration',
+  formType: 'emergency-contact' | 'ac-inquiry' | 'pet-registration' | 'scooter-registration' | 'storage-locker-application',
   options: ExcelExportOptions = {}
 ): Promise<void> {
   let formattedData: Record<string, unknown>[];
@@ -189,6 +219,11 @@ export async function exportFormDataAsExcel(
       formattedData = formatScooterRegistrationForExcel(data);
       defaultFilename = `scooter-registrations-${new Date().toISOString().split('T')[0]}.xlsx`;
       defaultSheetName = 'Scooter Registrations';
+      break;
+    case 'storage-locker-application':
+      formattedData = formatStorageLockerForExcel(data);
+      defaultFilename = `storage-locker-applications-${new Date().toISOString().split('T')[0]}.xlsx`;
+      defaultSheetName = 'Storage Lockers';
       break;
     default:
       throw new Error(`Unknown form type: ${formType}`);
