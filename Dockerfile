@@ -62,6 +62,7 @@ COPY --from=builder /app/prisma ./prisma/
 COPY --from=builder /app/scripts ./scripts/
 COPY --from=builder /app/server ./server/
 COPY --from=builder /app/server.js ./
+COPY --from=builder /app/prisma.config.ts ./
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma/
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma/
 COPY --from=builder /app/public/documents ./public/documents/
