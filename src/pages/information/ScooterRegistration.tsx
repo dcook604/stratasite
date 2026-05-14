@@ -22,7 +22,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Turnstile } from '@marsidev/react-turnstile';
+import { TurnstileCaptcha } from '@/components/ui/TurnstileCaptcha';
 import { CalendarIcon, Zap, AlertTriangle, DollarSign, Lock, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -341,8 +341,7 @@ const ScooterRegistration = () => {
 
                 {/* Turnstile CAPTCHA */}
                 <div className="flex justify-center">
-                  <Turnstile
-                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                  <TurnstileCaptcha
                     onSuccess={setTurnstileToken}
                     onError={() => setTurnstileToken(null)}
                     onExpire={() => setTurnstileToken(null)}

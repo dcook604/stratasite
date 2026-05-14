@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from '@/components/ui/use-toast';
 import { Label } from '@/components/ui/label';
 import { Upload, X } from 'lucide-react';
-import { Turnstile } from '@marsidev/react-turnstile';
+import { TurnstileCaptcha } from '@/components/ui/TurnstileCaptcha';
 import { uploadImage, validateImage } from '@/utils/imageUpload';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 import { getAuthorId } from '@/utils/authorId';
@@ -362,7 +362,7 @@ const Marketplace = () => {
                     {postImages.map((img, i) => <div key={i} className="relative"><img src={img} alt="upload preview" className="h-20 w-20 object-cover rounded"/><Button type="button" variant="destructive" size="icon" className="absolute top-0 right-0 h-5 w-5" onClick={() => removeImage(i)}><X className="h-3 w-3"/></Button></div>)}
                 </div>
             </div>
-            <Turnstile onSuccess={setTurnstileToken} siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} />
+            <TurnstileCaptcha onSuccess={setTurnstileToken} />
             <Button type="submit" className="w-full">Submit Post</Button>
           </form>
         </DialogContent>
@@ -420,7 +420,7 @@ const Marketplace = () => {
                           {replyImages.map((img, i) => <div key={i} className="relative"><img src={img} alt="upload preview" className="h-20 w-20 object-cover rounded"/><Button type="button" variant="destructive" size="icon" className="absolute top-0 right-0 h-5 w-5" onClick={() => removeImage(i, true)}><X className="h-3 w-3"/></Button></div>)}
                       </div>
                   </div>
-                  <Turnstile onSuccess={setTurnstileToken} siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} />
+                  <TurnstileCaptcha onSuccess={setTurnstileToken} />
                   <Button type="submit" className="w-full">Submit Reply</Button>
                 </form>
             </DialogContent>

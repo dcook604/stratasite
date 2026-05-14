@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, PawPrint, Upload, X, Camera } from 'lucide-react';
-import { Turnstile } from '@marsidev/react-turnstile';
+import { TurnstileCaptcha } from '@/components/ui/TurnstileCaptcha';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -515,9 +515,8 @@ const PetRegistration: React.FC = () => {
 
                 {/* Turnstile CAPTCHA */}
                 <div className="flex justify-center">
-                  <Turnstile
+                  <TurnstileCaptcha
                     key={turnstileKey}
-                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
                     onSuccess={(token) => form.setValue('turnstileToken', token)}
                     onError={() => form.setValue('turnstileToken', '')}
                     onExpire={() => form.setValue('turnstileToken', '')}

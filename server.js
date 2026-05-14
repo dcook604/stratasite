@@ -1313,6 +1313,13 @@ const verifyTurnstile = async (token) => {
   }
 };
 
+// Public configuration endpoint (no auth required)
+app.get('/api/config/public', (req, res) => {
+  res.json({
+    turnstileSiteKey: process.env.VITE_TURNSTILE_SITE_KEY || ''
+  });
+});
+
 // Function to send scooter registration email (now using dynamic service)
 const sendScooterRegistrationEmail = async (registrationData) => {
   const { sendDynamicFormEmail, sendFormEmailFallback } = await import('./server/utils/dynamicEmailService.js');

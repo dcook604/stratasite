@@ -22,7 +22,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Turnstile } from '@marsidev/react-turnstile';
+import { TurnstileCaptcha } from '@/components/ui/TurnstileCaptcha';
 import { FileText, AlertTriangle, Loader2, UserCheck, Mail, Clock } from 'lucide-react';
 
 const formSchema = z.object({
@@ -996,8 +996,7 @@ const FormK = () => {
                 <CardTitle>Security Verification</CardTitle>
               </CardHeader>
               <CardContent>
-                <Turnstile
-                  siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                <TurnstileCaptcha
                   onSuccess={(token) => setCaptchaToken(token)}
                   onError={() => setCaptchaToken(null)}
                   onExpire={() => setCaptchaToken(null)}

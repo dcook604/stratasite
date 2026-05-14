@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertTriangle, Upload, X, FileVideo } from 'lucide-react';
-import { Turnstile } from '@marsidev/react-turnstile';
+import { TurnstileCaptcha } from '@/components/ui/TurnstileCaptcha';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -651,9 +651,8 @@ const IncidentReport: React.FC = () => {
                         <FormLabel>Verification <span className="text-red-500">*</span></FormLabel>
                         <FormControl>
                           <div>
-                            <Turnstile
+                            <TurnstileCaptcha
                               key={turnstileKey}
-                              siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
                               onSuccess={(token) => field.onChange(token)}
                               onError={() => field.onChange('')}
                               onExpire={() => field.onChange('')}
