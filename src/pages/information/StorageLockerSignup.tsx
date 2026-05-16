@@ -24,7 +24,7 @@ import { TurnstileCaptcha } from '@/components/ui/TurnstileCaptcha';
 import { useNavigate } from 'react-router-dom';
 import {
   Package, User, Phone, Mail, Lock, Loader2, CheckCircle2,
-  MapPin, DollarSign, Ruler, AlertCircle, Star,
+  MapPin, DollarSign, Ruler, AlertCircle, Star, Gift,
 } from 'lucide-react';
 
 interface StorageLocker {
@@ -56,13 +56,13 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const RENTAL_TERMS = [
-  '$50 non-refundable admin fee',
-  '$50 refundable key fee',
-  '$300 refundable damage deposit payable upon signing',
-  'Rent due on the 1st of every month by EFT',
-  'Must sign Strata Rental Contract',
-  '10% discount for 12 months prepaid rent',
+const RENTAL_TERMS: { text: string; promoWaived?: boolean }[] = [
+  { text: '$50 non-refundable admin fee' },
+  { text: '$50 refundable key fee' },
+  { text: '$300 refundable damage deposit payable upon signing', promoWaived: true },
+  { text: 'Rent due on the 1st of every month by EFT' },
+  { text: 'Must sign Strata Rental Contract' },
+  { text: '10% discount for 12 months prepaid rent' },
 ];
 
 const StorageLockerSignup = () => {
@@ -178,6 +178,29 @@ const StorageLockerSignup = () => {
       />
       <main className="flex-grow container mx-auto px-4 py-8 max-w-5xl">
 
+        {/* Limited-time promotion banner */}
+        <Card className="mb-4 border-amber-400 bg-gradient-to-r from-amber-50 to-yellow-50 shadow-md">
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-start gap-3">
+              <div className="rounded-full bg-amber-400 p-2 flex-shrink-0">
+                <Gift className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-base font-bold text-amber-900 flex items-center gap-2">
+                  Limited-Time Promotion
+                  <span className="inline-block rounded-full bg-amber-400 px-2 py-0.5 text-xs font-semibold text-white uppercase tracking-wide">
+                    Save $300
+                  </span>
+                </p>
+                <p className="text-sm text-amber-800 mt-1">
+                  Sign a <strong>minimum 1-year contract</strong> and your{' '}
+                  <strong>$300 damage deposit is fully waived</strong> — no deposit required at signing.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Rental Terms */}
         <Card className="mb-8 border-blue-200 bg-blue-50">
           <CardHeader>
@@ -188,10 +211,20 @@ const StorageLockerSignup = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {RENTAL_TERMS.map((term) => (
-                <div key={term} className="flex items-start gap-2 text-sm text-blue-700">
+              {RENTAL_TERMS.map(({ text, promoWaived }) => (
+                <div key={text} className="flex items-start gap-2 text-sm text-blue-700">
                   <CheckCircle2 className="h-4 w-4 mt-0.5 flex-shrink-0 text-blue-500" />
-                  <span>{term}</span>
+                  {promoWaived ? (
+                    <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                      <span className="line-through text-blue-400">{text}</span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 border border-amber-300 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                        <Gift className="h-3 w-3" />
+                        Waived with 1-year contract
+                      </span>
+                    </span>
+                  ) : (
+                    <span>{text}</span>
+                  )}
                 </div>
               ))}
             </div>
