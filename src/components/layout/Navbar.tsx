@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { AlertTriangle, Menu, X } from 'lucide-react';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 
 const informationItems = [
@@ -79,12 +80,12 @@ const Navbar = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              <div className="absolute top-full left-0 mt-1 bg-white border border-outline-variant rounded-xl shadow-lg py-2 min-w-[200px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              <div className="absolute top-full left-0 mt-1 bg-white border border-outline-variant rounded-xl shadow-xl py-2 min-w-[200px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 {formsItems.map((item) => (
                   <Link
                     key={item.name}
                     to={item.path}
-                    className="block px-4 py-2.5 text-body-md text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors"
+                    className="block px-4 py-2.5 text-sm font-medium text-[#151c27] hover:bg-[#e7eefe] hover:text-secondary transition-colors"
                   >
                     {item.name}
                   </Link>
@@ -100,12 +101,12 @@ const Navbar = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              <div className="absolute top-full left-0 mt-1 bg-white border border-outline-variant rounded-xl shadow-lg py-2 min-w-[200px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              <div className="absolute top-full left-0 mt-1 bg-white border border-outline-variant rounded-xl shadow-xl py-2 min-w-[200px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 {informationItems.map((item) => (
                   <Link
                     key={item.name}
                     to={item.path}
-                    className="block px-4 py-2.5 text-body-md text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors"
+                    className="block px-4 py-2.5 text-sm font-medium text-[#151c27] hover:bg-[#e7eefe] hover:text-secondary transition-colors"
                   >
                     {item.name}
                   </Link>
@@ -113,7 +114,7 @@ const Navbar = () => {
                 <div className="border-t border-outline-variant my-1"></div>
                 <Link
                   to="/incident-status"
-                  className="block px-4 py-2.5 text-body-md text-spectrum-red hover:bg-surface-container-low transition-colors"
+                  className="block px-4 py-2.5 text-sm font-medium text-spectrum-red hover:bg-red-50 transition-colors"
                 >
                   Incident Status
                 </Link>
@@ -136,9 +137,9 @@ const Navbar = () => {
           <div className="flex items-center gap-4">
             <Link
               to="/incident-report"
-              className="hidden lg:flex items-center gap-2 bg-error-container text-on-error-container px-4 py-2 rounded-full text-label-md hover:brightness-95 transition-all"
+              className="hidden lg:flex items-center gap-2 bg-error-container text-on-error-container px-4 py-2 rounded-full text-xs font-semibold hover:brightness-95 transition-all"
             >
-              <span className="material-symbols-outlined text-[16px]">report</span>
+              <AlertTriangle className="h-3.5 w-3.5" />
               Report Issue
             </Link>
             {adminUser ? (
@@ -158,11 +159,11 @@ const Navbar = () => {
             )}
             {/* Mobile hamburger */}
             <button
-              className="md:hidden material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors"
+              className="md:hidden p-1 text-on-surface-variant hover:text-primary transition-colors"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
             >
-              {isMenuOpen ? 'close' : 'menu'}
+              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
         </div>

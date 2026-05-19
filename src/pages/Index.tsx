@@ -6,7 +6,7 @@ import Footer from '@/components/layout/Footer';
 import RecentAnnouncements from '@/components/widgets/RecentAnnouncements';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Image, Book, Mail, Edit, Save, X, Loader2, Paintbrush, Wind, Hammer, ArrowRight, AlertTriangle } from 'lucide-react';
+import { Image, Book, Mail, Edit, Save, X, Loader2, Paintbrush, Wind, Hammer, Wrench, ArrowRight, AlertTriangle } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -303,7 +303,7 @@ Use our platform to stay updated on events, announcements, and community activit
                   <div className="flex flex-wrap gap-4 mt-8">
                     <Link
                       to="/incident-report"
-                      className="bg-secondary text-on-secondary px-8 py-4 rounded-xl text-title-lg shadow-md hover:brightness-110 active:scale-95 transition-all inline-flex items-center gap-2"
+                      className="bg-spectrum-blue text-white px-8 py-4 rounded-xl text-title-lg shadow-md hover:brightness-110 active:scale-95 transition-all inline-flex items-center gap-2"
                     >
                       Contact Us
                       <ArrowRight className="h-5 w-5" />
@@ -377,7 +377,7 @@ Use our platform to stay updated on events, announcements, and community activit
                 {/* Maintenance / Requests Card */}
                 <Link to="/incident-report" className="bg-surface-container-lowest border border-outline-variant p-card-padding rounded-3xl shadow-sm hover:shadow-md transition-all group">
                   <div className="w-10 h-10 bg-surface-container-highest text-on-surface rounded-lg flex items-center justify-center mb-4">
-                    <span className="material-symbols-outlined text-[24px]">handyman</span>
+                    <Wrench className="h-5 w-5" />
                   </div>
                   <h4 className="text-title-lg mb-2 text-on-surface">Requests</h4>
                   <p className="text-body-md text-on-surface-variant">Submit maintenance or service tickets.</p>
@@ -390,7 +390,7 @@ Use our platform to stay updated on events, announcements, and community activit
                     <h3 className="text-headline-md mb-2">Community Updates</h3>
                     <p className="text-body-md text-white/80">Check announcements and notices from the Strata Council.</p>
                   </div>
-                  <span className="material-symbols-outlined text-6xl opacity-10 absolute -right-4 -bottom-4">campaign</span>
+                  <Mail className="h-24 w-24 opacity-10 absolute -right-4 -bottom-4" />
                 </div>
               </div>
             </section>
