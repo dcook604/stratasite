@@ -147,7 +147,7 @@ const Bylaws: React.FC = () => {
   const downloadPDF = () => {
     const link = document.createElement('a');
     link.href = '/documents/bylaws_2025.pdf';
-    link.download = 'Spectrum_4_Bylaws_2025.pdf';
+    link.download = 'Spectrum_4_Bylaws_2026.pdf';
     link.click();
   };
 
