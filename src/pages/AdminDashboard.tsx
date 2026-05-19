@@ -741,13 +741,13 @@ const AdminDashboard = () => {
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-3">
                   <SidebarTrigger className="md:hidden" />
-                  <h1 className="text-2xl font-bold">{sectionTitles[activeSection]}</h1>
+                  <h1 className="text-headline-md text-on-surface">{sectionTitles[activeSection]}</h1>
                 </div>
-                <Button variant="outline" onClick={handleLogout}>Log Out</Button>
+                <Button variant="outline" onClick={handleLogout} className="border-outline-variant">Log Out</Button>
               </div>
 
-              <Alert className="mb-6">
-                <AlertDescription>Welcome back, {adminUser?.email}!</AlertDescription>
+              <Alert className="mb-6 border border-outline-variant bg-surface-container-low">
+                <AlertDescription className="text-on-surface text-sm">Welcome back, {adminUser?.email}!</AlertDescription>
               </Alert>
 
                 {activeSection === 'announcements' && (

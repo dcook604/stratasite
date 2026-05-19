@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAdminAuth } from '@/context/AdminAuthContext';
@@ -9,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import { Lock, ArrowLeft, Mail, AlertCircle } from 'lucide-react';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
@@ -16,7 +16,6 @@ const AdminLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Forgot password state
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
@@ -27,12 +26,10 @@ const AdminLogin = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  
-  // Get the intended destination from location state, or default to dashboard
+
   const from = location.state?.from?.pathname || '/admin/dashboard';
-  
+
   useEffect(() => {
-    // If already logged in, redirect to dashboard or previous location
     if (adminUser) {
       navigate(from, { replace: true });
     }
@@ -103,30 +100,42 @@ const AdminLogin = () => {
     <div className="page-container">
       <Navbar />
       <div className="page-content">
-        <div className="max-w-md mx-auto mt-16 mb-16">
-          <div className="bg-white p-8 rounded-lg shadow-md">
+        <div className="max-w-md mx-auto mt-16 mb-16 px-gutter">
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-8 shadow-sm">
+            {/* Logo */}
+            <div className="flex justify-center mb-8">
+              <div className="flex spectrum-logo-bars gap-1 items-end h-10">
+                <div className="w-2.5 h-5 bg-spectrum-red rounded-sm"></div>
+                <div className="w-2.5 h-7 bg-spectrum-green rounded-sm"></div>
+                <div className="w-2.5 h-10 bg-spectrum-blue rounded-sm"></div>
+                <div className="w-2.5 h-7 bg-spectrum-yellow rounded-sm"></div>
+              </div>
+            </div>
+
             {showForgotPassword ? (
               <>
-                <h1 className="text-2xl font-bold text-center mb-6">Reset Password</h1>
+                <h1 className="text-headline-md text-center mb-2 text-on-surface">Reset Password</h1>
+                <p className="text-body-md text-center text-on-surface-variant mb-8">
+                  Enter your admin email and we'll send a reset link.
+                </p>
 
                 {forgotMessage && (
-                  <Alert className="mb-4">
-                    <AlertDescription>{forgotMessage}</AlertDescription>
+                  <Alert className="mb-6 border border-spectrum-green/20 bg-spectrum-green/5">
+                    <AlertCircle className="h-4 w-4 text-spectrum-green" />
+                    <AlertDescription className="text-on-surface">{forgotMessage}</AlertDescription>
                   </Alert>
                 )}
                 {forgotError && (
-                  <Alert variant="destructive" className="mb-4">
+                  <Alert variant="destructive" className="mb-6">
+                    <AlertCircle className="h-4 w-4" />
                     <AlertDescription>{forgotError}</AlertDescription>
                   </Alert>
                 )}
 
                 {!forgotMessage && (
                   <form onSubmit={handleForgotPassword} className="space-y-6">
-                    <p className="text-sm text-gray-600">
-                      Enter your admin email address and we'll send you a link to reset your password.
-                    </p>
                     <div className="space-y-2">
-                      <Label htmlFor="forgot-email">Email</Label>
+                      <Label htmlFor="forgot-email" className="text-xs font-semibold text-on-surface">Email</Label>
                       <Input
                         id="forgot-email"
                         type="email"
@@ -134,18 +143,19 @@ const AdminLogin = () => {
                         onChange={(e) => setForgotEmail(e.target.value)}
                         placeholder="Enter your email"
                         required
+                        className="border-outline-variant"
                       />
                     </div>
-                    <Button type="submit" className="w-full" disabled={forgotLoading}>
+                    <Button type="submit" className="w-full bg-primary-container text-on-primary hover:brightness-110" disabled={forgotLoading}>
                       {forgotLoading ? 'Sending...' : 'Send Reset Link'}
                     </Button>
                   </form>
                 )}
 
-                <div className="text-center mt-4">
+                <div className="text-center mt-6">
                   <button
                     type="button"
-                    className="text-sm text-blue-600 hover:underline"
+                    className="text-sm text-secondary hover:underline inline-flex items-center gap-1"
                     onClick={() => {
                       setShowForgotPassword(false);
                       setForgotMessage('');
@@ -153,23 +163,28 @@ const AdminLogin = () => {
                       setForgotEmail('');
                     }}
                   >
+                    <ArrowLeft className="w-4 h-4" />
                     Back to Login
                   </button>
                 </div>
               </>
             ) : (
               <>
-                <h1 className="text-2xl font-bold text-center mb-6">Admin Login</h1>
+                <h1 className="text-headline-md text-center mb-2 text-on-surface">Admin Login</h1>
+                <p className="text-body-md text-center text-on-surface-variant mb-8">
+                  Sign in to manage your strata site.
+                </p>
 
                 {errorMessage && (
-                  <Alert variant="destructive" className="mb-4">
+                  <Alert variant="destructive" className="mb-6">
+                    <AlertCircle className="h-4 w-4" />
                     <AlertDescription>{errorMessage}</AlertDescription>
                   </Alert>
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email" className="text-xs font-semibold text-on-surface">Email</Label>
                     <Input
                       id="email"
                       type="email"
@@ -177,32 +192,34 @@ const AdminLogin = () => {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Enter your email"
                       required
+                      className="border-outline-variant"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password" className="text-xs font-semibold text-on-surface">Password</Label>
                     <Input
                       id="password"
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
+                      placeholder="Enter your password"
                       required
+                      className="border-outline-variant"
                     />
                   </div>
                   <Button
                     type="submit"
-                    className="w-full"
+                    className="w-full bg-primary-container text-on-primary hover:brightness-110"
                     disabled={isLoading}
                   >
                     {isLoading ? "Logging in..." : "Log In"}
                   </Button>
                 </form>
 
-                <div className="text-center mt-4">
+                <div className="text-center mt-6">
                   <button
                     type="button"
-                    className="text-sm text-blue-600 hover:underline"
+                    className="text-sm text-secondary hover:underline"
                     onClick={() => setShowForgotPassword(true)}
                   >
                     Forgot Password?

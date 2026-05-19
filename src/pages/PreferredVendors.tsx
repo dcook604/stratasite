@@ -1,10 +1,7 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { ExternalLink, Phone, Mail, Paintbrush, Wind, Hammer } from 'lucide-react';
+import { ExternalLink, Phone, Mail, Paintbrush, Wind, Hammer, Search, ArrowRight } from 'lucide-react';
 
 const vendors = [
   {
@@ -24,9 +21,11 @@ const vendors = [
     ],
     website: 'https://honestjohnpaintingco.com/',
     icon: Paintbrush,
-    color: 'bg-blue-500',
-    badgeColor: 'bg-blue-100 text-blue-800',
+    color: 'bg-spectrum-blue/10 text-spectrum-blue',
     category: 'Painting & Finishing',
+    phone: null,
+    email: null,
+    recommended: true,
   },
   {
     name: 'Airlux',
@@ -45,9 +44,9 @@ const vendors = [
     email: 'info@airlux.ca',
     website: 'https://airlux.ca/',
     icon: Wind,
-    color: 'bg-orange-500',
-    badgeColor: 'bg-orange-100 text-orange-800',
+    color: 'bg-spectrum-yellow/10 text-spectrum-yellow',
     category: 'HVAC & Climate Control',
+    recommended: true,
   },
   {
     name: 'Swift Contracting & Renovations Ltd.',
@@ -66,9 +65,11 @@ const vendors = [
     ],
     website: 'https://swiftcontractingandrenovations.com/',
     icon: Hammer,
-    color: 'bg-green-600',
-    badgeColor: 'bg-green-100 text-green-800',
+    color: 'bg-spectrum-green/10 text-spectrum-green',
     category: 'Contracting & Renovations',
+    phone: null,
+    email: null,
+    recommended: true,
   },
 ];
 
@@ -78,95 +79,111 @@ const PreferredVendors = () => {
       <Navbar />
       <div className="page-content">
         {/* Header */}
-        <section className="bg-gradient-to-b from-primary/10 to-primary/5 py-12 md:py-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Preferred Vendors</h1>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Trusted service providers recommended by the Spectrum 4 Strata Council. These vendors have been vetted for quality, reliability, and professionalism.
-            </p>
+        <section className="bg-surface-subtle py-16 md:py-20">
+          <div className="max-w-container-max mx-auto px-gutter">
+            <div className="max-w-3xl">
+              <h1 className="text-headline-lg text-on-surface mb-4">Vendor Directory</h1>
+              <p className="text-body-lg text-on-surface-variant">
+                A curated directory of trusted vendors recommended by the Strata Council. These professionals have been vetted for quality, reliability, and familiarity with Spectrum 4's building systems.
+              </p>
+            </div>
           </div>
         </section>
 
         {/* Vendor Cards */}
-        <section className="py-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <section className="py-section-gap">
+          <div className="max-w-container-max mx-auto px-gutter">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
               {vendors.map((vendor) => {
                 const Icon = vendor.icon;
                 return (
-                  <Card key={vendor.name} className="flex flex-col shadow-md hover:shadow-lg transition-shadow">
-                    <CardHeader className="pb-4">
-                      <div className="flex items-start gap-4 mb-3">
-                        <div className={`h-12 w-12 ${vendor.color} rounded-xl flex items-center justify-center flex-shrink-0`}>
-                          <Icon className="h-6 w-6 text-white" />
-                        </div>
-                        <div className="min-w-0">
-                          <Badge className={`${vendor.badgeColor} border-0 text-xs mb-2`}>
-                            {vendor.category}
-                          </Badge>
-                          <CardTitle className="text-lg leading-snug">{vendor.name}</CardTitle>
-                          <p className="text-sm text-gray-500 italic mt-1">{vendor.tagline}</p>
-                        </div>
+                  <div key={vendor.name} className="bg-surface-container-lowest border border-outline-variant rounded-xl p-card-padding shadow-[0_4px_12px_rgba(17,24,39,0.04)] hover:shadow-lg transition-all group flex flex-col">
+                    {/* Header with badge */}
+                    <div className="flex justify-between items-start mb-6">
+                      <div className={`w-14 h-14 rounded-lg ${vendor.color} flex items-center justify-center`}>
+                        <Icon className="h-7 w-7" />
                       </div>
-                      <p className="text-sm text-gray-600 leading-relaxed">{vendor.description}</p>
-                    </CardHeader>
-
-                    <CardContent className="flex flex-col flex-1 gap-4">
-                      {/* Services */}
-                      <div>
-                        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Services</h4>
-                        <ul className="space-y-1">
-                          {vendor.services.map((s) => (
-                            <li key={s} className="flex items-start gap-2 text-sm text-gray-700">
-                              <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-gray-400 flex-shrink-0" />
-                              {s}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      {/* Contact */}
-                      {(vendor.phone || vendor.email) && (
-                        <div className="space-y-1">
-                          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Contact</h4>
-                          {vendor.phone && (
-                            <a
-                              href={`tel:${vendor.phone}`}
-                              className="flex items-center gap-2 text-sm text-gray-700 hover:text-primary"
-                            >
-                              <Phone className="h-4 w-4 flex-shrink-0" />
-                              {vendor.phone}
-                            </a>
-                          )}
-                          {vendor.email && (
-                            <a
-                              href={`mailto:${vendor.email}`}
-                              className="flex items-center gap-2 text-sm text-gray-700 hover:text-primary"
-                            >
-                              <Mail className="h-4 w-4 flex-shrink-0" />
-                              {vendor.email}
-                            </a>
-                          )}
-                        </div>
+                      {vendor.recommended && (
+                        <span className="bg-spectrum-green/15 text-spectrum-green px-3 py-1 rounded-full text-label-md flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+                          Strata Recommended
+                        </span>
                       )}
+                    </div>
 
-                      {/* Website button pinned to bottom */}
-                      <div className="mt-auto pt-2">
-                        <Button asChild className="w-full" variant="outline">
-                          <a href={vendor.website} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            Visit Website
-                          </a>
-                        </Button>
+                    {/* Name & Category */}
+                    <h3 className="text-title-lg text-on-surface mb-1">{vendor.name}</h3>
+                    <p className="text-label-md text-spectrum-blue mb-4">{vendor.category}</p>
+                    <p className="text-body-md text-on-surface-variant mb-6">{vendor.description}</p>
+
+                    {/* Services */}
+                    <div className="mb-6">
+                      <h4 className="text-label-md uppercase tracking-wider text-on-surface-variant mb-3">Services</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {vendor.services.slice(0, 4).map((s) => (
+                          <span key={s} className="bg-surface-container-high px-2.5 py-1 rounded-md text-[11px] font-semibold uppercase text-on-surface-variant">
+                            {s.length > 20 ? s.substring(0, 18) + '...' : s}
+                          </span>
+                        ))}
+                        {vendor.services.length > 4 && (
+                          <span className="text-[11px] text-on-surface-variant flex items-center">+{vendor.services.length - 4} more</span>
+                        )}
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+
+                    {/* Contact */}
+                    {(vendor.phone || vendor.email) && (
+                      <div className="space-y-2 mb-6">
+                        {vendor.phone && (
+                          <a href={`tel:${vendor.phone}`} className="flex items-center gap-3 text-body-md text-on-surface-variant hover:text-secondary transition-colors">
+                            <span className="material-symbols-outlined text-[18px]">phone</span>
+                            {vendor.phone}
+                          </a>
+                        )}
+                        {vendor.email && (
+                          <a href={`mailto:${vendor.email}`} className="flex items-center gap-3 text-body-md text-on-surface-variant hover:text-secondary transition-colors">
+                            <span className="material-symbols-outlined text-[18px]">mail</span>
+                            {vendor.email}
+                          </a>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Website button */}
+                    <a
+                      href={vendor.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-auto w-full border border-primary-container text-primary-container text-label-md py-3 rounded-xl text-center group-hover:bg-primary-container group-hover:text-on-primary transition-all flex items-center justify-center gap-2"
+                    >
+                      Visit Website
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </div>
                 );
               })}
+
+              {/* Featured CTA Card */}
+              <div className="bg-primary-container text-on-primary rounded-xl p-card-padding flex flex-col justify-center relative overflow-hidden">
+                <div className="absolute -right-8 -bottom-8 opacity-10">
+                  <span className="material-symbols-outlined text-[160px]">handyman</span>
+                </div>
+                <h3 className="text-headline-md mb-4 relative z-10">Need a Quote?</h3>
+                <p className="text-body-lg mb-8 relative z-10 opacity-90">
+                  Don't see what you're looking for? Contact the Strata Council for specific recommendations for your project.
+                </p>
+                <a
+                  href="mailto:Council@spectrum4.ca"
+                  className="bg-on-primary text-primary-container text-label-md py-3 px-6 rounded-xl w-max relative z-10 hover:opacity-90 transition-all flex items-center gap-2"
+                >
+                  <Mail className="h-4 w-4" />
+                  Request Recommendation
+                </a>
+              </div>
             </div>
 
             {/* Disclaimer */}
-            <p className="mt-10 text-center text-sm text-gray-500">
+            <p className="mt-12 text-center text-body-md text-on-surface-variant">
               Spectrum 4 Strata recommends these vendors based on community experience. Residents engage vendors directly and at their own discretion.
             </p>
           </div>

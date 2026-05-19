@@ -254,13 +254,13 @@ const FormK = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="page-container">
       <Navbar />
-      <PageHeader 
-        title="Form K - Notice of Tenant's Responsibilities"
-        description="Strata Property Act Form K (Section 146)"
-        icon={<FileText className="h-8 w-8" />}
-      />
+      <div className="page-content">
+        <PageHeader
+          title="Form K - Notice of Tenant's Responsibilities"
+          description="Strata Property Act Form K (Section 146)"
+        />
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <Form {...form}>
@@ -1025,6 +1025,7 @@ const FormK = () => {
 
           </form>
         </Form>
+        </div>
       </div>
 
       <Footer />

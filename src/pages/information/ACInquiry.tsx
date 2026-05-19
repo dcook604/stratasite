@@ -123,13 +123,14 @@ const ACInquiry = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="page-container">
       <Navbar />
-      <PageHeader
-        title="AC Inquiry"
-        description="Request information about air conditioning installation from Airlux"
-      />
-      <main className="flex-grow container mx-auto px-4 py-8 max-w-4xl">
+      <div className="page-content">
+        <PageHeader
+          title="AC Inquiry"
+          description="Request information about air conditioning installation from Airlux"
+        />
+        <div className="form-page-container max-w-4xl">
         {/* Header Card */}
         <Card className="mb-8 bg-gradient-to-r from-blue-50 to-cyan-50 border-l-4 border-l-blue-500">
           <CardHeader>
@@ -451,10 +452,11 @@ const ACInquiry = () => {
             </div>
           </CardContent>
         </Card>
-      </main>
+      </div>
       <Footer />
+      </div>
     </div>
   );
 };
 
-export default ACInquiry; 
+export default ACInquiry;

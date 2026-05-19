@@ -4,14 +4,11 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import PageHeader from '@/components/shared/PageHeader';
-import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Download, AlertCircle, Smartphone, ZoomIn, ZoomOut } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { isMobile, isIOS, isAndroid } from '@/utils/pdfConfig';
 
-// Configure PDF.js worker using CDN for reliability
-// This ensures the worker loads correctly in all environments
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const Bylaws: React.FC = () => {
@@ -23,18 +20,15 @@ const Bylaws: React.FC = () => {
   const [pdfUrl, setPdfUrl] = useState<string>('');
   const [useIframe, setUseIframe] = useState<boolean>(false);
 
-  // Debug logging and URL setup
   useEffect(() => {
     console.log('Bylaws component mounted');
     console.log('PDF.js version:', pdfjs.version);
     console.log('Worker source:', pdfjs.GlobalWorkerOptions.workerSrc);
-    
-    // Set PDF URL
+
     const url = `${window.location.origin}/documents/bylaws_2025.pdf`;
     console.log('PDF URL:', url);
     setPdfUrl(url);
-    
-    // Test if PDF is accessible
+
     fetch(url)
       .then(response => {
         console.log('PDF fetch response:', response.status, response.statusText);
@@ -45,12 +39,9 @@ const Bylaws: React.FC = () => {
       })
       .then(blob => {
         console.log('PDF blob size:', blob.size, 'bytes');
-        setLoading(false); // PDF is accessible, stop loading
-        
-        // If using iframe mode, we need to set a default number of pages
-        // since we can't get it programmatically from iframe
+        setLoading(false);
         if (useIframe && numPages === 0) {
-          setNumPages(33); // Default based on known PDF
+          setNumPages(33);
         }
       })
       .catch(err => {
@@ -58,8 +49,7 @@ const Bylaws: React.FC = () => {
         setError('Unable to access PDF file');
         setLoading(false);
       });
-      
-    // Auto-switch to iframe after 5 seconds if still loading
+
     const timeoutId = setTimeout(() => {
       if (loading && !error && !useIframe) {
         console.log('PDF loading timeout - switching to iframe mode');
@@ -70,38 +60,36 @@ const Bylaws: React.FC = () => {
         }
       }
     }, 5000);
-    
+
     return () => clearTimeout(timeoutId);
   }, []);
 
-  // Handle page count when switching to iframe mode
   useEffect(() => {
     if (useIframe && numPages === 0) {
       console.log('Setting default page count for iframe mode');
-      setNumPages(33); // Known page count for this PDF
+      setNumPages(33);
     }
   }, [useIframe, numPages]);
 
-  // This useEffect is now only for responsive scaling, not for initialization
   useEffect(() => {
     const updateScale = () => {
       const width = window.innerWidth;
-      
+
       if (isMobile()) {
         if (width < 375) {
-          setScale(0.5); // Very small mobile screens
+          setScale(0.5);
         } else if (width < 480) {
-          setScale(0.6); // Small mobile screens
+          setScale(0.6);
         } else if (width < 768) {
-          setScale(0.7); // Larger mobile screens (portrait tablets)
+          setScale(0.7);
         } else {
-          setScale(0.8); // Tablets
+          setScale(0.8);
         }
       } else {
         if (width < 1200) {
-          setScale(0.9); // Small desktop screens
+          setScale(0.9);
         } else {
-          setScale(1.0); // Large desktop screens
+          setScale(1.0);
         }
       }
       console.log('Scale updated:', { width, mobile: isMobile(), scale });
@@ -129,14 +117,12 @@ const Bylaws: React.FC = () => {
     console.error('Error name:', error.name);
     console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
-    
-    // Auto-switch to iframe mode on error
+
     console.log('Switching to iframe fallback mode');
     setUseIframe(true);
     setLoading(false);
-    setError(null); // Clear error since we're switching to iframe
-    
-    // Set default page count for iframe if we don't have it
+    setError(null);
+
     if (numPages === 0) {
       setNumPages(33);
     }
@@ -165,302 +151,294 @@ const Bylaws: React.FC = () => {
     link.click();
   };
 
-  if (loading) {
-    return (
-      <>
-        <Navbar />
-        <div className="container mx-auto px-4 py-8">
-          <PageHeader 
-            title="Bylaws" 
-            description="Spectrum 4 Strata Bylaws"
-          />
-          <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <p className="text-gray-600 text-center">
-              {isMobile() ? (
-                <>
-                  <Smartphone className="inline w-4 h-4 mr-2" />
-                  Loading PDF for mobile device...
-                </>
-              ) : (
-                'Loading PDF...'
-              )}
-            </p>
-            {isMobile() && (
-              <div className="text-sm text-gray-500 text-center max-w-md space-y-1">
-                <p>Mobile devices may take longer to load PDFs.</p>
-                <p>Please be patient while we optimize the viewing experience.</p>
-              </div>
-            )}
-          </div>
-        </div>
-        <Footer />
-      </>
-    );
-  }
-
-  if (error) {
-    return (
-      <>
-        <Navbar />
-        <div className="container mx-auto px-4 py-8">
-          <PageHeader 
-            title="Bylaws" 
-            description="Spectrum 4 Strata Bylaws"
-          />
-          <Alert className="max-w-2xl mx-auto">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="space-y-4">
-              <div>{error}</div>
-              {isMobile() && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">Mobile troubleshooting tips:</p>
-                  <ul className="text-xs space-y-1 list-disc list-inside ml-4">
-                    <li>Try refreshing the page</li>
-                    <li>Ensure you have a stable internet connection</li>
-                    {isIOS() && <li>Use Safari browser for best compatibility</li>}
-                    {isAndroid() && <li>Use Chrome browser for best compatibility</li>}
-                    <li>Clear your browser cache and cookies</li>
-                    <li>Try downloading the PDF directly using the button below</li>
-                  </ul>
-                </div>
-              )}
-              <div className="pt-2">
-                <Button onClick={downloadPDF} variant="outline" size="sm">
-                  <Download className="w-4 h-4 mr-2" />
-                  Download PDF
-                </Button>
-              </div>
-            </AlertDescription>
-          </Alert>
-        </div>
-        <Footer />
-      </>
-    );
-  }
-
   return (
-    <>
+    <div className="page-container">
       <Navbar />
-      <div className="container mx-auto px-4 py-8">
-        <PageHeader 
-          title="Bylaws" 
-          description="Spectrum 4 Strata Bylaws"
-        />
-        
-        {isMobile() && (
-          <Alert className="mb-6">
-            <Smartphone className="h-4 w-4" />
-            <AlertDescription>
-              <strong>Mobile View:</strong> PDF is optimized for mobile viewing. 
-              Use pinch-to-zoom for better readability. You can also download the PDF for offline viewing.
-            </AlertDescription>
-          </Alert>
-        )}
-        
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          {/* PDF Controls */}
-          <div className="flex flex-col lg:flex-row justify-between items-center mb-6 space-y-4 lg:space-y-0">
-            {/* Navigation Controls */}
-            <div className="flex items-center space-x-2">
-              <Button 
-                onClick={goToPrevPage} 
-                disabled={pageNumber <= 1}
-                variant="outline"
-                size="sm"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                {!isMobile() && "Previous"}
-              </Button>
-              <span className="text-sm font-medium px-2 whitespace-nowrap">
-                Page {pageNumber} of {numPages}
-              </span>
-              <Button 
-                onClick={goToNextPage} 
-                disabled={pageNumber >= numPages}
-                variant="outline"
-                size="sm"
-              >
-                {!isMobile() && "Next"}
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
-            
-            {/* Zoom Controls (Desktop only) */}
-            {!isMobile() && (
-              <div className="flex items-center space-x-2">
-                <Button onClick={zoomOut} variant="outline" size="sm">
-                  <ZoomOut className="w-4 h-4" />
-                </Button>
-                <span className="text-sm px-2 min-w-16 text-center">
-                  {Math.round(scale * 100)}%
-                </span>
-                <Button onClick={zoomIn} variant="outline" size="sm">
-                  <ZoomIn className="w-4 h-4" />
-                </Button>
-              </div>
-            )}
-            
-            {/* Download Button */}
-            <div className="flex items-center space-x-2">
-              <Button onClick={downloadPDF} variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
-                Download
-              </Button>
-              
-              {/* Toggle View Mode Button */}
-              <Button 
-                onClick={() => setUseIframe(!useIframe)} 
-                variant="outline" 
-                size="sm"
-                title={useIframe ? "Switch to advanced viewer" : "Switch to simple viewer"}
-              >
-                {useIframe ? "Advanced View" : "Simple View"}
-              </Button>
-            </div>
+      <div className="page-content">
+        {/* Header */}
+        <section className="bg-surface-subtle py-12 md:py-16">
+          <div className="max-w-container-max mx-auto px-gutter">
+            <h1 className="text-headline-lg text-on-surface mb-2">Strata Bylaws</h1>
+            <p className="text-body-lg text-on-surface-variant">Spectrum 4 consolidated bylaws and building rules.</p>
           </div>
+        </section>
 
-          {/* PDF Viewer */}
-          <div className="flex justify-center">
-            <div className="border border-gray-200 shadow-sm rounded">
-              {/* Render either PDF or iframe fallback */}
-              {useIframe ? (
-                <div className="w-full">
-                  <iframe
-                    src={`${pdfUrl}#page=${pageNumber}`}
-                    className="w-full rounded"
-                    style={{ 
-                      height: isMobile() ? '500px' : '800px',
-                      border: 'none'
-                    }}
-                    title="Bylaws PDF Viewer"
-                    allowFullScreen
-                    key={pageNumber} // Force re-render when page changes
-                  />
-                  <div className="mt-4 text-center text-sm text-gray-500">
-                    Using simple PDF viewer. Use your browser's zoom controls to adjust size.
-                  </div>
-                </div>
-              ) : (
-                pdfUrl ? (
-                  <Document
-                    file={pdfUrl}
-                    onLoadSuccess={onDocumentLoadSuccess}
-                    onLoadError={onDocumentLoadError}
-                    onSourceError={(error) => {
-                      console.error('onSourceError called:', error);
-                      onDocumentLoadError(error as Error);
-                    }}
-                    options={{
-                      cMapUrl: `//unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
-                      cMapPacked: true,
-                      withCredentials: false,
-                    }}
-                    loading={
-                      <div className="flex items-center justify-center h-96 bg-gray-50 rounded">
-                        <div className="text-center space-y-2">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                          <p className="text-gray-600">Loading page...</p>
-                        </div>
-                      </div>
-                    }
-                    error={
-                      <div className="flex items-center justify-center h-96 bg-red-50 rounded">
-                        <div className="text-center text-red-600">
-                          <AlertCircle className="w-8 h-8 mx-auto mb-2" />
-                          <p>Failed to load PDF</p>
-                        </div>
-                      </div>
-                    }
-                  >
-                    <Page 
-                      pageNumber={pageNumber} 
-                      scale={scale}
-                      renderTextLayer={!isMobile()} // Disable text layer on mobile for better performance
-                      renderAnnotationLayer={!isMobile()} // Disable annotation layer on mobile for better performance
-                      loading={
-                        <div 
-                          className="flex items-center justify-center bg-gray-50 rounded" 
-                          style={{ 
-                            width: isMobile() ? `${Math.min(window.innerWidth - 80, 600)}px` : '800px', 
-                            height: isMobile() ? `${Math.min(window.innerHeight - 300, 800)}px` : '1000px' 
-                          }}
-                        >
-                          <div className="text-center space-y-2">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-                            <p className="text-gray-600 text-sm">Rendering page...</p>
-                          </div>
-                        </div>
-                      }
-                      error={
-                        <div 
-                          className="flex items-center justify-center bg-red-50 rounded" 
-                          style={{ 
-                            width: isMobile() ? `${Math.min(window.innerWidth - 80, 600)}px` : '800px', 
-                            height: isMobile() ? `${Math.min(window.innerHeight - 300, 800)}px` : '1000px' 
-                          }}
-                        >
-                          <div className="text-center text-red-600">
-                            <AlertCircle className="w-6 h-6 mx-auto mb-2" />
-                            <p className="text-sm">Failed to render page</p>
-                          </div>
-                        </div>
-                      }
-                    />
-                  </Document>
+        <div className="form-page-container">
+          {/* Loading State */}
+          {loading && (
+            <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+              <div className="w-10 h-10 border-4 border-outline-variant border-t-secondary rounded-full animate-spin"></div>
+              <p className="text-sm text-on-surface-variant">
+                {isMobile() ? (
+                  <span className="flex items-center gap-2">
+                    <Smartphone className="w-4 h-4" />
+                    Loading PDF for mobile device...
+                  </span>
                 ) : (
-                  <div className="flex items-center justify-center h-96 bg-gray-50 rounded">
-                    <div className="text-center space-y-2">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                      <p className="text-gray-600">Initializing PDF viewer...</p>
-                    </div>
-                  </div>
-                )
+                  'Loading PDF...'
+                )}
+              </p>
+              {isMobile() && (
+                <div className="text-sm text-on-surface-variant text-center max-w-md space-y-1">
+                  <p>Mobile devices may take longer to load PDFs.</p>
+                  <p>Please be patient while we optimize the viewing experience.</p>
+                </div>
               )}
-            </div>
-          </div>
-
-          {/* Mobile Bottom Navigation */}
-          {isMobile() && (
-            <div className="flex justify-center mt-6">
-              <div className="flex items-center space-x-2">
-                <Button 
-                  onClick={goToPrevPage} 
-                  disabled={pageNumber <= 1}
-                  variant="outline"
-                  size="sm"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  Previous
-                </Button>
-                <span className="text-sm font-medium px-3">
-                  {pageNumber} / {numPages}
-                </span>
-                <Button 
-                  onClick={goToNextPage} 
-                  disabled={pageNumber >= numPages}
-                  variant="outline"
-                  size="sm"
-                >
-                  Next
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
             </div>
           )}
-          
-          {/* Mobile Zoom Instructions */}
-          {isMobile() && (
-            <div className="mt-4 text-center">
-              <p className="text-sm text-gray-500">
-                📱 Use pinch-to-zoom gesture to zoom in/out on mobile devices
-              </p>
+
+          {/* Error State */}
+          {error && !loading && (
+            <Alert className="max-w-2xl mx-auto border border-spectrum-red/20">
+              <AlertCircle className="h-4 w-4 text-spectrum-red" />
+              <AlertDescription className="space-y-4">
+                <div className="text-on-surface">{error}</div>
+                {isMobile() && (
+                  <div className="space-y-2">
+                    <p className="text-label-md text-on-surface">Mobile troubleshooting tips:</p>
+                    <ul className="text-xs space-y-1 list-disc list-inside ml-4 text-on-surface-variant">
+                      <li>Try refreshing the page</li>
+                      <li>Ensure you have a stable internet connection</li>
+                      {isIOS() && <li>Use Safari browser for best compatibility</li>}
+                      {isAndroid() && <li>Use Chrome browser for best compatibility</li>}
+                      <li>Clear your browser cache and cookies</li>
+                      <li>Try downloading the PDF directly using the button below</li>
+                    </ul>
+                  </div>
+                )}
+                <div className="pt-2">
+                  <Button onClick={downloadPDF} variant="outline" size="sm" className="border-outline-variant">
+                    <Download className="w-4 h-4 mr-2" />
+                    Download PDF
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* PDF Viewer */}
+          {!loading && !error && (
+            <div>
+              {isMobile() && (
+                <Alert className="mb-6 border border-spectrum-blue/20 bg-surface-brand">
+                  <Smartphone className="h-4 w-4 text-spectrum-blue" />
+                  <AlertDescription className="text-on-surface-variant">
+                    <strong className="text-on-surface">Mobile View:</strong> PDF is optimized for mobile viewing.
+                    Use pinch-to-zoom for better readability. You can also download the PDF for offline viewing.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm p-card-padding">
+                {/* PDF Controls */}
+                <div className="flex flex-col lg:flex-row justify-between items-center mb-6 gap-4 lg:gap-0">
+                  {/* Navigation */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={goToPrevPage}
+                      disabled={pageNumber <= 1}
+                      variant="outline"
+                      size="sm"
+                      className="border-outline-variant"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      {!isMobile() && <span className="ml-1">Previous</span>}
+                    </Button>
+                    <span className="text-body-md text-on-surface-variant px-3 whitespace-nowrap">
+                      Page {pageNumber} of {numPages}
+                    </span>
+                    <Button
+                      onClick={goToNextPage}
+                      disabled={pageNumber >= numPages}
+                      variant="outline"
+                      size="sm"
+                      className="border-outline-variant"
+                    >
+                      {!isMobile() && <span className="mr-1">Next</span>}
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  {/* Zoom Controls (Desktop only) */}
+                  <div className="flex items-center gap-2">
+                    {!isMobile() && (
+                      <>
+                        <Button onClick={zoomOut} variant="outline" size="sm" className="border-outline-variant">
+                          <ZoomOut className="w-4 h-4" />
+                        </Button>
+                        <span className="text-body-md text-on-surface-variant px-2 min-w-16 text-center">
+                          {Math.round(scale * 100)}%
+                        </span>
+                        <Button onClick={zoomIn} variant="outline" size="sm" className="border-outline-variant">
+                          <ZoomIn className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
+
+                    <div className="w-px h-6 bg-outline-variant mx-1"></div>
+
+                    <Button onClick={downloadPDF} variant="outline" size="sm" className="border-outline-variant">
+                      <Download className="w-4 h-4 mr-2" />
+                      Download
+                    </Button>
+
+                    <Button
+                      onClick={() => setUseIframe(!useIframe)}
+                      variant="outline"
+                      size="sm"
+                      className="border-outline-variant"
+                      title={useIframe ? "Switch to advanced viewer" : "Switch to simple viewer"}
+                    >
+                      {useIframe ? "Advanced View" : "Simple View"}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* PDF Viewer */}
+                <div className="flex justify-center">
+                  <div className="border border-outline-variant rounded-xl overflow-hidden">
+                    {useIframe ? (
+                      <div className="w-full">
+                        <iframe
+                          src={`${pdfUrl}#page=${pageNumber}`}
+                          className="w-full rounded"
+                          style={{
+                            height: isMobile() ? '500px' : '800px',
+                            border: 'none'
+                          }}
+                          title="Bylaws PDF Viewer"
+                          allowFullScreen
+                          key={pageNumber}
+                        />
+                        <div className="py-3 text-center text-body-md text-on-surface-variant bg-surface-subtle border-t border-outline-variant">
+                          Using simple PDF viewer. Use your browser's zoom controls to adjust size.
+                        </div>
+                      </div>
+                    ) : (
+                      pdfUrl ? (
+                        <Document
+                          file={pdfUrl}
+                          onLoadSuccess={onDocumentLoadSuccess}
+                          onLoadError={onDocumentLoadError}
+                          onSourceError={(error) => {
+                            console.error('onSourceError called:', error);
+                            onDocumentLoadError(error as Error);
+                          }}
+                          options={{
+                            cMapUrl: `//unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
+                            cMapPacked: true,
+                            withCredentials: false,
+                          }}
+                          loading={
+                            <div className="flex items-center justify-center min-h-[400px] bg-surface-subtle rounded">
+                              <div className="text-center space-y-2">
+                                <div className="w-8 h-8 border-4 border-outline-variant border-t-secondary rounded-full animate-spin mx-auto"></div>
+                                <p className="text-on-surface-variant text-sm">Loading page...</p>
+                              </div>
+                            </div>
+                          }
+                          error={
+                            <div className="flex items-center justify-center min-h-[400px] bg-error-container rounded">
+                              <div className="text-center text-on-error-container">
+                                <AlertCircle className="w-8 h-8 mx-auto mb-2" />
+                                <p className="text-sm">Failed to load PDF</p>
+                              </div>
+                            </div>
+                          }
+                        >
+                          <Page
+                            pageNumber={pageNumber}
+                            scale={scale}
+                            renderTextLayer={!isMobile()}
+                            renderAnnotationLayer={!isMobile()}
+                            loading={
+                              <div
+                                className="flex items-center justify-center bg-surface-subtle rounded"
+                                style={{
+                                  width: isMobile() ? `${Math.min(window.innerWidth - 80, 600)}px` : '800px',
+                                  height: isMobile() ? `${Math.min(window.innerHeight - 300, 800)}px` : '1000px'
+                                }}
+                              >
+                                <div className="text-center space-y-2">
+                                  <div className="w-6 h-6 border-4 border-outline-variant border-t-secondary rounded-full animate-spin mx-auto"></div>
+                                  <p className="text-on-surface-variant text-sm text-sm">Rendering page...</p>
+                                </div>
+                              </div>
+                            }
+                            error={
+                              <div
+                                className="flex items-center justify-center bg-error-container rounded"
+                                style={{
+                                  width: isMobile() ? `${Math.min(window.innerWidth - 80, 600)}px` : '800px',
+                                  height: isMobile() ? `${Math.min(window.innerHeight - 300, 800)}px` : '1000px'
+                                }}
+                              >
+                                <div className="text-center text-on-error-container">
+                                  <AlertCircle className="w-6 h-6 mx-auto mb-2" />
+                                  <p className="text-sm text-sm">Failed to render page</p>
+                                </div>
+                              </div>
+                            }
+                          />
+                        </Document>
+                      ) : (
+                        <div className="flex items-center justify-center min-h-[400px] bg-surface-subtle rounded">
+                          <div className="text-center space-y-2">
+                            <div className="w-8 h-8 border-4 border-outline-variant border-t-secondary rounded-full animate-spin mx-auto"></div>
+                            <p className="text-on-surface-variant text-sm">Initializing PDF viewer...</p>
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+
+                {/* Mobile Bottom Navigation */}
+                {isMobile() && (
+                  <div className="flex justify-center mt-6">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={goToPrevPage}
+                        disabled={pageNumber <= 1}
+                        variant="outline"
+                        size="sm"
+                        className="border-outline-variant"
+                      >
+                        <ChevronLeft className="w-4 h-4 mr-1" />
+                        Previous
+                      </Button>
+                      <span className="text-body-md text-on-surface-variant px-3">
+                        {pageNumber} / {numPages}
+                      </span>
+                      <Button
+                        onClick={goToNextPage}
+                        disabled={pageNumber >= numPages}
+                        variant="outline"
+                        size="sm"
+                        className="border-outline-variant"
+                      >
+                        Next
+                        <ChevronRight className="w-4 h-4 ml-1" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Mobile Zoom Instructions */}
+                {isMobile() && (
+                  <div className="mt-4 text-center">
+                    <p className="text-body-md text-on-surface-variant">
+                      Use pinch-to-zoom gesture to adjust the view on mobile devices
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
       </div>
       <Footer />
-    </>
+    </div>
   );
 };
 

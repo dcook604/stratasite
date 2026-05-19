@@ -32,6 +32,7 @@ import {
   IncidentReport,
   IncidentStatus,
   PreferredVendors,
+  HelpCenter,
   LazyLoadingFallback
 } from "./components/lazy/LazyComponents";
 
@@ -151,6 +152,12 @@ const App = () => (
                 } />
                 {/* Form Acknowledgment page */}
                 <Route path="/form-acknowledgment" element={<FormAcknowledgment />} />
+                {/* Help & Support Center */}
+                <Route path="/support" element={
+                  <Suspense fallback={<LazyLoadingFallback />}>
+                    <HelpCenter />
+                  </Suspense>
+                } />
                 {/* Legacy information routes - redirect to new slugs */}
                 <Route path="/information/recycling" element={<DynamicPage />} />
                 <Route path="/information/organics" element={<DynamicPage />} />

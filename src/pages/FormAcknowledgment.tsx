@@ -132,13 +132,14 @@ const FormAcknowledgment = () => {
   const specificInfo = getFormSpecificMessage(formData.formType);
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="page-container">
       <Navbar />
-      <PageHeader
-        title="Submission Confirmed"
-        description="Your form has been submitted successfully"
-      />
-      <main className="flex-grow container mx-auto px-4 py-8 max-w-4xl">
+      <div className="page-content">
+        <PageHeader
+          title="Submission Confirmed"
+          description="Your form has been submitted successfully"
+        />
+        <div className="form-page-container max-w-4xl">
         {/* Success Card */}
         <Card className="mb-8 border-green-200 bg-green-50">
           <CardHeader className="text-center">
@@ -231,7 +232,8 @@ const FormAcknowledgment = () => {
             Return to Home
           </Button>
         </div>
-      </main>
+      </div>
+      </div>
       <Footer />
     </div>
   );
