@@ -231,35 +231,33 @@ const IncidentReport: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="page-container">
       <Navbar />
-      <PageHeader
-        title="Incident Report"
-        description="Report an incident that has occurred on the strata property."
-      />
-      <main className="flex-grow container mx-auto px-4 py-8 max-w-3xl">
-        <Alert className="mb-8 border-red-200 bg-red-50">
-          <AlertTriangle className="h-4 w-4 text-red-600" />
-          <AlertDescription className="text-red-800">
-            <p className="font-semibold">Emergency?</p>
-            <p>If this is an emergency, call <strong>911</strong> immediately. This form is for non-emergency incident reporting only.</p>
-          </AlertDescription>
-        </Alert>
+      <div className="page-content">
+        <PageHeader
+          title="Incident Report"
+          description="Report an incident that has occurred on the strata property."
+        />
+        <div className="form-page-container max-w-3xl">
+          <Alert className="mb-8 border border-spectrum-red/20 bg-error-container">
+            <AlertTriangle className="h-4 w-4 text-spectrum-red" />
+            <AlertDescription className="text-on-error-container">
+              <p className="font-semibold">Emergency?</p>
+              <p>If this is an emergency, call <strong>911</strong> immediately. This form is for non-emergency incident reporting only.</p>
+            </AlertDescription>
+          </Alert>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-orange-500" />
+          <div className="form-card">
+            <h2 className="form-section-title flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-spectrum-yellow" />
               Incident Report Form
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </h2>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
 
                 {/* Reporter Information */}
                 <section className="space-y-4">
-                  <h3 className="text-lg font-semibold border-b pb-2">Reporter Information</h3>
+                  <h3 className="text-title-lg text-on-surface border-b border-outline-variant pb-2">Reporter Information</h3>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField
@@ -322,7 +320,7 @@ const IncidentReport: React.FC = () => {
 
                 {/* Incident Details */}
                 <section className="space-y-4">
-                  <h3 className="text-lg font-semibold border-b pb-2">Incident Details</h3>
+                  <h3 className="text-title-lg text-on-surface border-b border-outline-variant pb-2">Incident Details</h3>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
@@ -455,7 +453,7 @@ const IncidentReport: React.FC = () => {
 
                 {/* Additional Information */}
                 <section className="space-y-4">
-                  <h3 className="text-lg font-semibold border-b pb-2">Additional Information</h3>
+                  <h3 className="text-title-lg text-on-surface border-b border-outline-variant pb-2">Additional Information</h3>
 
                   <div className="space-y-3">
                     <FormField
@@ -618,7 +616,7 @@ const IncidentReport: React.FC = () => {
 
                 {/* Status notifications */}
                 <section className="space-y-4">
-                  <h3 className="text-lg font-semibold border-b pb-2">Status Updates</h3>
+                  <h3 className="text-title-lg text-on-surface border-b border-outline-variant pb-2">Status Updates</h3>
                   <FormField
                     control={form.control}
                     name="notifyReporter"
@@ -681,9 +679,9 @@ const IncidentReport: React.FC = () => {
                 </Button>
               </form>
             </Form>
-          </CardContent>
-        </Card>
-      </main>
+          </div>
+        </div>
+      </div>
       <Footer />
     </div>
   );

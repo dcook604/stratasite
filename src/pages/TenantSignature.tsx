@@ -146,13 +146,13 @@ const TenantSignature = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="page-container bg-background">
         <Navbar />
-        <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <div className="container mx-auto px-4 py-8 max-w-2xl flex-1">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
               <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-              <p className="text-gray-600">Loading signature form...</p>
+              <p className="text-on-surface-variant">Loading signature form...</p>
             </div>
           </div>
         </div>
@@ -163,12 +163,12 @@ const TenantSignature = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="page-container bg-background">
         <Navbar />
-        <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <div className="container mx-auto px-4 py-8 max-w-2xl flex-1">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-red-600">
+              <CardTitle className="flex items-center gap-2 text-spectrum-red">
                 <XCircle className="h-6 w-6" />
                 Error Loading Signature Form
               </CardTitle>
@@ -193,12 +193,12 @@ const TenantSignature = () => {
 
   if (isAlreadySigned) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="page-container bg-background">
         <Navbar />
-        <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <div className="container mx-auto px-4 py-8 max-w-2xl flex-1">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-green-600">
+              <CardTitle className="flex items-center gap-2 text-spectrum-green">
                 <CheckCircle className="h-6 w-6" />
                 Already Signed
               </CardTitle>
@@ -225,12 +225,12 @@ const TenantSignature = () => {
 
   if (isExpired) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="page-container bg-background">
         <Navbar />
-        <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <div className="container mx-auto px-4 py-8 max-w-2xl flex-1">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-orange-600">
+              <CardTitle className="flex items-center gap-2 text-spectrum-yellow">
                 <XCircle className="h-6 w-6" />
                 Signature Link Expired
               </CardTitle>
@@ -256,8 +256,9 @@ const TenantSignature = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="page-container">
       <Navbar />
+      <div className="page-content">
       <PageHeader 
         title="Tenant Signature - Form K"
         description="Notice of Tenant's Responsibilities - Electronic Signature Required"
@@ -420,6 +421,7 @@ const TenantSignature = () => {
       </div>
 
       <Footer />
+      </div>
     </div>
   );
 };

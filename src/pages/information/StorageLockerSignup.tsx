@@ -170,13 +170,14 @@ const StorageLockerSignup = () => {
   const selectedLocker = lockers.find((l) => l.id === selectedLockerId);
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="page-container">
       <Navbar />
-      <PageHeader
-        title="Storage Locker Signup"
-        description="Select and apply for an available storage locker at Spectrum 4"
-      />
-      <main className="flex-grow container mx-auto px-4 py-8 max-w-5xl">
+      <div className="page-content">
+        <PageHeader
+          title="Storage Locker Signup"
+          description="Select and apply for an available storage locker at Spectrum 4"
+        />
+        <div className="form-page-container max-w-5xl">
 
         {/* Limited-time promotion banner */}
         <Card className="mb-4 border-amber-400 bg-gradient-to-r from-amber-50 to-yellow-50 shadow-md">
@@ -453,11 +454,14 @@ const StorageLockerSignup = () => {
             </Form>
           </CardContent>
         </Card>
-      </main>
+      </div>
+      </div>
       <Footer />
     </div>
   );
 };
+
+
 
 interface LockerGroupProps {
   title: string;

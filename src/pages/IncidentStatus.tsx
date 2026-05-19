@@ -170,14 +170,15 @@ export default function IncidentStatus() {
   const statusCfg = data ? STATUS_CONFIG[data.status] : null;
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="page-container">
       <Navbar />
-      <PageHeader
-        title="Incident Status"
-        description="Check the status of your submitted incident report."
-      />
+      <div className="page-content">
+        <PageHeader
+          title="Incident Status"
+          description="Check the status of your submitted incident report."
+        />
 
-      <main className="flex-grow container mx-auto px-4 py-8 max-w-2xl">
+        <div className="form-page-container max-w-2xl">
 
         {/* Lookup form */}
         <Card className="mb-6">
@@ -367,8 +368,9 @@ export default function IncidentStatus() {
             </p>
           </div>
         )}
-      </main>
-      <Footer />
+        </div>
+        <Footer />
+      </div>
     </div>
   );
 }

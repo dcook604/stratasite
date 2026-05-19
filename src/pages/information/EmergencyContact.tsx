@@ -137,13 +137,14 @@ const EmergencyContact = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="page-container">
       <Navbar />
-      <PageHeader
-        title="Emergency Contact Information"
-        description="Provide your emergency contact information for our records"
-      />
-      <main className="flex-grow container mx-auto px-4 py-8 max-w-4xl">
+      <div className="page-content">
+        <PageHeader
+          title="Emergency Contact Information"
+          description="Provide your emergency contact information for our records"
+        />
+        <div className="form-page-container max-w-4xl">
         {/* Header Card */}
         <Card className="mb-8 bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-l-red-500">
           <CardHeader>
@@ -550,8 +551,9 @@ const EmergencyContact = () => {
             </div>
           </CardContent>
         </Card>
-      </main>
+      </div>
       <Footer />
+      </div>
     </div>
   );
 };

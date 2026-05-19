@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface PageHeaderProps {
@@ -8,11 +7,11 @@ interface PageHeaderProps {
 
 const PageHeader: React.FC<PageHeaderProps> = ({ title, description }) => {
   return (
-    <div className="bg-primary/5 py-8 md:py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900">{title}</h1>
+    <div className="bg-surface-subtle py-12 md:py-16">
+      <div className="max-w-container-max mx-auto px-gutter">
+        <h1 className="text-headline-lg text-on-surface">{title}</h1>
         {description && (
-          <p className="mt-2 text-lg text-gray-600 max-w-3xl">{description}</p>
+          <p className="mt-3 text-body-lg text-on-surface-variant max-w-3xl">{description}</p>
         )}
       </div>
     </div>

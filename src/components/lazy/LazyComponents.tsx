@@ -109,6 +109,13 @@ export const PreferredVendors = lazy(() =>
   }))
 );
 
+// Help & Support Center page
+export const HelpCenter = lazy(() =>
+  import('@/pages/HelpCenter').then(module => ({
+    default: module.default
+  }))
+);
+
 // Loading fallback component
 export const LazyLoadingFallback = () => (
   <PageLoading text="Loading..." />

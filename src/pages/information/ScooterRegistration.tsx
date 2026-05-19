@@ -122,13 +122,14 @@ const ScooterRegistration = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="page-container">
       <Navbar />
-      <PageHeader
-        title="E-Scooter Registration"
-        description="Register your e-scooter for secure storage in our parkade facility"
-      />
-      <main className="flex-grow container mx-auto px-4 py-8 max-w-4xl">
+      <div className="page-content">
+        <PageHeader
+          title="E-Scooter Registration"
+          description="Register your e-scooter for secure storage in our parkade facility"
+        />
+        <div className="form-page-container max-w-4xl">
         {/* Header Card */}
         <Card className="mb-8 bg-gradient-to-r from-blue-50 to-green-50 border-l-4 border-l-blue-500">
           <CardHeader>
@@ -384,8 +385,9 @@ const ScooterRegistration = () => {
             </p>
           </CardContent>
         </Card>
-      </main>
+      </div>
       <Footer />
+      </div>
     </div>
   );
 };

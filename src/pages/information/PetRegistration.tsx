@@ -200,13 +200,14 @@ const PetRegistration: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="page-container">
       <Navbar />
-      <PageHeader
-        title="Pet Registration"
-        description="Register your pet with Spectrum 4 Strata."
-      />
-      <main className="flex-grow container mx-auto px-4 py-8 max-w-4xl">
+      <div className="page-content">
+        <PageHeader
+          title="Pet Registration"
+          description="Register your pet with Spectrum 4 Strata."
+        />
+        <div className="form-page-container max-w-4xl">
         {/* Information Notice */}
         <Alert className="mb-8 border-amber-200 bg-amber-50">
           <PawPrint className="h-4 w-4 text-amber-600" />
@@ -547,8 +548,9 @@ const PetRegistration: React.FC = () => {
             </Form>
           </CardContent>
         </Card>
-      </main>
+      </div>
       <Footer />
+      </div>
     </div>
   );
 };
