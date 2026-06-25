@@ -1704,6 +1704,24 @@ app.post('/api/ac-inquiry', async (req, res) => {
       }
     });
 
+    // Send email notification
+    try {
+      await sendACInquiryEmail({
+        inquiryId,
+        ownerName,
+        ownerUnit,
+        ownerPhone,
+        email,
+        isMultiZone: isMultiZone || false,
+        bestContactMethod,
+        installationTiming,
+        notes: notes || null,
+        consentGiven
+      });
+    } catch (emailError) {
+      logger.error('Failed to send AC inquiry email notification', emailError);
+    }
+
     // Send success response
     res.status(201).json({
       success: true,
