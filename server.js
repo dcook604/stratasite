@@ -1942,6 +1942,53 @@ app.post('/api/storage-locker-application', async (req, res) => {
   }
 });
 
+// Admin: manually assign an available locker (no applicant submission / Turnstile required)
+app.post('/api/storage-locker-applications/manual', async (req, res) => {
+  try {
+    const db = await getPrisma();
+    const { lockerId, firstName, lastName, address, unitNumber, telephone, email, prepayYear, adminNotes } = req.body;
+
+    if (!lockerId || !firstName || !lastName || !address || !unitNumber || !telephone || !email) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email address' });
+    }
+
+    const locker = await db.storageLocker.findUnique({ where: { id: lockerId } });
+    if (!locker) {
+      return res.status(404).json({ error: 'Locker not found' });
+    }
+    if (locker.status !== 'AVAILABLE') {
+      return res.status(409).json({ error: 'This locker is not available to assign.' });
+    }
+
+    const applicationId = `SLA-${Date.now()}`;
+    const application = await db.storageLockerApplication.create({
+      data: {
+        applicationId, lockerId, firstName, lastName, address, unitNumber,
+        telephone, email,
+        consentGiven: true,
+        onWaitingList: false,
+        prepayYear: !!prepayYear,
+        status: 'APPROVED',
+        adminNotes: adminNotes || null
+      },
+      include: { locker: true }
+    });
+
+    await db.storageLocker.update({ where: { id: lockerId }, data: { status: 'ASSIGNED' } });
+
+    logger.info('Storage locker manually assigned by admin', { applicationId, lockerId });
+    res.status(201).json(application);
+  } catch (error) {
+    logger.error('Error manually assigning storage locker', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Admin: list all applications
 app.get('/api/storage-locker-applications', async (req, res) => {
   try {

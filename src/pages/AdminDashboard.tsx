@@ -66,6 +66,11 @@ const AdminDashboard = () => {
   const [acInquiries, setACInquiries] = useState([]);
   const [storageLockerApplications, setStorageLockerApplications] = useState([]);
   const [allLockers, setAllLockers] = useState<any[]>([]);
+  const [manualAssignLocker, setManualAssignLocker] = useState<any>(null);
+  const [manualAssignForm, setManualAssignForm] = useState({
+    firstName: '', lastName: '', address: '', unitNumber: '', telephone: '', email: '', prepayYear: false, adminNotes: ''
+  });
+  const [manualAssignSubmitting, setManualAssignSubmitting] = useState(false);
   const [incidentReports, setIncidentReports] = useState([]);
 
   // Form K cleanup states
@@ -272,6 +277,40 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Error exporting PDF:', error);
       toast({ title: "Export Failed", description: "Could not generate PDF export", variant: "destructive" });
+    }
+  };
+
+  // Manually assign an available storage locker
+  const openManualAssign = (locker: any) => {
+    setManualAssignLocker(locker);
+    setManualAssignForm({ firstName: '', lastName: '', address: '', unitNumber: '', telephone: '', email: '', prepayYear: false, adminNotes: '' });
+  };
+
+  const submitManualAssign = async () => {
+    if (!manualAssignLocker) return;
+    const { firstName, lastName, address, unitNumber, telephone, email } = manualAssignForm;
+    if (!firstName || !lastName || !address || !unitNumber || !telephone || !email) {
+      toast({ title: 'Error', description: 'Please fill in all required fields', variant: 'destructive' });
+      return;
+    }
+    setManualAssignSubmitting(true);
+    try {
+      const r = await fetch('/api/storage-locker-applications/manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lockerId: manualAssignLocker.id, ...manualAssignForm })
+      });
+      if (!r.ok) {
+        const err = await r.json();
+        throw new Error(err.error || 'Failed to assign locker');
+      }
+      toast({ title: 'Locker Assigned', description: `Locker #${manualAssignLocker.lockerNumber} manually assigned` });
+      setManualAssignLocker(null);
+      fetchData();
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Failed to assign locker', variant: 'destructive' });
+    } finally {
+      setManualAssignSubmitting(false);
     }
   };
 
@@ -1670,6 +1709,105 @@ const AdminDashboard = () => {
                         )}
                       </CardContent>
                     </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Lock className="h-5 w-5 text-purple-600" />
+                          All Lockers
+                        </CardTitle>
+                        <CardDescription>
+                          Full locker inventory, including lockers with no application on file. Manually assign an available locker directly (e.g. for a resident handled outside the online form).
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {allLockers.length === 0 ? (
+                          <p className="text-gray-500">No lockers found.</p>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {[...allLockers]
+                              .sort((a: any, b: any) => a.lockerNumber.localeCompare(b.lockerNumber, undefined, { numeric: true }))
+                              .map((locker: any) => (
+                                <div key={locker.id} className="p-3 border rounded-lg bg-white flex flex-col gap-1">
+                                  <div className="flex justify-between items-start">
+                                    <span className="font-semibold text-sm">Locker #{locker.lockerNumber}</span>
+                                    <span className={`px-2 py-0.5 text-xs rounded font-medium ${
+                                      locker.status === 'ASSIGNED' ? 'bg-red-100 text-red-800' :
+                                      locker.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                      'bg-green-100 text-green-800'
+                                    }`}>
+                                      {locker.status}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-gray-600">{locker.location}</p>
+                                  <p className="text-xs text-gray-500">{locker.dimensions} · ${locker.monthlyRent}/mo</p>
+                                  {locker.notes && <p className="text-xs text-amber-600">{locker.notes}</p>}
+                                  {locker.status === 'AVAILABLE' && (
+                                    <Button variant="outline" size="sm" className="mt-2" onClick={() => openManualAssign(locker)}>
+                                      Manually Assign
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    <Dialog open={!!manualAssignLocker} onOpenChange={(open) => { if (!open) setManualAssignLocker(null); }}>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Manually Assign Locker #{manualAssignLocker?.lockerNumber}</DialogTitle>
+                          <DialogDescription>
+                            Creates an approved application for this locker and immediately marks it as assigned. No email is sent.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label htmlFor="ma-firstName">First Name</Label>
+                              <Input id="ma-firstName" value={manualAssignForm.firstName} onChange={(e) => setManualAssignForm({ ...manualAssignForm, firstName: e.target.value })} />
+                            </div>
+                            <div>
+                              <Label htmlFor="ma-lastName">Last Name</Label>
+                              <Input id="ma-lastName" value={manualAssignForm.lastName} onChange={(e) => setManualAssignForm({ ...manualAssignForm, lastName: e.target.value })} />
+                            </div>
+                          </div>
+                          <div>
+                            <Label htmlFor="ma-address">Address</Label>
+                            <Input id="ma-address" value={manualAssignForm.address} onChange={(e) => setManualAssignForm({ ...manualAssignForm, address: e.target.value })} />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label htmlFor="ma-unitNumber">Unit Number</Label>
+                              <Input id="ma-unitNumber" value={manualAssignForm.unitNumber} onChange={(e) => setManualAssignForm({ ...manualAssignForm, unitNumber: e.target.value })} />
+                            </div>
+                            <div>
+                              <Label htmlFor="ma-telephone">Telephone</Label>
+                              <Input id="ma-telephone" value={manualAssignForm.telephone} onChange={(e) => setManualAssignForm({ ...manualAssignForm, telephone: e.target.value })} />
+                            </div>
+                          </div>
+                          <div>
+                            <Label htmlFor="ma-email">Email</Label>
+                            <Input id="ma-email" type="email" value={manualAssignForm.email} onChange={(e) => setManualAssignForm({ ...manualAssignForm, email: e.target.value })} />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Checkbox id="ma-prepayYear" checked={manualAssignForm.prepayYear} onCheckedChange={(checked) => setManualAssignForm({ ...manualAssignForm, prepayYear: !!checked })} />
+                            <Label htmlFor="ma-prepayYear" className="!mt-0">Prepaying 12 months (10% discount)</Label>
+                          </div>
+                          <div>
+                            <Label htmlFor="ma-adminNotes">Admin Notes (optional)</Label>
+                            <Textarea id="ma-adminNotes" value={manualAssignForm.adminNotes} onChange={(e) => setManualAssignForm({ ...manualAssignForm, adminNotes: e.target.value })} />
+                          </div>
+                          <div className="flex justify-end gap-2 pt-2">
+                            <Button variant="outline" onClick={() => setManualAssignLocker(null)} disabled={manualAssignSubmitting}>Cancel</Button>
+                            <Button onClick={submitManualAssign} disabled={manualAssignSubmitting}>
+                              {manualAssignSubmitting ? 'Assigning...' : 'Assign Locker'}
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 )}
 
