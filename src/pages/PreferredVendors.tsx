@@ -1,7 +1,7 @@
 import React from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { ExternalLink, Phone, Mail, Paintbrush, Wind, Hammer, Search, ArrowRight } from 'lucide-react';
+import { ExternalLink, Phone, Mail, Paintbrush, Wind, Hammer, Search, ArrowRight, DoorOpen } from 'lucide-react';
 
 const vendors = [
   {
@@ -70,6 +70,26 @@ const vendors = [
     phone: null,
     email: null,
     recommended: true,
+  },
+  {
+    name: 'Expresscloset',
+    tagline: 'Custom closets & storage solutions',
+    description:
+      'Designs and builds custom, functional closet and storage solutions for residential and commercial spaces throughout Vancouver, the Lower Mainland, and the Sunshine Coast.',
+    services: [
+      'Bedroom closets (reach-in & walk-in)',
+      'Office consoles & storage',
+      'Garage & storage room organization',
+      'Entryway storage & mudrooms',
+      'Media consoles & bookshelves',
+    ],
+    phone: '1-778-837-1623',
+    email: 'alistair@expresscloset.com',
+    website: 'https://www.expresscloset.ca',
+    icon: DoorOpen,
+    color: 'bg-spectrum-blue/10 text-spectrum-blue',
+    category: 'Closets & Storage',
+    recommended: false,
   },
 ];
 
