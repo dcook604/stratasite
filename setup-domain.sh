@@ -4,7 +4,7 @@
 set -e
 
 COOLIFY_HOST="http://localhost:8000"
-API_TOKEN="2|dcYe6bV3RuV1WZHlfrTHwkzCN4soyU9GUyWsjPvN7dbdedd3"
+API_TOKEN="${COOLIFY_API_TOKEN:?Set COOLIFY_API_TOKEN in your environment (never commit tokens)}"
 APP_UUID="sgwoo8koso8cgsgskkc8k4os"
 DOMAIN="www.spectrum4.ca"
 
