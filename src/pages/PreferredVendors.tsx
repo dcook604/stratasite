@@ -1,7 +1,7 @@
 import React from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { ExternalLink, Phone, Mail, Paintbrush, Wind, Hammer, Search, ArrowRight, DoorOpen } from 'lucide-react';
+import { ExternalLink, Phone, Mail, Paintbrush, Wind, Hammer, Search, ArrowRight, DoorOpen, Wrench } from 'lucide-react';
 
 const vendors = [
   {
@@ -89,6 +89,29 @@ const vendors = [
     icon: DoorOpen,
     color: 'bg-spectrum-blue/10 text-spectrum-blue',
     category: 'Closets & Storage',
+    recommended: false,
+  },
+  {
+    name: 'Lina Construction Ltd.',
+    tagline: 'Strata unit repairs, renovations & maintenance',
+    description:
+      'A licensed BC general contractor serving Metro Vancouver since 2016, with a dedicated strata and property services division. Handles in-unit repairs and renovations — drywall, painting, doors and flooring — plus general maintenance and suite turnovers, coordinating trades through a single point of contact.',
+    services: [
+      'Drywall repair & texture matching',
+      'Interior painting & suite repaints',
+      'Door repairs & replacement',
+      'Flooring supply & installation',
+      'General unit maintenance',
+      'Suite turnovers',
+      'Common-area renovations',
+      'Trade coordination',
+    ],
+    phone: '604-417-7394',
+    email: null,
+    website: 'https://linaconstruction.ca',
+    icon: Wrench,
+    color: 'bg-spectrum-green/10 text-spectrum-green',
+    category: 'Repairs & Renovations',
     recommended: false,
   },
 ];
