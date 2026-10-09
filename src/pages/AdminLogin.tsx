@@ -83,9 +83,9 @@ const AdminLogin = () => {
         });
         navigate(from, { replace: true });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login submission error:', error);
-      setErrorMessage(error.message || "An unexpected error occurred.");
+      setErrorMessage(error instanceof Error ? error.message : "An unexpected error occurred.");
       toast({
         title: "Login Failed",
         description: "An unexpected error occurred.",

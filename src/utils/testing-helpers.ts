@@ -50,10 +50,26 @@ export const generateMockPetRegistration = (overrides = {}) => ({
   ...overrides
 });
 
+export const generateMockMarketplacePost = (overrides = {}) => ({
+  id: `test-${Date.now()}`,
+  title: 'Test Marketplace Post',
+  description: 'A test item listed for sale.',
+  price: 25,
+  category: 'For Sale',
+  authorId: 'anon_test',
+  contactName: 'Jane Smith',
+  contactEmail: 'jane.smith@test.com',
+  imageUrl: null,
+  status: 'ACTIVE',
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  ...overrides
+});
+
 // API testing helpers
 export const apiTestHelpers = {
   // Test if API endpoint is responsive
-  async testEndpoint(endpoint: string, method = 'GET', body?: any) {
+  async testEndpoint(endpoint: string, method = 'GET', body?: unknown) {
     try {
       const response = await fetch(`/api/${endpoint}`, {
         method,
@@ -228,8 +244,8 @@ export const performanceTestHelpers = {
         entry.name.includes('.js') && !entry.name.includes('analytics')
       );
       
-      const totalSize = jsFiles.reduce((acc, entry) => 
-        acc + (entry as any).transferSize || 0, 0
+      const totalSize = jsFiles.reduce((acc, entry) =>
+        acc + (entry as PerformanceEntry & { transferSize?: number }).transferSize || 0, 0
       );
       
       return {
@@ -286,5 +302,5 @@ export const testingSuite = {
 
 // Make available globally for manual testing
 if (typeof window !== 'undefined') {
-  (window as any).spectrumTests = testingSuite;
+  (window as unknown as { spectrumTests: unknown }).spectrumTests = testingSuite;
 }

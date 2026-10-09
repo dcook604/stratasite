@@ -161,29 +161,34 @@ export function formatACInquiryForExcel(data: Record<string, unknown>[]): Record
  * Format Storage Locker Application data for Excel export
  */
 export function formatStorageLockerForExcel(data: Record<string, unknown>[]): Record<string, unknown>[] {
-  return data.map((app: any) => ({
-    'Application ID': app.applicationId,
-    'First Name': app.firstName,
-    'Last Name': app.lastName,
-    'Unit Number': app.unitNumber,
-    'Address': app.address,
-    'Telephone': app.telephone,
-    'Email': app.email,
-    'Status': app.status,
-    'On Waiting List': app.onWaitingList ? 'Yes' : 'No',
-    'Prepay 12 Months': app.prepayYear ? 'Yes' : 'No',
-    'Locker Number': app.locker?.lockerNumber || '',
-    'Locker Location': app.locker?.location || '',
-    'Monthly Rent': app.locker?.monthlyRent ? `$${app.locker.monthlyRent}` : '',
-    'Consent Given': app.consentGiven ? 'Yes' : 'No',
-    'Admin Notes': app.adminNotes || '',
-    'Email Sent': app.emailSent ? 'Yes' : 'No',
-    'Submitted Date': new Date(app.createdAt).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
-  }));
+  return data.map((app: Record<string, unknown>) => {
+    const locker = (app.locker ?? null) as
+      | { lockerNumber?: string; location?: string; monthlyRent?: number }
+      | null;
+    return {
+      'Application ID': app.applicationId,
+      'First Name': app.firstName,
+      'Last Name': app.lastName,
+      'Unit Number': app.unitNumber,
+      'Address': app.address,
+      'Telephone': app.telephone,
+      'Email': app.email,
+      'Status': app.status,
+      'On Waiting List': app.onWaitingList ? 'Yes' : 'No',
+      'Prepay 12 Months': app.prepayYear ? 'Yes' : 'No',
+      'Locker Number': locker?.lockerNumber || '',
+      'Locker Location': locker?.location || '',
+      'Monthly Rent': locker?.monthlyRent ? `$${locker.monthlyRent}` : '',
+      'Consent Given': app.consentGiven ? 'Yes' : 'No',
+      'Admin Notes': app.adminNotes || '',
+      'Email Sent': app.emailSent ? 'Yes' : 'No',
+      'Submitted Date': new Date(app.createdAt as string).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+    };
+  });
 }
 
 

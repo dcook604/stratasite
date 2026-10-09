@@ -118,7 +118,7 @@ const WelcomePackage = () => {
                   className="flex items-center gap-2 p-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
                 >
                   {section.icon}
-                  {section.title.replace(/[🛠️🛡️💳🌐🚚♻️🚨✈️📄]/g, '').trim()}
+                  {section.title.replace(/(?:\p{Extended_Pictographic}|\uFE0F)/gu, '').trim()}
                 </a>
               ))}
             </div>

@@ -49,6 +49,37 @@ const sectionTitles: Record<string, string> = {
   users: 'Admin Users',
 };
 
+interface AdminLocker {
+  id: string;
+  lockerNumber: string;
+  location?: string;
+  dimensions?: string;
+  monthlyRent?: number;
+  status?: string;
+  notes?: string;
+  [key: string]: unknown;
+}
+
+interface AdminLockerApplication {
+  id: string;
+  applicationId: string;
+  firstName?: string;
+  lastName?: string;
+  unitNumber?: string;
+  address?: string;
+  telephone?: string;
+  email?: string;
+  status?: string;
+  emailSent?: boolean;
+  createdAt: string;
+  onWaitingList?: boolean;
+  prepayYear?: boolean;
+  lockerId?: string;
+  adminNotes?: string;
+  locker?: AdminLocker | null;
+  [key: string]: unknown;
+}
+
 const AdminDashboard = () => {
   const { adminUser, logout } = useAdminAuth();
   const navigate = useNavigate();
@@ -64,9 +95,9 @@ const AdminDashboard = () => {
   const [petRegistrations, setPetRegistrations] = useState([]);
   const [emergencyContacts, setEmergencyContacts] = useState([]);
   const [acInquiries, setACInquiries] = useState([]);
-  const [storageLockerApplications, setStorageLockerApplications] = useState([]);
-  const [allLockers, setAllLockers] = useState<any[]>([]);
-  const [manualAssignLocker, setManualAssignLocker] = useState<any>(null);
+  const [storageLockerApplications, setStorageLockerApplications] = useState<AdminLockerApplication[]>([]);
+  const [allLockers, setAllLockers] = useState<AdminLocker[]>([]);
+  const [manualAssignLocker, setManualAssignLocker] = useState<AdminLocker | null>(null);
   const [manualAssignForm, setManualAssignForm] = useState({
     firstName: '', lastName: '', address: '', unitNumber: '', telephone: '', email: '', prepayYear: false, adminNotes: ''
   });
@@ -256,7 +287,7 @@ const AdminDashboard = () => {
   };
 
   // Storage Locker PDF export
-  const exportStorageLockerPdf = async (applications: any[]) => {
+  const exportStorageLockerPdf = async (applications: AdminLockerApplication[]) => {
     try {
       const response = await fetch('/api/storage-locker-applications/export/pdf', {
         method: 'POST',
@@ -281,7 +312,7 @@ const AdminDashboard = () => {
   };
 
   // Manually assign an available storage locker
-  const openManualAssign = (locker: any) => {
+  const openManualAssign = (locker: AdminLocker) => {
     setManualAssignLocker(locker);
     setManualAssignForm({ firstName: '', lastName: '', address: '', unitNumber: '', telephone: '', email: '', prepayYear: false, adminNotes: '' });
   };
@@ -307,8 +338,8 @@ const AdminDashboard = () => {
       toast({ title: 'Locker Assigned', description: `Locker #${manualAssignLocker.lockerNumber} manually assigned` });
       setManualAssignLocker(null);
       fetchData();
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message || 'Failed to assign locker', variant: 'destructive' });
+    } catch (err: unknown) {
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to assign locker', variant: 'destructive' });
     } finally {
       setManualAssignSubmitting(false);
     }
@@ -1540,7 +1571,7 @@ const AdminDashboard = () => {
                           <p className="text-gray-500">No storage locker applications yet.</p>
                         ) : (
                           <div className="space-y-4">
-                            {storageLockerApplications.map((app: any) => (
+                            {storageLockerApplications.map((app) => (
                               <div key={app.id} className="p-5 border rounded-lg bg-gray-50">
                                 <div className="flex justify-between items-start mb-3">
                                   <div>
@@ -1617,8 +1648,8 @@ const AdminDashboard = () => {
                                             }
                                             toast({ title: 'Locker Reassigned', description: 'Locker assignment updated' });
                                             fetchData();
-                                          } catch (err: any) {
-                                            toast({ title: 'Error', description: err.message || 'Failed to reassign locker', variant: 'destructive' });
+                                          } catch (err: unknown) {
+                                            toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to reassign locker', variant: 'destructive' });
                                           }
                                         }}
                                         className="px-2 py-1 text-xs border rounded w-full"
@@ -1626,8 +1657,8 @@ const AdminDashboard = () => {
                                         <option value="">— select to reassign —</option>
                                         {allLockers
                                           .filter(l => l.status === 'AVAILABLE' && l.id !== app.lockerId)
-                                          .sort((a: any, b: any) => a.lockerNumber.localeCompare(b.lockerNumber, undefined, { numeric: true }))
-                                          .map((l: any) => (
+                                          .sort((a: AdminLocker, b: AdminLocker) => a.lockerNumber.localeCompare(b.lockerNumber, undefined, { numeric: true }))
+                                          .map((l: AdminLocker) => (
                                             <option key={l.id} value={l.id}>
                                               #{l.lockerNumber} — {l.location} (${l.monthlyRent}/mo)
                                             </option>
@@ -1726,8 +1757,8 @@ const AdminDashboard = () => {
                         ) : (
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                             {[...allLockers]
-                              .sort((a: any, b: any) => a.lockerNumber.localeCompare(b.lockerNumber, undefined, { numeric: true }))
-                              .map((locker: any) => (
+                              .sort((a: AdminLocker, b: AdminLocker) => a.lockerNumber.localeCompare(b.lockerNumber, undefined, { numeric: true }))
+                              .map((locker: AdminLocker) => (
                                 <div key={locker.id} className="p-3 border rounded-lg bg-white flex flex-col gap-1">
                                   <div className="flex justify-between items-start">
                                     <span className="font-semibold text-sm">Locker #{locker.lockerNumber}</span>
@@ -2268,7 +2299,7 @@ const AdminDashboard = () => {
                             <CardContent>
                               <div className="space-y-2 max-h-60 overflow-y-auto">
                                 {expiredFormKs.map((submission) => {
-                                  const age = Math.floor((new Date() - new Date(submission.createdAt)) / (1000 * 60 * 60 * 24));
+                                  const age = Math.floor((Date.now() - new Date(submission.createdAt).getTime()) / (1000 * 60 * 60 * 24));
                                   return (
                                     <div key={submission.id} className="flex items-center justify-between p-2 border rounded">
                                       <div>

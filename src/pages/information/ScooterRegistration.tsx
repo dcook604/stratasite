@@ -39,7 +39,7 @@ const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
   phone: z.string().optional().refine((val) => {
     if (!val) return true;
-    return /^[\+]?[1-9][\d]{0,15}$/.test(val.replace(/[\s\-\(\)]/g, ''));
+    return /^[+]?[1-9][\d]{0,15}$/.test(val.replace(/[\s\-()]/g, ''));
   }, { message: 'Please enter a valid phone number' }),
   acceptTerms: z.boolean().refine((val) => val === true, {
     message: 'You must accept the terms and conditions'

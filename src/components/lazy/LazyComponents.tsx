@@ -120,26 +120,3 @@ export const HelpCenter = lazy(() =>
 export const LazyLoadingFallback = () => (
   <PageLoading text="Loading..." />
 );
-
-// Preload functions for better UX
-export const preloadAdminComponents = () => {
-  // Preload admin components when user hovers over admin link
-  AdminDashboard.preload?.();
-  AdminLogin.preload?.();
-};
-
-export const preloadFormComponents = () => {
-  // Preload form components when user navigates to forms section
-  ScooterRegistration.preload?.();
-  PetRegistration.preload?.();
-  EmergencyContact.preload?.();
-  ACInquiry.preload?.();
-  FormK.preload?.();
-};
-
-export const preloadContentComponents = () => {
-  // Preload content-heavy components
-  Bylaws.preload?.();
-  Documents.preload?.();
-  WelcomePackage.preload?.();
-};

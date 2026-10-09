@@ -43,7 +43,7 @@ const formSchema = z.object({
   address: z.string().min(5, 'Please enter your full address'),
   unitNumber: z.string().min(1, 'Unit number is required'),
   telephone: z.string().min(10, 'Please enter a valid phone number').refine(
-    (val) => /^[\+]?[1-9][\d]{0,15}$/.test(val.replace(/[\s\-\(\)]/g, '')),
+    (val) => /^[+]?[1-9][\d]{0,15}$/.test(val.replace(/[\s\-()]/g, '')),
     'Please enter a valid phone number'
   ),
   email: z.string().email('Please enter a valid email address'),

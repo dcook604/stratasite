@@ -5,10 +5,12 @@ export interface CSVExportOptions {
   includeHeaders?: boolean;
 }
 
+type CsvRow = Record<string, unknown>;
+
 /**
  * Convert an array of objects to CSV format
  */
-export function convertToCSV(data: any[], options: CSVExportOptions = {}): string {
+export function convertToCSV(data: CsvRow[], options: CSVExportOptions = {}): string {
   if (data.length === 0) return '';
   
   const { includeHeaders = true } = options;
@@ -55,7 +57,7 @@ export function downloadCSV(csvData: string, filename: string): void {
 /**
  * Format Emergency Contact data for CSV export
  */
-export function formatEmergencyContactForCSV(data: any[]): any[] {
+export function formatEmergencyContactForCSV(data: CsvRow[]): CsvRow[] {
   return data.map(item => ({
     'Contact ID': item.contactId,
     'Unit Number': item.unitNumber,
@@ -76,7 +78,7 @@ export function formatEmergencyContactForCSV(data: any[]): any[] {
     'Concierge Key Provided': item.conciergeKeyProvided,
     'Date Provided to Concierge': item.dateProvidedToConcierge || '',
     'Security Code Provided': item.securityCode ? 'Yes' : 'No',
-    'Submitted Date': new Date(item.createdAt).toLocaleDateString(),
+    'Submitted Date': new Date(item.createdAt as string).toLocaleDateString(),
     'Status': item.isActive ? 'Active' : 'Inactive'
   }));
 }
@@ -84,7 +86,7 @@ export function formatEmergencyContactForCSV(data: any[]): any[] {
 /**
  * Format AC Inquiry data for CSV export
  */
-export function formatACInquiryForCSV(data: any[]): any[] {
+export function formatACInquiryForCSV(data: CsvRow[]): CsvRow[] {
   return data.map(item => ({
     'Inquiry ID': item.inquiryId,
     'Owner Name': item.ownerName,
@@ -96,7 +98,7 @@ export function formatACInquiryForCSV(data: any[]): any[] {
     'Installation Timing': item.installationTiming,
     'Notes': item.notes || '',
     'Consent Given': item.consentGiven ? 'Yes' : 'No',
-    'Submitted Date': new Date(item.createdAt).toLocaleDateString(),
+    'Submitted Date': new Date(item.createdAt as string).toLocaleDateString(),
     'Status': item.isActive ? 'Active' : 'Inactive'
   }));
 }
@@ -104,7 +106,7 @@ export function formatACInquiryForCSV(data: any[]): any[] {
 /**
  * Format Pet Registration data for CSV export
  */
-export function formatPetRegistrationForCSV(data: any[]): any[] {
+export function formatPetRegistrationForCSV(data: CsvRow[]): CsvRow[] {
   return data.map(item => ({
     'Registration ID': item.registrationId,
     'Owner Name': item.ownerName,
@@ -123,7 +125,7 @@ export function formatPetRegistrationForCSV(data: any[]): any[] {
     'License Number': item.licenseNumber || '',
     'Status': item.status,
     'Admin Notes': item.notes || '',
-    'Submitted Date': new Date(item.createdAt).toLocaleDateString(),
+    'Submitted Date': new Date(item.createdAt as string).toLocaleDateString(),
     'Active': item.isActive ? 'Yes' : 'No'
   }));
 }
@@ -131,7 +133,7 @@ export function formatPetRegistrationForCSV(data: any[]): any[] {
 /**
  * Format Scooter Registration data for CSV export
  */
-export function formatScooterRegistrationForCSV(data: any[]): any[] {
+export function formatScooterRegistrationForCSV(data: CsvRow[]): CsvRow[] {
   return data.map(item => ({
     'Registration ID': item.registrationId,
     'Registration Date': item.registrationDate,
@@ -148,45 +150,50 @@ export function formatScooterRegistrationForCSV(data: any[]): any[] {
     'Notes': item.notes || '',
     'Email Sent': item.emailSent ? 'Yes' : 'No',
     'Active': item.isActive ? 'Yes' : 'No',
-    'Submitted Date': new Date(item.createdAt).toLocaleDateString(),
-    'Last Updated': new Date(item.updatedAt).toLocaleDateString()
+    'Submitted Date': new Date(item.createdAt as string).toLocaleDateString(),
+    'Last Updated': new Date(item.updatedAt as string).toLocaleDateString()
   }));
 }
 
 /**
  * Format Storage Locker Application data for CSV export
  */
-export function formatStorageLockerForCSV(data: any[]): any[] {
-  return data.map((app: any) => ({
-    'Application ID': app.applicationId,
-    'First Name': app.firstName,
-    'Last Name': app.lastName,
-    'Unit Number': app.unitNumber,
-    'Address': app.address,
-    'Telephone': app.telephone,
-    'Email': app.email,
-    'Status': app.status,
-    'On Waiting List': app.onWaitingList ? 'Yes' : 'No',
-    'Prepay 12 Months': app.prepayYear ? 'Yes' : 'No',
-    'Locker Number': app.locker?.lockerNumber || '',
-    'Locker Location': app.locker?.location || '',
-    'Monthly Rent': app.locker?.monthlyRent ? `$${app.locker.monthlyRent}` : '',
-    'Consent Given': app.consentGiven ? 'Yes' : 'No',
-    'Admin Notes': app.adminNotes || '',
-    'Email Sent': app.emailSent ? 'Yes' : 'No',
-    'Submitted Date': new Date(app.createdAt).toLocaleDateString()
-  }));
+export function formatStorageLockerForCSV(data: CsvRow[]): CsvRow[] {
+  return data.map((app: CsvRow) => {
+    const locker = (app.locker ?? null) as
+      | { lockerNumber?: string; location?: string; monthlyRent?: number }
+      | null;
+    return {
+      'Application ID': app.applicationId,
+      'First Name': app.firstName,
+      'Last Name': app.lastName,
+      'Unit Number': app.unitNumber,
+      'Address': app.address,
+      'Telephone': app.telephone,
+      'Email': app.email,
+      'Status': app.status,
+      'On Waiting List': app.onWaitingList ? 'Yes' : 'No',
+      'Prepay 12 Months': app.prepayYear ? 'Yes' : 'No',
+      'Locker Number': locker?.lockerNumber || '',
+      'Locker Location': locker?.location || '',
+      'Monthly Rent': locker?.monthlyRent ? `$${locker.monthlyRent}` : '',
+      'Consent Given': app.consentGiven ? 'Yes' : 'No',
+      'Admin Notes': app.adminNotes || '',
+      'Email Sent': app.emailSent ? 'Yes' : 'No',
+      'Submitted Date': new Date(app.createdAt as string).toLocaleDateString()
+    };
+  });
 }
 
 /**
  * Export form data as CSV
  */
 export function exportFormData(
-  data: any[],
+  data: CsvRow[],
   formType: 'emergency-contact' | 'ac-inquiry' | 'pet-registration' | 'scooter-registration' | 'storage-locker-application',
   options: CSVExportOptions = {}
 ): void {
-  let formattedData: any[];
+  let formattedData: CsvRow[];
   let defaultFilename: string;
 
   switch (formType) {

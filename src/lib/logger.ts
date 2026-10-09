@@ -5,7 +5,7 @@
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 interface LogData {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 class Logger {
@@ -36,15 +36,16 @@ class Logger {
     this.formatMessage('warn', message, data);
   }
 
-  error(message: string, error?: Error | any, data?: LogData): void {
-    this.formatMessage('error', message, { error: error?.message || error, ...data });
-    if (error?.stack && this.isDevelopment) {
-      console.error('Stack trace:', error.stack);
+  error(message: string, error?: unknown, data?: LogData): void {
+    const err = error instanceof Error ? error : undefined;
+    this.formatMessage('error', message, { error: err?.message ?? error, ...data });
+    if (err?.stack && this.isDevelopment) {
+      console.error('Stack trace:', err.stack);
     }
   }
 
   // API request logging
-  apiRequest(method: string, url: string, data?: any): void {
+  apiRequest(method: string, url: string, data?: unknown): void {
     this.debug(`API Request: ${method} ${url}`, data ? { body: data } : undefined);
   }
 

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, type NavigateFunction } from 'react-router-dom';
 import { validateAdminCredentials, checkAdminSession, logoutAdmin, type AdminUser } from '@/lib/auth';
 import SessionTimeoutWarning from '@/components/shared/SessionTimeoutWarning';
 import { useToast } from '@/components/ui/use-toast';
@@ -14,7 +14,7 @@ type AdminAuthContextType = {
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
 
 // A helper component to handle navigation since hooks can only be called in components
-const NavigationHandler = ({ onNavigate }: { onNavigate: (navigate: Function) => void }) => {
+const NavigationHandler = ({ onNavigate }: { onNavigate: (navigate: NavigateFunction) => void }) => {
   const navigate = useNavigate();
   useEffect(() => {
     onNavigate(navigate);
@@ -33,7 +33,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const logoutTimer = useRef<NodeJS.Timeout>();
   const warningTimer = useRef<NodeJS.Timeout>();
   const countdownTimer = useRef<NodeJS.Timeout>();
-  const navigateRef = useRef<Function | null>(null);
+  const navigateRef = useRef<NavigateFunction | null>(null);
 
   const logout = useCallback(async (isInactive = false) => {
     setAdminUser(null);
@@ -138,10 +138,10 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
         return { error: 'Invalid credentials' };
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Admin login error:', error);
       setIsLoading(false);
-      return { error: error.message || 'Login failed. Please try again.' };
+      return { error: error instanceof Error ? error.message : 'Login failed. Please try again.' };
     }
   };
 

@@ -32,7 +32,7 @@ const formSchema = z.object({
   ownerName: z.string().min(2, { message: 'Owner name must be at least 2 characters' }),
   ownerUnit: z.string().min(1, { message: 'Unit number is required' }),
   ownerPhone: z.string().min(10, { message: 'Please enter a valid phone number' }).refine((val) => {
-    return /^[\+]?[1-9][\d]{0,15}$/.test(val.replace(/[\s\-\(\)]/g, ''));
+    return /^[+]?[1-9][\d]{0,15}$/.test(val.replace(/[\s\-()]/g, ''));
   }, { message: 'Please enter a valid phone number' }),
   email: z.string().email({ message: 'Please enter a valid email address' }),
   isMultiZone: z.boolean().default(false),

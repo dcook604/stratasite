@@ -175,7 +175,7 @@ Use our platform to stay updated on events, announcements, and community activit
       .replace(/^## (.*$)/gm, '<h2 class="text-xl text-gray-600 max-w-3xl mx-auto mb-4">$1</h2>')
       .replace(/^### (.*$)/gm, '<h3 class="text-lg font-medium text-gray-700 mb-2">$1</h3>')
       .replace(/^\*\*(.*?)\*\*/gm, '<strong>$1</strong>')
-      .replace(/^\- (.*$)/gm, '<li class="ml-4">$1</li>')
+      .replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>')
       .replace(/\n\n/g, '</p><p class="text-xl text-gray-600 max-w-3xl mx-auto mb-4">')
       .replace(/\n/g, '<br/>');
   };

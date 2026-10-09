@@ -25,7 +25,7 @@ const isIOSSafari = (): boolean => {
 // The worker is now configured directly in the Bylaws.tsx component.
 
 // Enhanced PDF loading function with mobile-specific error handling
-export const loadPDFDocument = async (url: string, options: any = {}) => {
+export const loadPDFDocument = async (url: string, options: Record<string, unknown> = {}) => {
   try {
     console.log('Loading PDF document:', url, 'Mobile:', isMobile());
     
@@ -35,7 +35,7 @@ export const loadPDFDocument = async (url: string, options: any = {}) => {
     }
     
     // Mobile-optimized loading options
-    const baseOptions = {
+    const baseOptions: Record<string, unknown> = {
       url,
       // Mobile browsers often have stricter CORS policies
       httpHeaders: {
@@ -56,10 +56,10 @@ export const loadPDFDocument = async (url: string, options: any = {}) => {
       baseOptions.cMapPacked = true; // Use packed CMaps for better performance
     }
     
-    const loadingTask = pdfjsLib.getDocument(baseOptions);
+    const loadingTask = pdfjsLib.getDocument(baseOptions as Parameters<typeof pdfjsLib.getDocument>[0]);
     
     // Add progress tracking with mobile-friendly logging
-    loadingTask.onProgress = (progress: any) => {
+    loadingTask.onProgress = (progress: { loaded: number; total: number }) => {
       if (progress.total > 0) {
         const percent = Math.round((progress.loaded / progress.total) * 100);
         if (percent % 20 === 0) { // Log every 20% on mobile to reduce noise
@@ -106,7 +106,7 @@ export const loadPDFDocument = async (url: string, options: any = {}) => {
 };
 
 // Mobile-specific fallback loading with multiple worker strategies
-export const loadPDFDocumentWithFallback = async (url: string, options: any = {}) => {
+export const loadPDFDocumentWithFallback = async (url: string, options: Record<string, unknown> = {}) => {
   const strategies = [];
   
   if (isIOS()) {

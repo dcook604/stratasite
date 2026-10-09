@@ -151,7 +151,7 @@ const DynamicPage = () => {
       .replace(/^## (.*$)/gm, '<h2 class="text-2xl font-bold mb-4 mt-8">$1</h2>')
       .replace(/^### (.*$)/gm, '<h3 class="text-xl font-semibold mb-3 mt-6">$1</h3>')
       .replace(/^\*\*(.*?)\*\*/gm, '<strong>$1</strong>')
-      .replace(/^\- (.*$)/gm, '<li class="ml-4">$1</li>')
+      .replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>')
       .replace(/^\|(.*)\|$/gm, (match, content) => {
         const cells = content.split('|').map((cell: string) => cell.trim());
         if (cells[0] === '' && cells[cells.length - 1] === '') {

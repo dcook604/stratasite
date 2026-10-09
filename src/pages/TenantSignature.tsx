@@ -32,6 +32,20 @@ const signatureSchema = z.object({
 
 type SignatureValues = z.infer<typeof signatureSchema>;
 
+interface SignatureFormData {
+  address?: string;
+  unitNumber?: string;
+  strataPlan?: string;
+  landlordName?: string;
+  tenancyCommencingDay?: string;
+  tenancyCommencingDate?: string;
+  tenancyCommencingYear?: string;
+}
+
+interface SignatureTenantInfo {
+  name?: string;
+}
+
 const TenantSignature = () => {
   const { submissionId, token } = useParams<{ submissionId: string; token: string }>();
   const navigate = useNavigate();
@@ -39,8 +53,8 @@ const TenantSignature = () => {
   
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<any>(null);
-  const [tenantInfo, setTenantInfo] = useState<any>(null);
+  const [formData, setFormData] = useState<SignatureFormData | null>(null);
+  const [tenantInfo, setTenantInfo] = useState<SignatureTenantInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isAlreadySigned, setIsAlreadySigned] = useState(false);
   const [isExpired, setIsExpired] = useState(false);

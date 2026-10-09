@@ -3,8 +3,15 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from 'lucide-react';
 
+interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+}
+
 const RecentAnnouncements = () => {
-  const [announcements, setAnnouncements] = useState([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -47,7 +54,7 @@ const RecentAnnouncements = () => {
           <p className="text-gray-500">No announcements yet.</p>
         ) : (
           <ul className="space-y-4">
-            {announcements.map((announcement: any) => (
+            {announcements.map((announcement) => (
               <li key={announcement.id} className="border-b pb-4 last:border-0">
                 <div className="flex justify-between items-center">
                   <h3 className="font-medium">{announcement.title}</h3>

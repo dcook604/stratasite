@@ -70,7 +70,7 @@ class MonitoringService {
   }
 
   // Error monitoring
-  reportError(error: Error, context?: any) {
+  reportError(error: Error, context?: Record<string, unknown>) {
     const errorReport: ErrorReport = {
       message: error.message,
       stack: error.stack,
@@ -96,7 +96,7 @@ class MonitoringService {
   }
 
   // User action tracking
-  trackUserAction(action: string, data?: any) {
+  trackUserAction(action: string, data?: unknown) {
     if (process.env.NODE_ENV === 'development') {
       console.debug('User action:', action, data);
     }
@@ -111,7 +111,7 @@ class MonitoringService {
   }
 
   // Feature usage tracking
-  trackFeatureUsage(feature: string, context?: any) {
+  trackFeatureUsage(feature: string, context?: Record<string, unknown>) {
     this.trackUserAction('feature_used', { feature, ...context });
   }
 
