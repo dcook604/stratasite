@@ -117,7 +117,7 @@ const Documents = () => {
     return (
       <div className="page-container">
         <Navbar />
-        <div className="page-content">
+        <div id="main-content" className="page-content" tabIndex={-1}>
           <div className="bg-surface-subtle py-12 md:py-16">
             <div className="max-w-container-max mx-auto px-gutter">
               <h1 className="text-headline-lg text-on-surface">Documents</h1>
@@ -136,7 +136,7 @@ const Documents = () => {
   return (
     <div className="page-container">
       <Navbar />
-      <div className="page-content">
+      <div id="main-content" className="page-content" tabIndex={-1}>
         {/* Header */}
         <section className="bg-surface-subtle py-12 md:py-16">
           <div className="max-w-container-max mx-auto px-gutter">
@@ -161,6 +161,7 @@ const Documents = () => {
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-on-surface-variant" />
                 <input
                   type="text"
+                  aria-label="Search documents"
                   placeholder="Search documents..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -229,6 +230,7 @@ const Documents = () => {
                     {/* Download button */}
                     <button
                       onClick={() => handleDownload(doc)}
+                      aria-label={`Download ${doc.title}`}
                       className="w-full bg-primary-container text-on-primary py-3 rounded-xl text-xs font-semibold hover:brightness-110 transition-all flex items-center justify-center gap-2"
                     >
                       <Download className="h-4 w-4" />

@@ -8,7 +8,7 @@ const Fees = () => {
   return (
     <div className="page-container">
       <Navbar />
-      <div className="page-content">
+      <div id="main-content" className="page-content" tabIndex={-1}>
         <PageHeader
           title="Strata Fees & Payments"
           description="Information about strata fees, payment methods, and special assessments"

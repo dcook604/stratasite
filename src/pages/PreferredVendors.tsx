@@ -97,7 +97,7 @@ const PreferredVendors = () => {
   return (
     <div className="page-container">
       <Navbar />
-      <div className="page-content">
+      <div id="main-content" className="page-content" tabIndex={-1}>
         {/* Header */}
         <section className="bg-surface-subtle py-16 md:py-20">
           <div className="max-w-container-max mx-auto px-gutter">

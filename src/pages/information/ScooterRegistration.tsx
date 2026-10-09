@@ -124,7 +124,7 @@ const ScooterRegistration = () => {
   return (
     <div className="page-container">
       <Navbar />
-      <div className="page-content">
+      <div id="main-content" className="page-content" tabIndex={-1}>
         <PageHeader
           title="E-Scooter Registration"
           description="Register your e-scooter for secure storage in our parkade facility"

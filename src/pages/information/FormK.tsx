@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { 
   Form,
   FormControl,
@@ -256,7 +256,7 @@ const FormK = () => {
   return (
     <div className="page-container">
       <Navbar />
-      <div className="page-content">
+      <div id="main-content" className="page-content" tabIndex={-1}>
         <PageHeader
           title="Form K - Notice of Tenant's Responsibilities"
           description="Strata Property Act Form K (Section 146)"
@@ -761,14 +761,15 @@ const FormK = () => {
                     <FormItem className="space-y-3">
                       <FormLabel>How will tenants sign this form?</FormLabel>
                       <FormControl>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox 
-                              checked={field.value === 'present'} 
-                              onCheckedChange={() => field.onChange('present')}
-                            />
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                        >
+                          <div className="flex items-start space-x-2">
+                            <RadioGroupItem value="present" id="tenant-signing-present" className="mt-0.5" />
                             <div className="grid gap-1.5 leading-none">
-                              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                              <label htmlFor="tenant-signing-present" className="text-sm font-medium leading-none cursor-pointer">
                                 Tenants are present now
                               </label>
                               <p className="text-xs text-muted-foreground">
@@ -776,13 +777,10 @@ const FormK = () => {
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <Checkbox 
-                              checked={field.value === 'email'} 
-                              onCheckedChange={() => field.onChange('email')}
-                            />
+                          <div className="flex items-start space-x-2">
+                            <RadioGroupItem value="email" id="tenant-signing-email" className="mt-0.5" />
                             <div className="grid gap-1.5 leading-none">
-                              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                              <label htmlFor="tenant-signing-email" className="text-sm font-medium leading-none cursor-pointer">
                                 <Mail className="h-4 w-4 inline mr-1" />
                                 Send signature requests via email
                               </label>
@@ -791,7 +789,7 @@ const FormK = () => {
                               </p>
                             </div>
                           </div>
-                        </div>
+                        </RadioGroup>
                       </FormControl>
                       <FormMessage />
                     </FormItem>

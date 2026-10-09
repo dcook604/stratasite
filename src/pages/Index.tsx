@@ -197,7 +197,7 @@ Use our platform to stay updated on events, announcements, and community activit
   return (
     <div className="page-container">
       <Navbar />
-      <div className="page-content">
+      <div id="main-content" className="page-content" tabIndex={-1}>
         {/* Admin Controls */}
         {adminUser && (
           <div className="bg-surface-container border-b border-outline-variant" role="region" aria-label="Admin controls">
@@ -305,7 +305,7 @@ Use our platform to stay updated on events, announcements, and community activit
                       to="/incident-report"
                       className="bg-spectrum-blue text-white px-8 py-4 rounded-xl text-title-lg shadow-md hover:brightness-110 active:scale-95 transition-all inline-flex items-center gap-2"
                     >
-                      Contact Us
+                      Report an Issue
                       <ArrowRight className="h-5 w-5" />
                     </Link>
                     <Link
@@ -457,8 +457,8 @@ Use our platform to stay updated on events, announcements, and community activit
                   to="/incident-report"
                   className="bg-white text-spectrum-blue px-12 py-5 rounded-xl text-title-lg shadow-xl hover:scale-105 transition-all inline-flex items-center gap-3"
                 >
-                  <Mail className="h-6 w-6" />
-                  Contact Council
+                  <AlertTriangle className="h-6 w-6" />
+                  Report an Issue
                 </Link>
               </div>
             </section>

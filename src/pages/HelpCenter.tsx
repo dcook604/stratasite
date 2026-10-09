@@ -41,7 +41,7 @@ const HelpCenter = () => {
   return (
     <div className="page-container">
       <Navbar />
-      <div className="page-content">
+      <div id="main-content" className="page-content" tabIndex={-1}>
 
         {/* Emergency Info Banner */}
         <section className="mb-section-gap">
@@ -57,14 +57,14 @@ const HelpCenter = () => {
             </div>
             <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
               <a
-                href="tel:6045550199"
+                href="tel:6042932446"
                 className="bg-spectrum-red text-white px-8 py-3 rounded-xl text-title-lg flex items-center justify-center gap-2 hover:brightness-110 transition-all"
               >
                 <Phone className="h-5 w-5" />
-                604-555-0199
+                (604) 293-2446
               </a>
               <div className="text-center md:text-left">
-                <p className="text-label-md text-on-error-container">24/7 Strata Dispatch</p>
+                <p className="text-label-md text-on-error-container">Strata Management — Ascent</p>
                 <p className="text-xs text-on-error-container opacity-70">Case ID: SP4-SEC-911</p>
               </div>
             </div>
@@ -127,7 +127,7 @@ const HelpCenter = () => {
                     <div>
                       <p className="text-body-md text-on-surface font-semibold">Need immediate assistance?</p>
                       <p className="text-body-md text-on-surface-variant">
-                        For urgent issues requiring same-day attention, call Strata Dispatch at <strong>604-555-0199</strong>.
+                        For urgent issues requiring same-day attention, call Strata Management at <strong>(604) 293-2446</strong>.
                         For non-urgent inquiries, please use the online form above and expect a response within 24 business hours.
                       </p>
                     </div>

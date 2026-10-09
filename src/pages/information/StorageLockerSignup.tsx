@@ -172,7 +172,7 @@ const StorageLockerSignup = () => {
   return (
     <div className="page-container">
       <Navbar />
-      <div className="page-content">
+      <div id="main-content" className="page-content" tabIndex={-1}>
         <PageHeader
           title="Storage Locker Signup"
           description="Select and apply for an available storage locker at Spectrum 4"

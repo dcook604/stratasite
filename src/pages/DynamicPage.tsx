@@ -167,7 +167,7 @@ const DynamicPage = () => {
     return (
       <div className="page-container">
         <Navbar />
-        <div className="page-content">
+        <div id="main-content" className="page-content" tabIndex={-1}>
           <div className="max-w-4xl mx-auto px-4 py-8">
             <p className="text-center text-gray-500">Loading...</p>
           </div>
@@ -184,7 +184,7 @@ const DynamicPage = () => {
   return (
     <div className="page-container">
       <Navbar />
-      <div className="page-content">
+      <div id="main-content" className="page-content" tabIndex={-1}>
         {isEditing ? (
           <div className="max-w-4xl mx-auto px-4 py-8">
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">

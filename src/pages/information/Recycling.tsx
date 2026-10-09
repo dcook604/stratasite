@@ -8,7 +8,7 @@ const Recycling = () => {
   return (
     <div className="page-container">
       <Navbar />
-      <div className="page-content">
+      <div id="main-content" className="page-content" tabIndex={-1}>
         <PageHeader
           title="Recycling Information"
           description="Learn about the recycling program in our building"

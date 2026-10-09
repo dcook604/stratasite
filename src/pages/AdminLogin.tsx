@@ -99,7 +99,7 @@ const AdminLogin = () => {
   return (
     <div className="page-container">
       <Navbar />
-      <div className="page-content">
+      <div id="main-content" className="page-content" tabIndex={-1}>
         <div className="max-w-md mx-auto mt-16 mb-16 px-gutter">
           <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-8 shadow-sm">
             {/* Logo */}

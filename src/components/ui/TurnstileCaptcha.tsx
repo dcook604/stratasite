@@ -22,12 +22,26 @@ const fetchTurnstileKey = async (): Promise<string> => {
 
 export function TurnstileCaptcha(props: Omit<TurnstileProps, 'siteKey'>) {
   const [siteKey, setSiteKey] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    fetchTurnstileKey().then(setSiteKey);
+    fetchTurnstileKey().then((key) => {
+      setSiteKey(key);
+      if (!key) setFailed(true);
+    });
   }, []);
 
-  if (!siteKey) return null;
+  if (failed) {
+    return (
+      <p role="alert" className="text-sm text-spectrum-red">
+        Verification could not load. Please refresh the page, or contact the strata office if it persists.
+      </p>
+    );
+  }
+
+  if (!siteKey) {
+    return <p className="text-sm text-on-surface-variant">Loading verification…</p>;
+  }
 
   return <Turnstile siteKey={siteKey} {...props} />;
 }

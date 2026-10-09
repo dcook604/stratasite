@@ -8,7 +8,7 @@ const Organics = () => {
   return (
     <div className="page-container">
       <Navbar />
-      <div className="page-content">
+      <div id="main-content" className="page-content" tabIndex={-1}>
         <PageHeader
           title="Organics Collection"
           description="Information about our building's organic waste program"

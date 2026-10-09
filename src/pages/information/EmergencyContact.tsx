@@ -139,7 +139,7 @@ const EmergencyContact = () => {
   return (
     <div className="page-container">
       <Navbar />
-      <div className="page-content">
+      <div id="main-content" className="page-content" tabIndex={-1}>
         <PageHeader
           title="Emergency Contact Information"
           description="Provide your emergency contact information for our records"

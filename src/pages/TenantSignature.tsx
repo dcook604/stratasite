@@ -258,7 +258,7 @@ const TenantSignature = () => {
   return (
     <div className="page-container">
       <Navbar />
-      <div className="page-content">
+      <div id="main-content" className="page-content" tabIndex={-1}>
       <PageHeader 
         title="Tenant Signature - Form K"
         description="Notice of Tenant's Responsibilities - Electronic Signature Required"

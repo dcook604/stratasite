@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 const Footer = () => {
   return (
-    <footer className="bg-surface-container-lowest border-t border-outline-variant mt-section-gap">
+    <footer className="bg-surface-container-lowest border-t border-outline-variant mt-section-gap pb-16 md:pb-0">
       <div className="max-w-container-max mx-auto px-gutter py-16">
         <div className="flex flex-col md:flex-row justify-between items-start gap-12">
           {/* Brand & Address */}

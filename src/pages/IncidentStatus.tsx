@@ -172,7 +172,7 @@ export default function IncidentStatus() {
   return (
     <div className="page-container">
       <Navbar />
-      <div className="page-content">
+      <div id="main-content" className="page-content" tabIndex={-1}>
         <PageHeader
           title="Incident Status"
           description="Check the status of your submitted incident report."

@@ -202,7 +202,7 @@ const PetRegistration: React.FC = () => {
   return (
     <div className="page-container">
       <Navbar />
-      <div className="page-content">
+      <div id="main-content" className="page-content" tabIndex={-1}>
         <PageHeader
           title="Pet Registration"
           description="Register your pet with Spectrum 4 Strata."

@@ -28,6 +28,8 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [formsOpen, setFormsOpen] = React.useState(false);
   const [infoOpen, setInfoOpen] = React.useState(false);
+  const [formsDesktopOpen, setFormsDesktopOpen] = React.useState(false);
+  const [infoDesktopOpen, setInfoDesktopOpen] = React.useState(false);
   const { adminUser } = useAdminAuth();
   const location = useLocation();
 
@@ -73,14 +75,20 @@ const Navbar = () => {
             </Link>
 
             {/* Forms Dropdown */}
-            <div className="relative group">
-              <button className="text-title-lg text-on-surface-variant hover:text-secondary transition-colors flex items-center gap-1">
+            <div className="relative group" onMouseLeave={() => setFormsDesktopOpen(false)}>
+              <button
+                aria-haspopup="true"
+                aria-expanded={formsDesktopOpen}
+                onClick={() => setFormsDesktopOpen((v) => !v)}
+                onFocus={() => setFormsDesktopOpen(true)}
+                className="text-title-lg text-on-surface-variant hover:text-secondary transition-colors flex items-center gap-1"
+              >
                 Forms
                 <svg className="w-4 h-4 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              <div className="absolute top-full left-0 mt-1 bg-white border border-outline-variant rounded-xl shadow-xl py-2 min-w-[200px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              <div className={`absolute top-full left-0 mt-1 bg-white border border-outline-variant rounded-xl shadow-xl py-2 min-w-[200px] transition-all duration-200 z-50 ${formsDesktopOpen ? 'opacity-100 visible' : 'opacity-0 invisible group-hover:opacity-100 group-hover:visible'}`}>
                 {formsItems.map((item) => (
                   <Link
                     key={item.name}
@@ -94,14 +102,20 @@ const Navbar = () => {
             </div>
 
             {/* Information Dropdown */}
-            <div className="relative group">
-              <button className="text-title-lg text-on-surface-variant hover:text-secondary transition-colors flex items-center gap-1">
+            <div className="relative group" onMouseLeave={() => setInfoDesktopOpen(false)}>
+              <button
+                aria-haspopup="true"
+                aria-expanded={infoDesktopOpen}
+                onClick={() => setInfoDesktopOpen((v) => !v)}
+                onFocus={() => setInfoDesktopOpen(true)}
+                className="text-title-lg text-on-surface-variant hover:text-secondary transition-colors flex items-center gap-1"
+              >
                 Information
                 <svg className="w-4 h-4 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              <div className="absolute top-full left-0 mt-1 bg-white border border-outline-variant rounded-xl shadow-xl py-2 min-w-[200px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              <div className={`absolute top-full left-0 mt-1 bg-white border border-outline-variant rounded-xl shadow-xl py-2 min-w-[200px] transition-all duration-200 z-50 ${infoDesktopOpen ? 'opacity-100 visible' : 'opacity-0 invisible group-hover:opacity-100 group-hover:visible'}`}>
                 {informationItems.map((item) => (
                   <Link
                     key={item.name}
@@ -312,8 +326,6 @@ const Navbar = () => {
           <span className="text-xs font-semibold text-[10px] uppercase mt-0.5">Support</span>
         </Link>
       </nav>
-      {/* Spacer for mobile bottom nav */}
-      <div className="h-16 md:hidden"></div>
     </>
   );
 };
