@@ -7,7 +7,7 @@ import Footer from '@/components/layout/Footer';
 import { ChevronLeft, ChevronRight, Download, AlertCircle, Smartphone, ZoomIn, ZoomOut } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { isMobile, isIOS, isAndroid } from '@/utils/pdfConfig';
+import { isMobile, isIOS, isAndroid } from '@/utils/device';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -87,7 +87,6 @@ const Bylaws: React.FC = () => {
           setScale(1.0);
         }
       }
-      console.log('Scale updated:', { width, mobile: isMobile(), scale });
     };
 
     updateScale();
@@ -100,20 +99,14 @@ const Bylaws: React.FC = () => {
   }, []);
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
-    console.log('onDocumentLoadSuccess called with numPages:', numPages);
     setNumPages(numPages);
     setLoading(false);
     setError(null);
-    console.log(`PDF loaded successfully with ${numPages} pages`);
   };
 
   const onDocumentLoadError = (error: Error) => {
-    console.error('onDocumentLoadError called:', error);
-    console.error('Error name:', error.name);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
+    console.error('PDF failed to render, falling back to iframe:', error);
 
-    console.log('Switching to iframe fallback mode');
     setUseIframe(true);
     setLoading(false);
     setError(null);
