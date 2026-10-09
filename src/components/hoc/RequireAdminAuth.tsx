@@ -31,11 +31,9 @@ export const RequireAdminAuth = ({ children }: { children: React.ReactNode }) =>
   }
 
   if (!adminUser) {
-    console.log('No admin user found, redirecting to login');
     // Redirect to login page but save the current location so we can redirect back after login
     return <Navigate to="/admin/login" state={{ from: location }} replace />;
   }
 
-  console.log('Admin user authenticated:', adminUser.email);
   return <>{children}</>;
 };

@@ -10,12 +10,21 @@ import fs from 'fs';
 import cookieParser from 'cookie-parser';
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
+import {
+  createSessionToken,
+  verifySessionToken,
+  SESSION_COOKIE,
+  sessionCookieOptions,
+} from './server/utils/session.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3331;
+
+// Trust the first proxy hop (Coolify/Traefik) so req.ip and secure cookies work correctly.
+app.set('trust proxy', 1);
 
 // Initialize Prisma client with error handling
 let prisma = null;
@@ -281,24 +290,75 @@ const upload = multer({
   }
 });
 
-// A simple middleware to check if the user is an admin
-// NOTE: This is a placeholder. In a real app, you'd have a robust session/token system.
+// Admin authentication middleware.
+// Verifies the signed httpOnly session cookie set at login (see server/utils/session.js).
 const requireAdmin = (req, res, next) => {
-  // For now, we'll check for a header or a session variable.
-  // This part needs to be connected to your actual admin auth state.
-  // Let's assume for now a simple check. This will need to be improved.
-  const { 'x-admin-authenticated': adminHeader } = req.headers;
-  if (adminHeader === 'true') { 
+  const session = verifySessionToken(req.cookies?.[SESSION_COOKIE]);
+  if (!session) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  req.admin = session;
+  next();
+};
+
+// Simple in-memory login rate limiter (per IP + email). Suitable for a single
+// server instance; the window resets on success or after LOGIN_WINDOW_MS.
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_MAX_ATTEMPTS = 10;
+const loginAttempts = new Map();
+const loginRateLimit = (req, res, next) => {
+  const key = `${req.ip || 'unknown'}|${(req.body && req.body.email) || ''}`;
+  const now = Date.now();
+  const record = loginAttempts.get(key);
+  if (!record || now - record.first > LOGIN_WINDOW_MS) {
+    loginAttempts.set(key, { count: 1, first: now });
     return next();
   }
-  
-  // This is a basic check and should be replaced with a proper token/session validation
-  // For the purpose of this implementation, we will assume a session or context is set.
-  // Since we don't have real sessions implemented server-side, this is a simplified check.
-  // We'll refine this later if needed.
-  // For now, let's assume if we get here from the admin dash, it's okay.
-  // This is NOT secure for production without a real auth mechanism.
-  next(); 
+  record.count += 1;
+  if (record.count > LOGIN_MAX_ATTEMPTS) {
+    return res.status(429).json({ error: 'Too many login attempts. Please try again in a few minutes.' });
+  }
+  next();
+};
+
+// Default-deny gate for the entire /api namespace. Only the explicit allowlist
+// below is reachable without an admin session; everything else — including all
+// /api/admin/* routes, PII list endpoints, and every mutation — requires auth.
+// `req.path` here is relative to the '/api' mount, e.g. '/pages/homepage'.
+const PUBLIC_API_ROUTES = [
+  ['POST', /^\/auth\/login$/],
+  ['POST', /^\/admin\/forgot-password$/],
+  ['POST', /^\/admin\/reset-password-with-token$/],
+  // Public form submissions (each verifies a Cloudflare Turnstile token)
+  ['POST', /^\/event-requests$/],
+  ['POST', /^\/scooter-registration$/],
+  ['POST', /^\/ac-inquiry$/],
+  ['POST', /^\/storage-locker-application$/],
+  ['POST', /^\/emergency-contact$/],
+  ['POST', /^\/pet-registration$/],
+  ['POST', /^\/form-k-submission$/],
+  ['POST', /^\/incident-report$/],
+  // Token/email-gated public lookups
+  ['GET',  /^\/tenant-signature\//],
+  ['POST', /^\/tenant-signature\//],
+  ['GET',  /^\/incident-status\//],
+  ['GET',  /^\/health$/],
+  // Public read-only content for the resident site
+  ['GET',  /^\/config\/public$/],
+  ['GET',  /^\/announcements$/],
+  ['GET',  /^\/events$/],
+  ['GET',  /^\/pages$/],
+  ['GET',  /^\/pages\/[^/]+$/],
+  ['GET',  /^\/documents$/],
+  ['GET',  /^\/documents\/[^/]+\/download$/],
+  ['GET',  /^\/storage-lockers$/],
+  ['GET',  /^\/storage-waitlist-check$/],
+];
+const isPublicApiRoute = (req) =>
+  PUBLIC_API_ROUTES.some(([method, pattern]) => req.method === method && pattern.test(req.path));
+const apiGate = (req, res, next) => {
+  if (isPublicApiRoute(req)) return next();
+  return requireAdmin(req, res, next);
 };
 
 // Enhanced logging utility
@@ -411,6 +471,9 @@ app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 
+// Enforce authentication across the API before any route handler runs.
+app.use('/api', apiGate);
+
 // Move request logger to be the first middleware to ensure all requests are logged
 // app.use(requestLogger);
 
@@ -515,7 +578,7 @@ app.post('/api/admin/form-k/cleanup', async (req, res) => {
 });
 
 // API Routes
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', loginRateLimit, async (req, res) => {
   try {
     const { email, password } = req.body;
     logger.debug('Login attempt', { email });
@@ -531,11 +594,21 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const isValidPassword = await bcrypt.compare(password, admin.password);
-    
+
     if (!isValidPassword) {
       logger.warn('Login failed - invalid password', { email });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+
+    // Clear any failed-attempt counter for this IP+email on success.
+    if (req.ip) loginAttempts.delete(`${req.ip}|${email}`);
+
+    // Establish a real, server-verifiable session.
+    res.cookie(
+      SESSION_COOKIE,
+      createSessionToken({ id: admin.id, email: admin.email }),
+      sessionCookieOptions()
+    );
 
     logger.info('Login successful', { email, adminId: admin.id });
     res.json({
@@ -550,43 +623,19 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-app.post('/api/auth/register', async (req, res) => {
-  try {
-    const db = await getPrisma();
-    const { email, password } = req.body;
-    logger.debug('Registration attempt', { email });
-
-    // Check if admin already exists
-    const existingAdmin = await db.adminUser.findUnique({
-      where: { email }
-    });
-
-    if (existingAdmin) {
-      logger.warn('Registration failed - user already exists', { email });
-      return res.status(400).json({ error: 'Admin user already exists' });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    const admin = await db.adminUser.create({
-      data: {
-        email,
-        password: hashedPassword
-      }
-    });
-
-    logger.info('Registration successful', { email, adminId: admin.id });
-    res.json({
-      user: {
-        id: admin.id,
-        email: admin.email
-      }
-    });
-  } catch (error) {
-    logger.error('Registration error', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+// Log out by clearing the session cookie.
+app.post('/api/auth/logout', (req, res) => {
+  res.clearCookie(SESSION_COOKIE, { ...sessionCookieOptions(), maxAge: undefined });
+  res.json({ success: true });
 });
+
+// Return the currently authenticated admin, or 401 if the session is invalid.
+app.get('/api/auth/me', requireAdmin, (req, res) => {
+  res.json({ user: { id: req.admin.sub, email: req.admin.email } });
+});
+
+// NOTE: public admin self-registration was removed. New admin accounts are
+// created via the authenticated POST /api/admin/users endpoint.
 
 // Announcements CRUD
 app.get('/api/announcements', async (req, res) => {

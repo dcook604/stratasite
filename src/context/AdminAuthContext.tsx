@@ -1,13 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { validateAdminCredentials } from '@/lib/auth';
+import { validateAdminCredentials, checkAdminSession, logoutAdmin, type AdminUser } from '@/lib/auth';
 import SessionTimeoutWarning from '@/components/shared/SessionTimeoutWarning';
 import { useToast } from '@/components/ui/use-toast';
-
-type AdminUser = {
-  id: string;
-  email: string;
-};
 
 type AdminAuthContextType = {
   adminUser: AdminUser | null;
@@ -42,7 +37,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async (isInactive = false) => {
     setAdminUser(null);
-    localStorage.removeItem('admin_user');
+    await logoutAdmin();
     setWarningModalOpen(false);
     clearTimeout(logoutTimer.current);
     clearTimeout(warningTimer.current);
@@ -116,34 +111,30 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   }, [countdown, logout]);
 
   useEffect(() => {
-    // Check if admin user exists in localStorage on initial load
-    const storedAdmin = localStorage.getItem('admin_user');
-    if (storedAdmin) {
-      try {
-        setAdminUser(JSON.parse(storedAdmin));
-      } catch (error) {
-        console.error('Error parsing stored admin user:', error);
-        localStorage.removeItem('admin_user');
-      }
-    }
-    setIsLoading(false);
+    // Verify the session against the server. localStorage is not trusted — the
+    // httpOnly session cookie is the only proof of authentication.
+    let isMounted = true;
+    (async () => {
+      const user = await checkAdminSession();
+      if (!isMounted) return;
+      setAdminUser(user);
+      setIsLoading(false);
+    })();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      console.log('Attempting login with:', email);
-      
       const adminUser = await validateAdminCredentials(email, password);
-      
+
       if (adminUser) {
-        console.log('Login successful, user:', adminUser);
         setAdminUser(adminUser);
-        localStorage.setItem('admin_user', JSON.stringify(adminUser));
         setIsLoading(false);
         return { error: null };
       } else {
-        console.log('Invalid credentials');
         setIsLoading(false);
         return { error: 'Invalid credentials' };
       }
