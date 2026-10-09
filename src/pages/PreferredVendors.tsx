@@ -1,7 +1,7 @@
 import React from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { ExternalLink, Phone, Mail, Paintbrush, Wind, Hammer, Search, ArrowRight, DoorOpen, Wrench } from 'lucide-react';
+import { ExternalLink, Phone, Mail, Paintbrush, Wind, Search, ArrowRight, DoorOpen, Wrench } from 'lucide-react';
 
 const vendors = [
   {
@@ -49,29 +49,6 @@ const vendors = [
     recommended: true,
   },
   {
-    name: 'Swift Contracting & Renovations Ltd.',
-    tagline: 'Building Dreams into Reality',
-    description:
-      'A full-service general contractor specializing in comprehensive home transformations. From kitchen and bathroom remodels to decks and home additions, Swift delivers quality craftsmanship and personalized design solutions.',
-    services: [
-      'Kitchen & bathroom renovations',
-      'Basement remodeling',
-      'Deck & porch construction',
-      'Home additions & room conversions',
-      'Attic conversions',
-      'Garage construction',
-      'Foundation work',
-      'General contracting',
-    ],
-    website: 'https://swiftcontractingandrenovations.com/',
-    icon: Hammer,
-    color: 'bg-spectrum-green/10 text-spectrum-green',
-    category: 'Contracting & Renovations',
-    phone: null,
-    email: null,
-    recommended: true,
-  },
-  {
     name: 'Expresscloset',
     tagline: 'Custom closets & storage solutions',
     description:
@@ -89,7 +66,7 @@ const vendors = [
     icon: DoorOpen,
     color: 'bg-spectrum-blue/10 text-spectrum-blue',
     category: 'Closets & Storage',
-    recommended: false,
+    recommended: true,
   },
   {
     name: 'Lina Construction Ltd.',
@@ -112,7 +89,7 @@ const vendors = [
     icon: Wrench,
     color: 'bg-spectrum-green/10 text-spectrum-green',
     category: 'Repairs & Renovations',
-    recommended: false,
+    recommended: true,
   },
 ];
 

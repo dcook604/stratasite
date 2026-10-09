@@ -6,7 +6,7 @@ import Footer from '@/components/layout/Footer';
 import RecentAnnouncements from '@/components/widgets/RecentAnnouncements';
 import { useAdminAuth } from '@/context/AdminAuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Image, Book, Mail, Edit, Save, X, Loader2, Paintbrush, Wind, Hammer, Wrench, ArrowRight, AlertTriangle } from 'lucide-react';
+import { Image, Book, Mail, Edit, Save, X, Loader2, Paintbrush, Wind, Wrench, ArrowRight, AlertTriangle } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -411,7 +411,7 @@ Use our platform to stay updated on events, announcements, and community activit
                   {[
                     { icon: Paintbrush, color: 'bg-spectrum-blue/10 text-spectrum-blue', name: 'Honest John Painting Co.', summary: 'Interior & exterior painting, drywall repair, and carpentry.' },
                     { icon: Wind, color: 'bg-spectrum-yellow/10 text-spectrum-yellow', name: 'Airlux Heating & Cooling', summary: 'Heat pump and AC specialists serving BC since 2004.' },
-                    { icon: Hammer, color: 'bg-spectrum-green/10 text-spectrum-green', name: 'Swift Contracting', summary: 'Full-service renovations, kitchen remodels, and flooring.' },
+                    { icon: Wrench, color: 'bg-spectrum-green/10 text-spectrum-green', name: 'Lina Construction Ltd.', summary: 'In-unit repairs and renovations — drywall, painting, doors and flooring.' },
                   ].map((v) => {
                     const Icon = v.icon;
                     return (
