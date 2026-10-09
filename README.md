@@ -4,15 +4,15 @@ A comprehensive web application for the Spectrum 4 strata council, providing res
 
 ## 🌐 Live Site
 
-**Production**: [https://spectrum4.ca](https://spectrum4.ca)
+**Production**: [https://www.spectrum4.ca](https://www.spectrum4.ca)
 
 ## 🏗️ Tech Stack
 
 - **Frontend**: React 18 + TypeScript + Vite
 - **Styling**: Tailwind CSS + shadcn/ui components
 - **Backend**: Node.js + Express
-- **Database**: PostgreSQL + Prisma ORM
-- **Authentication**: bcryptjs + session management
+- **Database**: SQLite + Prisma ORM
+- **Authentication**: bcryptjs + signed httpOnly session cookies
 - **File Uploads**: Multer + Sharp image processing
 - **Deployment**: Coolify with Docker
 
@@ -47,9 +47,10 @@ A comprehensive web application for the Spectrum 4 strata council, providing res
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ 
-- PostgreSQL database
+- Node.js 18+
 - Git
+
+No database server is required — the app uses SQLite files managed by Prisma.
 
 ### Installation
 
@@ -133,7 +134,8 @@ See `prisma/schema.prisma` for complete schema definitions.
 ### Environment Variables
 
 ```bash
-DATABASE_URL=postgresql://user:password@host:port/database
+DATABASE_URL=file:./prisma/dev.db
+SESSION_SECRET=your_long_random_session_secret
 PORT=3000
 NODE_ENV=production
 VITE_TURNSTILE_SITE_KEY=your_turnstile_site_key

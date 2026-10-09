@@ -7,6 +7,7 @@ import { Suspense } from "react";
 import { AdminAuthProvider } from "./context/AdminAuthContext";
 import ErrorBoundary from "./components/error/ErrorBoundary";
 import SkipLink from "./components/accessibility/SkipLink";
+import RouteMeta from "./components/seo/RouteMeta";
 
 // Core pages - loaded immediately
 import Index from "./pages/Index";
@@ -44,6 +45,7 @@ const App = () => (
       <TooltipProvider>
         <BrowserRouter>
           <AdminAuthProvider>
+            <RouteMeta />
             <SkipLink />
             <Toaster />
             <Sonner />

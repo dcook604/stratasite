@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, type NavigateFunction } from 'react-router-dom';
 import { validateAdminCredentials, checkAdminSession, logoutAdmin, type AdminUser } from '@/lib/auth';
+import { SESSION_EXPIRED_EVENT } from '@/lib/apiClient';
 import SessionTimeoutWarning from '@/components/shared/SessionTimeoutWarning';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -124,6 +125,26 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       isMounted = false;
     };
   }, []);
+
+  // The server can reject an admin request with 401 before the client-side
+  // inactivity timer fires (e.g. a stale tab). Treat that as an expired
+  // session: clear the user so RequireAdminAuth redirects to the login page.
+  useEffect(() => {
+    const onSessionExpired = () => {
+      setAdminUser((current) => {
+        if (current) {
+          toast({
+            title: 'Session expired',
+            description: 'Please sign in again to continue.',
+            variant: 'destructive',
+          });
+        }
+        return null;
+      });
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
+  }, [toast]);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);

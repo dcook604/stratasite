@@ -35,6 +35,28 @@ const Navbar = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
+  const closeMenus = React.useCallback(() => {
+    setIsMenuOpen(false);
+    setFormsOpen(false);
+    setInfoOpen(false);
+    setFormsDesktopOpen(false);
+    setInfoDesktopOpen(false);
+  }, []);
+
+  // Close any open menu after navigating to a new route
+  React.useEffect(() => {
+    closeMenus();
+  }, [location.pathname, closeMenus]);
+
+  // Escape closes open menus
+  React.useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeMenus();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [closeMenus]);
+
   return (
     <>
       {/* Desktop Header */}
@@ -52,7 +74,7 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop nav links */}
-          <nav className="hidden md:flex items-center gap-8">
+          <nav aria-label="Main" className="hidden md:flex items-center gap-8">
             <Link
               to="/"
               className={`text-title-lg transition-colors ${
@@ -308,7 +330,7 @@ const Navbar = () => {
       </header>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 bg-white border-t border-outline-variant shadow-lg md:hidden">
+      <nav aria-label="Mobile" className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 bg-white border-t border-outline-variant shadow-lg md:hidden">
         <Link to="/" className={`flex flex-col items-center justify-center ${isActive('/') ? 'text-secondary' : 'text-on-surface-variant'}`}>
           <span className={`material-symbols-outlined ${isActive('/') ? 'fill-1' : ''}`}>home</span>
           <span className="text-xs font-semibold text-[10px] uppercase mt-0.5">Home</span>

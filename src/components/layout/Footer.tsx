@@ -27,14 +27,14 @@ const Footer = () => {
           {/* Quick Links */}
           <div className="grid grid-cols-2 gap-12">
             <div className="flex flex-col gap-4">
-              <h5 className="text-label-md uppercase tracking-widest text-on-surface-variant">Quick Links</h5>
+              <h2 className="text-label-md uppercase tracking-widest text-on-surface-variant">Quick Links</h2>
               <Link to="/" className="text-body-md text-on-surface-variant hover:text-on-surface transition-colors">Home</Link>
               <Link to="/bylaws" className="text-body-md text-on-surface-variant hover:text-on-surface transition-colors">Bylaws</Link>
               <Link to="/preferred-vendors" className="text-body-md text-on-surface-variant hover:text-on-surface transition-colors">Vendors</Link>
               <Link to="/documents" className="text-body-md text-on-surface-variant hover:text-on-surface transition-colors">Documents</Link>
             </div>
             <div className="flex flex-col gap-4">
-              <h5 className="text-label-md uppercase tracking-widest text-on-surface-variant">Support</h5>
+              <h2 className="text-label-md uppercase tracking-widest text-on-surface-variant">Support</h2>
               <Link to="/incident-report" className="text-body-md text-on-surface-variant hover:text-on-surface transition-colors">Report an Issue</Link>
               <Link to="/incident-status" className="text-body-md text-on-surface-variant hover:text-on-surface transition-colors">Incident Status</Link>
               <Link to="/admin/login" className="text-body-md text-on-surface-variant hover:text-on-surface transition-colors">Admin Login</Link>

@@ -9,7 +9,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { isMobile, isIOS, isAndroid } from '@/utils/pdfConfig';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+
+// Page count used when the PDF renders in iframe/fallback mode, where the
+// document object is not available to read the real page count from.
+const FALLBACK_PAGE_COUNT = 33;
 
 const Bylaws: React.FC = () => {
   const [numPages, setNumPages] = useState<number>(0);
@@ -21,27 +25,20 @@ const Bylaws: React.FC = () => {
   const [useIframe, setUseIframe] = useState<boolean>(false);
 
   useEffect(() => {
-    console.log('Bylaws component mounted');
-    console.log('PDF.js version:', pdfjs.version);
-    console.log('Worker source:', pdfjs.GlobalWorkerOptions.workerSrc);
-
     const url = `${window.location.origin}/documents/bylaws_2025.pdf`;
-    console.log('PDF URL:', url);
     setPdfUrl(url);
 
     fetch(url)
       .then(response => {
-        console.log('PDF fetch response:', response.status, response.statusText);
         if (!response.ok) {
           throw new Error(`PDF fetch failed: ${response.status} ${response.statusText}`);
         }
         return response.blob();
       })
-      .then(blob => {
-        console.log('PDF blob size:', blob.size, 'bytes');
+      .then(() => {
         setLoading(false);
         if (useIframe && numPages === 0) {
-          setNumPages(33);
+          setNumPages(FALLBACK_PAGE_COUNT);
         }
       })
       .catch(err => {
@@ -52,11 +49,10 @@ const Bylaws: React.FC = () => {
 
     const timeoutId = setTimeout(() => {
       if (loading && !error && !useIframe) {
-        console.log('PDF loading timeout - switching to iframe mode');
         setUseIframe(true);
         setLoading(false);
         if (numPages === 0) {
-          setNumPages(33);
+          setNumPages(FALLBACK_PAGE_COUNT);
         }
       }
     }, 5000);
@@ -66,8 +62,7 @@ const Bylaws: React.FC = () => {
 
   useEffect(() => {
     if (useIframe && numPages === 0) {
-      console.log('Setting default page count for iframe mode');
-      setNumPages(33);
+      setNumPages(FALLBACK_PAGE_COUNT);
     }
   }, [useIframe, numPages]);
 

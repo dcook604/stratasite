@@ -503,6 +503,7 @@ const PetRegistration: React.FC = () => {
                               variant="destructive"
                               size="icon"
                               className="absolute top-2 right-2 h-6 w-6"
+                              aria-label={`Remove photo ${index + 1}`}
                               onClick={() => removePhoto(index)}
                             >
                               <X className="h-3 w-3" />

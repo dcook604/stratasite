@@ -11,6 +11,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { sanitizeHtml } from '@/lib/sanitize';
+import { formatContent } from '@/lib/formatContent';
 
 const RichTextEditor = React.lazy(() => import('@/components/admin/RichTextEditor'));
 
@@ -165,26 +166,11 @@ Use our platform to stay updated on events, announcements, and community activit
     }
   };
 
-  const formatContent = (content: string) => {
-    if (content.includes('<p>') || content.includes('<div>') || content.includes('<h1>')) {
-      return content;
-    }
-
-    return content
-      .replace(/^# (.*$)/gm, '<h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">$1</h1>')
-      .replace(/^## (.*$)/gm, '<h2 class="text-xl text-gray-600 max-w-3xl mx-auto mb-4">$1</h2>')
-      .replace(/^### (.*$)/gm, '<h3 class="text-lg font-medium text-gray-700 mb-2">$1</h3>')
-      .replace(/^\*\*(.*?)\*\*/gm, '<strong>$1</strong>')
-      .replace(/^- (.*$)/gm, '<li class="ml-4">$1</li>')
-      .replace(/\n\n/g, '</p><p class="text-xl text-gray-600 max-w-3xl mx-auto mb-4">')
-      .replace(/\n/g, '<br/>');
-  };
-
   if (loading) {
     return (
       <div className="page-container">
         <Navbar />
-        <div className="page-content flex items-center justify-center min-h-[60vh]">
+        <div id="main-content" tabIndex={-1} className="page-content flex items-center justify-center min-h-[60vh]">
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-secondary" aria-hidden="true" />
             <p className="text-on-surface-variant text-sm" aria-live="polite">Loading homepage content...</p>
@@ -299,7 +285,7 @@ Use our platform to stay updated on events, announcements, and community activit
                     <div
                       className="homepage-content"
                       dangerouslySetInnerHTML={{
-                        __html: sanitizeHtml(formatContent(homepageData.content))
+                        __html: sanitizeHtml(formatContent(homepageData.content, 'homepage'))
                       }}
                     />
                   )}
