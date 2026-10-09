@@ -9,8 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Edit, Save, X } from 'lucide-react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import { sanitizeHtml } from '@/lib/sanitize';
+
+const RichTextEditor = React.lazy(() => import('@/components/admin/RichTextEditor'));
 
 interface PageData {
   id: string;
@@ -237,14 +238,16 @@ const DynamicPage = () => {
               <div>
                 <Label htmlFor="edit-content">Page Content</Label>
                 <div className="border rounded-md">
-                  <ReactQuill
-                    theme="snow"
-                    value={editData.content}
-                    onChange={(content) => setEditData({...editData, content})}
-                    modules={quillModules}
-                    formats={quillFormats}
-                    style={{ minHeight: '400px' }}
-                  />
+                  <React.Suspense fallback={<div className="h-[400px] flex items-center justify-center text-sm text-muted-foreground">Loading editor…</div>}>
+                    <RichTextEditor
+                      theme="snow"
+                      value={editData.content}
+                      onChange={(content) => setEditData({...editData, content})}
+                      modules={quillModules}
+                      formats={quillFormats}
+                      style={{ minHeight: '400px' }}
+                    />
+                  </React.Suspense>
                 </div>
               </div>
             </div>
@@ -278,8 +281,8 @@ const DynamicPage = () => {
             <div className="max-w-4xl mx-auto px-4 py-8">
               <div 
                 className="prose prose-lg max-w-none [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:mb-6 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mb-4 [&_h2]:mt-8 [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:mb-3 [&_h3]:mt-6 [&_p]:mb-4 [&_ul]:ml-6 [&_ol]:ml-6 [&_li]:mb-2 [&_table]:border-collapse [&_td]:border [&_td]:px-4 [&_td]:py-2 [&_th]:border [&_th]:px-4 [&_th]:py-2 [&_th]:bg-gray-50"
-                dangerouslySetInnerHTML={{ 
-                  __html: formatContent(page.content)
+                dangerouslySetInnerHTML={{
+                  __html: sanitizeHtml(formatContent(page.content))
                 }}
               />
             </div>

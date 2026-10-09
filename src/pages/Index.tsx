@@ -10,8 +10,9 @@ import { Image, Book, Mail, Edit, Save, X, Loader2, Paintbrush, Wind, Wrench, Ar
 import { Link, useLocation } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import { sanitizeHtml } from '@/lib/sanitize';
+
+const RichTextEditor = React.lazy(() => import('@/components/admin/RichTextEditor'));
 
 interface PageData {
   id: string;
@@ -269,14 +270,16 @@ Use our platform to stay updated on events, announcements, and community activit
                   <div>
                     <Label htmlFor="edit-content" className="text-xs font-semibold text-on-surface">Homepage Content</Label>
                     <div className="border border-outline-variant rounded-xl overflow-hidden">
-                      <ReactQuill
-                        theme="snow"
-                        value={editData.content}
-                        onChange={(content) => setEditData({...editData, content})}
-                        modules={quillModules}
-                        formats={quillFormats}
-                        style={{ minHeight: '300px' }}
-                      />
+                      <React.Suspense fallback={<div className="h-[300px] flex items-center justify-center text-sm text-on-surface-variant">Loading editor…</div>}>
+                        <RichTextEditor
+                          theme="snow"
+                          value={editData.content}
+                          onChange={(content) => setEditData({...editData, content})}
+                          modules={quillModules}
+                          formats={quillFormats}
+                          style={{ minHeight: '300px' }}
+                        />
+                      </React.Suspense>
                     </div>
                   </div>
                 </div>
@@ -296,7 +299,7 @@ Use our platform to stay updated on events, announcements, and community activit
                     <div
                       className="homepage-content"
                       dangerouslySetInnerHTML={{
-                        __html: formatContent(homepageData.content)
+                        __html: sanitizeHtml(formatContent(homepageData.content))
                       }}
                     />
                   )}
