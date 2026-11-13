@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -25,6 +26,7 @@ const formSchema = z.object({
   lastName: z.string().trim().min(1, 'Last name is required').max(60),
   email: z.string().trim().min(1, 'Email is required').email('Please enter a valid email address').max(254),
   isTownhouse: z.enum(['yes', 'no'], { required_error: 'Please select yes or no' }),
+  consent: z.literal(true, { errorMap: () => ({ message: 'You must accept to submit this form' }) }),
 });
 
 type Values = z.infer<typeof formSchema>;
@@ -39,7 +41,7 @@ const ResidentInfo = () => {
 
   const form = useForm<Values>({
     resolver: zodResolver(formSchema),
-    defaultValues: { unitNumber: '', address: '', firstName: '', lastName: '', email: '', isTownhouse: undefined },
+    defaultValues: { unitNumber: '', address: '', firstName: '', lastName: '', email: '', isTownhouse: undefined, consent: undefined },
   });
 
   React.useEffect(() => {
@@ -70,6 +72,7 @@ const ResidentInfo = () => {
           lastName: data.lastName,
           email: data.email,
           isTownhouse: data.isTownhouse === 'yes',
+          consent: data.consent,
           ...verified,
           turnstileToken,
         }),
@@ -189,6 +192,28 @@ const ResidentInfo = () => {
                           ))}
                         </RadioGroup>
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <FormField control={form.control} name="consent" render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-start gap-3 rounded-md border p-4 bg-muted/50">
+                        <FormControl>
+                          <Checkbox
+                            id="consent"
+                            checked={field.value === true}
+                            onCheckedChange={(checked) => field.onChange(checked === true ? true : undefined)}
+                            className="mt-1 h-5 w-5"
+                          />
+                        </FormControl>
+                        <Label htmlFor="consent" className="text-sm font-normal leading-relaxed cursor-pointer">
+                          I consent to Strata Corporation BCS2611 (Spectrum 4, 602 Citadel Parade) collecting
+                          and using the personal information I have provided above for the purpose of
+                          registering me for the Amazon Hub Locker system recently installed at Spectrum 4.
+                          I understand this information will be used for that purpose only.
+                        </Label>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )} />

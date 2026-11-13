@@ -570,6 +570,9 @@ model ResidentInfo {
   province      String
   postalCode    String  @map("postal_code")
 
+  // Consent to collection for Amazon Hub Locker registration (null on legacy rows)
+  consentAcceptedAt DateTime? @map("consent_accepted_at")
+
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")

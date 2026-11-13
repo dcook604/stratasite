@@ -2262,7 +2262,7 @@ const verifyCanadaPostAddress = async (streetAddress, postalCode) => {
 app.post('/api/resident-info', async (req, res) => {
   try {
     const db = await getPrisma();
-    const { unitNumber, firstName, lastName, email, isTownhouse, streetAddress, city, province, postalCode, turnstileToken } = req.body;
+    const { unitNumber, firstName, lastName, email, isTownhouse, streetAddress, city, province, postalCode, consent, turnstileToken } = req.body;
 
     const isTurnstileValid = await verifyTurnstile(turnstileToken);
     if (!isTurnstileValid) {
@@ -2281,6 +2281,9 @@ app.post('/api/resident-info', async (req, res) => {
       postalCode: clean(postalCode, 7).toUpperCase()
     };
 
+    if (consent !== true) {
+      return res.status(400).json({ error: 'You must accept the consent statement to submit this form' });
+    }
     if (Object.values(data).some((v) => !v) || typeof isTownhouse !== 'boolean') {
       return res.status(400).json({ error: 'Missing required fields' });
     }
@@ -2304,7 +2307,7 @@ app.post('/api/resident-info', async (req, res) => {
     }
 
     const submissionId = `RI-${Date.now()}`;
-    await db.residentInfo.create({ data: { submissionId, isTownhouse, ...data } });
+    await db.residentInfo.create({ data: { submissionId, isTownhouse, consentAcceptedAt: new Date(), ...data } });
 
     try {
       const { sendDynamicFormEmail, sendFormEmailFallback } = await import('./server/utils/dynamicEmailService.js');

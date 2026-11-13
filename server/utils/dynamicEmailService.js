@@ -141,7 +141,7 @@ const emailTemplates = {
           <li><strong>Address:</strong> ${esc(streetAddress)}, ${esc(city)}, ${esc(province)} ${esc(postalCode)}</li>
           ${submissionId ? `<li><strong>Reference:</strong> ${esc(submissionId)}</li>` : ''}
         </ul>
-        <p><em>Address verified with Canada Post AddressComplete.</em></p>
+        <p><em>Address verified with Canada Post AddressComplete. The resident consented to collection of this information for Amazon Hub Locker registration.</em></p>
       `
     };
   },

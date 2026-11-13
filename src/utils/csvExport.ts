@@ -78,6 +78,7 @@ export function formatResidentInfoForCSV(data: CsvRow[]): CsvRow[] {
     'City': safeCell(item.city),
     'Province': safeCell(item.province),
     'Postal Code': safeCell(item.postalCode),
+    'Consent Accepted': item.consentAcceptedAt ? new Date(String(item.consentAcceptedAt)).toLocaleString('en-CA') : '',
   }));
 }
 
