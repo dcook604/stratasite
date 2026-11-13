@@ -51,6 +51,26 @@ const ResidentInfo = () => {
       .catch(() => setCanadaPostKey(''));
   }, []);
 
+  // Canada Post AddressComplete stylesheet and script, loaded on this page only
+  React.useEffect(() => {
+    if (!canadaPostKey) return;
+    const base = 'https://ws1.postescanada-canadapost.ca';
+    const query = `?key=${encodeURIComponent(canadaPostKey)}`;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.type = 'text/css';
+    link.href = `${base}/css/addresscomplete-2.50.min.css${query}`;
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = `${base}/js/addresscomplete-2.50.min.js${query}`;
+    script.async = true;
+    document.head.append(link, script);
+    return () => {
+      link.remove();
+      script.remove();
+    };
+  }, [canadaPostKey]);
+
   const onSubmit = async (data: Values) => {
     if (!verified) {
       form.setError('address', { message: 'Please select your address from the suggestions' });
