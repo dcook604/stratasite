@@ -125,6 +125,27 @@ const emailTemplates = {
     };
   },
 
+  'resident-info': (data) => {
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const { unitNumber, firstName, lastName, email, isTownhouse, streetAddress, city, province, postalCode, submissionId } = data;
+
+    return {
+      subject: `Resident Information - Unit ${esc(unitNumber)}`,
+      html: `
+        <h2>Resident Information Submitted</h2>
+        <ul>
+          <li><strong>Name:</strong> ${esc(firstName)} ${esc(lastName)}</li>
+          <li><strong>Unit #:</strong> ${esc(unitNumber)}</li>
+          <li><strong>Townhouse:</strong> ${isTownhouse ? 'Yes' : 'No'}</li>
+          <li><strong>Email:</strong> ${esc(email)}</li>
+          <li><strong>Address:</strong> ${esc(streetAddress)}, ${esc(city)}, ${esc(province)} ${esc(postalCode)}</li>
+          ${submissionId ? `<li><strong>Reference:</strong> ${esc(submissionId)}</li>` : ''}
+        </ul>
+        <p><em>Address verified with Canada Post AddressComplete.</em></p>
+      `
+    };
+  },
+
   'emergency-contact': (data) => {
     const {
       unitNumber, strataLotNumber, registeredOwnerNames, ownerEmail,
@@ -604,6 +625,7 @@ const sendDynamicFormEmail = async (formName, formData) => {
           'ac-inquiry': 'AC Installation Inquiry',
           'storage-locker-application': 'Storage Locker Application',
           'emergency-contact': 'Emergency Contact Information',
+          'resident-info': 'Resident Information',
           'pet-registration': 'Pet Registration',
           'contact': 'Contact Form',
           'incident-report': 'Incident Report'

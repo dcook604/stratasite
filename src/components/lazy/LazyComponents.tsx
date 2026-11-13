@@ -50,6 +50,12 @@ export const EmergencyContact = lazy(() =>
   }))
 );
 
+export const ResidentInfo = lazy(() => 
+  import('@/pages/information/ResidentInfo').then(module => ({
+    default: module.default
+  }))
+);
+
 export const ACInquiry = lazy(() => 
   import('@/pages/information/ACInquiry').then(module => ({
     default: module.default

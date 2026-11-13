@@ -72,6 +72,7 @@ const FormManagement = () => {
     { formName: 'ac-inquiry', displayName: 'AC Installation Inquiry', description: 'Inquiry form for air conditioning installation', path: '/ac-inquiry' },
     { formName: 'storage-locker-application', displayName: 'Storage Locker Application', description: 'Locker selection and signup form for residents', path: '/storage-locker-signup' },
     { formName: 'emergency-contact', displayName: 'Emergency Contact Information', description: 'Emergency contact information form for residents', path: '/emergency-contact' },
+    { formName: 'resident-info', displayName: 'Resident Information', description: 'QR-code friendly resident contact and address form', path: '/resident-info' },
     { formName: 'pet-registration', displayName: 'Pet Registration', description: 'Pet registration form for residents', path: '/pet-registration' },
     { formName: 'form-k', displayName: 'Form K - Notice of Tenant\'s Responsibilities', description: 'Strata Property Act Form K for tenant notification', path: '/form-k' },
     { formName: 'contact', displayName: 'Contact Form', description: 'General contact form for inquiries', path: '/contact' },

@@ -55,6 +55,33 @@ export function downloadCSV(csvData: string, filename: string): void {
 }
 
 /**
+ * Neutralize spreadsheet formulas in user-supplied text (CSV injection)
+ */
+const safeCell = (value: unknown): string => {
+  const text = String(value ?? '');
+  return /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+};
+
+/**
+ * Format Resident Information data for CSV export
+ */
+export function formatResidentInfoForCSV(data: CsvRow[]): CsvRow[] {
+  return data.map(item => ({
+    'Submission ID': item.submissionId,
+    'Submitted': item.createdAt ? new Date(String(item.createdAt)).toLocaleString('en-CA') : '',
+    'First Name': safeCell(item.firstName),
+    'Last Name': safeCell(item.lastName),
+    'Email': safeCell(item.email),
+    'Unit Number': safeCell(item.unitNumber),
+    'Townhouse': item.isTownhouse ? 'Yes' : 'No',
+    'Street Address': safeCell(item.streetAddress),
+    'City': safeCell(item.city),
+    'Province': safeCell(item.province),
+    'Postal Code': safeCell(item.postalCode),
+  }));
+}
+
+/**
  * Format Emergency Contact data for CSV export
  */
 export function formatEmergencyContactForCSV(data: CsvRow[]): CsvRow[] {
@@ -190,7 +217,7 @@ export function formatStorageLockerForCSV(data: CsvRow[]): CsvRow[] {
  */
 export function exportFormData(
   data: CsvRow[],
-  formType: 'emergency-contact' | 'ac-inquiry' | 'pet-registration' | 'scooter-registration' | 'storage-locker-application',
+  formType: 'emergency-contact' | 'ac-inquiry' | 'pet-registration' | 'scooter-registration' | 'storage-locker-application' | 'resident-info',
   options: CSVExportOptions = {}
 ): void {
   let formattedData: CsvRow[];
@@ -216,6 +243,10 @@ export function exportFormData(
     case 'storage-locker-application':
       formattedData = formatStorageLockerForCSV(data);
       defaultFilename = `storage-locker-applications-${new Date().toISOString().split('T')[0]}.csv`;
+      break;
+    case 'resident-info':
+      formattedData = formatResidentInfoForCSV(data);
+      defaultFilename = `resident-info-${new Date().toISOString().split('T')[0]}.csv`;
       break;
     default:
       throw new Error(`Unknown form type: ${formType}`);

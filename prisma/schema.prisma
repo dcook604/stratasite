@@ -553,3 +553,26 @@ model IncidentStatusHistory {
 
   @@map("incident_status_history")
 }
+
+model ResidentInfo {
+  id           String   @id @default(cuid())
+  submissionId String   @unique @map("submission_id") // RI-timestamp format
+
+  unitNumber   String   @map("unit_number")
+  firstName    String   @map("first_name")
+  lastName     String   @map("last_name")
+  email        String
+  isTownhouse  Boolean  @map("is_townhouse")
+
+  // Canada Post AddressComplete verified address
+  streetAddress String  @map("street_address")
+  city          String
+  province      String
+  postalCode    String  @map("postal_code")
+
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("resident_info")
+}

@@ -24,6 +24,7 @@ import {
   ScooterRegistration,
   PetRegistration,
   EmergencyContact,
+  ResidentInfo,
   ACInquiry,
   StorageLockerSignup,
   FormK,
@@ -102,6 +103,12 @@ const App = () => (
                 <Route path="/emergency-contact" element={
                   <Suspense fallback={<LazyLoadingFallback />}>
                     <EmergencyContact />
+                  </Suspense>
+                } />
+                {/* Resident Information page (QR code target) */}
+                <Route path="/resident-info" element={
+                  <Suspense fallback={<LazyLoadingFallback />}>
+                    <ResidentInfo />
                   </Suspense>
                 } />
                 {/* AC Inquiry page */}

@@ -94,6 +94,7 @@ const AdminDashboard = () => {
   const [scooterRegistrations, setScooterRegistrations] = useState([]);
   const [petRegistrations, setPetRegistrations] = useState([]);
   const [emergencyContacts, setEmergencyContacts] = useState([]);
+  const [residentInfo, setResidentInfo] = useState([]);
   const [acInquiries, setACInquiries] = useState([]);
   const [storageLockerApplications, setStorageLockerApplications] = useState<AdminLockerApplication[]>([]);
   const [allLockers, setAllLockers] = useState<AdminLocker[]>([]);
@@ -158,7 +159,8 @@ const AdminDashboard = () => {
         acInquiriesRes,
         incidentReportsRes,
         storageLockerApplicationsRes,
-        allLockersRes
+        allLockersRes,
+        residentInfoRes
       ] = await Promise.all([
         fetch('/api/announcements').catch(err => err),
         fetch('/api/pages').catch(err => err),
@@ -170,7 +172,8 @@ const AdminDashboard = () => {
         fetch('/api/ac-inquiries').catch(err => err),
         fetch('/api/incident-reports').catch(err => err),
         fetch('/api/storage-locker-applications').catch(err => err),
-        fetch('/api/storage-lockers').catch(err => err)
+        fetch('/api/storage-lockers').catch(err => err),
+        fetch('/api/resident-info').catch(err => err)
       ]);
 
       console.log('AdminDashboard: API responses received');
@@ -243,6 +246,14 @@ const AdminDashboard = () => {
       } else {
         console.error('AdminDashboard: Failed to load emergency contacts:', emergencyContactsRes);
         setEmergencyContacts([]);
+      }
+
+      // Handle resident info
+      if (residentInfoRes instanceof Response && residentInfoRes.ok) {
+        setResidentInfo(await residentInfoRes.json());
+      } else {
+        console.error('AdminDashboard: Failed to load resident info:', residentInfoRes);
+        setResidentInfo([]);
       }
 
       // Handle AC inquiries
@@ -1881,6 +1892,25 @@ const AdminDashboard = () => {
                             </CardContent>
                           </Card>
 
+                          {/* Resident Information */}
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="text-lg">Resident Information</CardTitle>
+                              <CardDescription>{residentInfo.length} submissions</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              <Button
+                                onClick={() => exportFormData(residentInfo, 'resident-info')}
+                                className="w-full"
+                                variant="outline"
+                                disabled={residentInfo.length === 0}
+                              >
+                                <Download className="w-4 h-4 mr-2" />
+                                Export CSV
+                              </Button>
+                            </CardContent>
+                          </Card>
+
                           {/* AC Inquiries */}
                           <Card>
                             <CardHeader>
@@ -1999,6 +2029,40 @@ const AdminDashboard = () => {
                               {emergencyContacts.length > 5 && (
                                 <p className="text-sm text-gray-500 text-center">
                                   Showing 5 of {emergencyContacts.length} submissions
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {/* Resident Information Details */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Resident Information</CardTitle>
+                          <CardDescription>Recent resident information submissions</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          {residentInfo.length === 0 ? (
+                            <p className="text-gray-500">No resident information submissions yet.</p>
+                          ) : (
+                            <div className="space-y-4 max-h-96 overflow-y-auto">
+                              {residentInfo.slice(0, 5).map((r) => (
+                                <div key={r.id} className="p-4 border rounded-lg bg-gray-50">
+                                  <div className="flex justify-between items-start mb-2">
+                                    <h4 className="font-semibold">{r.firstName} {r.lastName}</h4>
+                                    <span className="text-sm text-gray-500">
+                                      {new Date(r.createdAt).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm"><strong>Unit:</strong> {r.unitNumber}{r.isTownhouse ? ' (Townhouse)' : ''}</p>
+                                  <p className="text-sm"><strong>Email:</strong> {r.email}</p>
+                                  <p className="text-sm"><strong>Address:</strong> {r.streetAddress}, {r.city}, {r.province} {r.postalCode}</p>
+                                </div>
+                              ))}
+                              {residentInfo.length > 5 && (
+                                <p className="text-sm text-gray-500 text-center">
+                                  Showing 5 of {residentInfo.length} submissions
                                 </p>
                               )}
                             </div>

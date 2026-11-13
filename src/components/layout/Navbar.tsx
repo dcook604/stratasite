@@ -18,6 +18,7 @@ const formsItems = [
   { name: 'Incident Report', path: '/incident-report' },
   { name: 'Scooter Registration', path: '/scooter-registration' },
   { name: 'Emergency Contact', path: '/emergency-contact' },
+  { name: 'Resident Information', path: '/resident-info' },
   { name: 'AC Inquiry', path: '/ac-inquiry' },
   { name: 'Storage Locker Signup', path: '/storage-locker-signup' },
   { name: 'Pet Registration', path: '/pet-registration' },
