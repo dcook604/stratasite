@@ -16,12 +16,20 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { TurnstileCaptcha } from '@/components/ui/TurnstileCaptcha';
-import { AddressAutocomplete, type VerifiedAddress } from '@/components/ui/AddressAutocomplete';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const PROVINCES = ['AB', 'BC', 'MB', 'NB', 'NL', 'NS', 'NT', 'NU', 'ON', 'PE', 'QC', 'SK', 'YT'] as const;
+// Letters D, F, I, O, Q, U never appear in Canadian postal codes
+const POSTAL_CODE = /^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z][ -]?\d[ABCEGHJ-NPRSTV-Z]\d$/i;
 
 const formSchema = z.object({
   unitNumber: z.string().trim().min(1, 'Unit number is required').max(20, 'Unit number is too long')
     .regex(/^[A-Za-z0-9\-/ ]+$/, 'Use letters, numbers, spaces, "-" or "/" only'),
-  address: z.string().trim().min(1, 'Address is required'),
+  streetAddress: z.string().trim().min(1, 'Street address is required').max(120),
+  city: z.string().trim().min(1, 'City is required').max(60),
+  province: z.enum(PROVINCES, { required_error: 'Province is required' }),
+  postalCode: z.string().trim().min(1, 'Postal code is required')
+    .regex(POSTAL_CODE, 'Enter a valid Canadian postal code, e.g. V6B 1A1'),
   firstName: z.string().trim().min(1, 'First name is required').max(60),
   lastName: z.string().trim().min(1, 'Last name is required').max(60),
   email: z.string().trim().min(1, 'Email is required').email('Please enter a valid email address').max(254),
@@ -36,46 +44,13 @@ const ResidentInfo = () => {
   const navigate = useNavigate();
   const [turnstileToken, setTurnstileToken] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [canadaPostKey, setCanadaPostKey] = React.useState<string | null>(null);
-  const [verified, setVerified] = React.useState<VerifiedAddress | null>(null);
 
   const form = useForm<Values>({
     resolver: zodResolver(formSchema),
-    defaultValues: { unitNumber: '', address: '', firstName: '', lastName: '', email: '', isTownhouse: undefined, consent: undefined },
+    defaultValues: { unitNumber: '', streetAddress: '', city: '', province: 'BC', postalCode: '', firstName: '', lastName: '', email: '', isTownhouse: undefined, consent: undefined },
   });
 
-  React.useEffect(() => {
-    fetch('/api/config/public')
-      .then((r) => r.json())
-      .then((d) => setCanadaPostKey(d.canadaPostKey || ''))
-      .catch(() => setCanadaPostKey(''));
-  }, []);
-
-  // Canada Post AddressComplete stylesheet and script, loaded on this page only
-  React.useEffect(() => {
-    if (!canadaPostKey) return;
-    const base = 'https://ws1.postescanada-canadapost.ca';
-    const query = `?key=${encodeURIComponent(canadaPostKey)}`;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.type = 'text/css';
-    link.href = `${base}/css/addresscomplete-2.50.min.css${query}`;
-    const script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.src = `${base}/js/addresscomplete-2.50.min.js${query}`;
-    script.async = true;
-    document.head.append(link, script);
-    return () => {
-      link.remove();
-      script.remove();
-    };
-  }, [canadaPostKey]);
-
   const onSubmit = async (data: Values) => {
-    if (!verified) {
-      form.setError('address', { message: 'Please select your address from the suggestions' });
-      return;
-    }
     if (!turnstileToken) {
       toast({ title: 'Error', description: 'Please complete the CAPTCHA verification', variant: 'destructive' });
       return;
@@ -93,7 +68,10 @@ const ResidentInfo = () => {
           email: data.email,
           isTownhouse: data.isTownhouse === 'yes',
           consent: data.consent,
-          ...verified,
+          streetAddress: data.streetAddress,
+          city: data.city,
+          province: data.province,
+          postalCode: data.postalCode.toUpperCase().replace(/[ -]/g, '').replace(/^(.{3})(.{3})$/, '$1 $2'),
           turnstileToken,
         }),
       });
@@ -167,33 +145,48 @@ const ResidentInfo = () => {
                     </FormItem>
                   )} />
 
-                  <FormField control={form.control} name="address" render={({ field, fieldState }) => (
+                  <FormField control={form.control} name="streetAddress" render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Address</FormLabel>
-                      <FormControl>
-                        {canadaPostKey === null ? (
-                          <Input className={inputClass} disabled placeholder="Loading…" />
-                        ) : canadaPostKey === '' ? (
-                          <p role="alert" className="text-sm text-destructive">
-                            Address lookup is not configured. Please contact the strata office.
-                          </p>
-                        ) : (
-                          <AddressAutocomplete
-                            apiKey={canadaPostKey}
-                            value={field.value}
-                            onChange={field.onChange}
-                            onVerified={(a) => { setVerified(a); if (a) form.clearErrors('address'); }}
-                            verified={!!verified}
-                            invalid={!!fieldState.error}
-                          />
-                        )}
-                      </FormControl>
-                      {verified && (
-                        <p className="text-sm text-muted-foreground">{verified.city}, {verified.province} {verified.postalCode}</p>
-                      )}
+                      <FormLabel>Street address</FormLabel>
+                      <FormControl><Input className={inputClass} placeholder="e.g. 602 Citadel Parade" autoComplete="address-line1" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
+
+                  <FormField control={form.control} name="city" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>City</FormLabel>
+                      <FormControl><Input className={inputClass} autoComplete="address-level2" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="province" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Province</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className={inputClass}><SelectValue /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {PROVINCES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+
+                    <FormField control={form.control} name="postalCode" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Postal code</FormLabel>
+                        <FormControl>
+                          <Input className={`${inputClass} uppercase`} placeholder="V6B 1A1" autoComplete="postal-code" autoCapitalize="characters" maxLength={7} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
 
                   <FormField control={form.control} name="isTownhouse" render={({ field }) => (
                     <FormItem>

@@ -1329,8 +1329,7 @@ const verifyTurnstile = async (token) => {
 // Public configuration endpoint (no auth required)
 app.get('/api/config/public', (req, res) => {
   res.json({
-    turnstileSiteKey: process.env.VITE_TURNSTILE_SITE_KEY || '',
-    canadaPostKey: process.env.CANADAPOST_ADDRESSCOMPLETE_KEY || ''
+    turnstileSiteKey: process.env.VITE_TURNSTILE_SITE_KEY || ''
   });
 });
 
@@ -2231,33 +2230,6 @@ app.put('/api/event-requests/:id', async (req, res) => {
   }
 });
 
-// Confirm an address against Canada Post AddressComplete (Find). Returns true/false,
-// or null when the service can't be reached so callers can decide how to degrade.
-const verifyCanadaPostAddress = async (streetAddress, postalCode) => {
-  const key = process.env.CANADAPOST_ADDRESSCOMPLETE_KEY;
-  if (!key) return null;
-  try {
-    const params = new URLSearchParams({
-      Key: key,
-      SearchTerm: `${streetAddress} ${postalCode}`,
-      Country: 'CA',
-      MaxSuggestions: '5'
-    });
-    const response = await fetch(`https://ws1.postescanada-canadapost.ca/AddressComplete/Interactive/Find/v2.10/json3.ws?${params}`);
-    const data = await response.json();
-    const items = data?.Items || [];
-    if (items.length && items[0].Error) {
-      logger.warn('AddressComplete error', { error: items[0].Error, description: items[0].Description });
-      return null;
-    }
-    const normalizedPostal = postalCode.replace(/\s/g, '').toUpperCase();
-    return items.some((i) => `${i.Text} ${i.Description}`.replace(/\s/g, '').toUpperCase().includes(normalizedPostal));
-  } catch (error) {
-    logger.error('AddressComplete verification failed', error);
-    return null;
-  }
-};
-
 // Submit resident information (QR-code friendly form)
 app.post('/api/resident-info', async (req, res) => {
   try {
@@ -2298,12 +2270,6 @@ app.post('/api/resident-info', async (req, res) => {
     }
     if (!/^(AB|BC|MB|NB|NL|NS|NT|NU|ON|PE|QC|SK|YT)$/.test(data.province)) {
       return res.status(400).json({ error: 'Invalid province' });
-    }
-
-    // Re-check the address server-side so it can't be forged by skipping the client widget
-    const addressOk = await verifyCanadaPostAddress(data.streetAddress, data.postalCode);
-    if (addressOk === false) {
-      return res.status(400).json({ error: 'We could not verify that address. Please select it from the suggestions.' });
     }
 
     const submissionId = `RI-${Date.now()}`;
