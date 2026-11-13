@@ -21,20 +21,34 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const PROVINCES = ['AB', 'BC', 'MB', 'NB', 'NL', 'NS', 'NT', 'NU', 'ON', 'PE', 'QC', 'SK', 'YT'] as const;
 // Letters D, F, I, O, Q, U never appear in Canadian postal codes
 const POSTAL_CODE = /^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z][ -]?\d[ABCEGHJ-NPRSTV-Z]\d$/i;
+const PROVINCES_BY_POSTAL_LETTER: Record<string, string[]> = {
+  A: ['NL'], B: ['NS'], C: ['PE'], E: ['NB'], G: ['QC'], H: ['QC'], J: ['QC'],
+  K: ['ON'], L: ['ON'], M: ['ON'], N: ['ON'], P: ['ON'], R: ['MB'], S: ['SK'],
+  T: ['AB'], V: ['BC'], X: ['NT', 'NU'], Y: ['YT'],
+};
+const NAME = /^\p{L}[\p{L}\p{M}' .\-’]*$/u;
+const NAME_MESSAGE = 'Use letters, spaces, apostrophes, hyphens and periods only';
 
 const formSchema = z.object({
   unitNumber: z.string().trim().min(1, 'Unit number is required').max(20, 'Unit number is too long')
-    .regex(/^[A-Za-z0-9\-/ ]+$/, 'Use letters, numbers, spaces, "-" or "/" only'),
-  streetAddress: z.string().trim().min(1, 'Street address is required').max(120),
-  city: z.string().trim().min(1, 'City is required').max(60),
+    .regex(/^[A-Za-z0-9][A-Za-z0-9\-/ ]*$/, 'Use letters, numbers, spaces, "-" or "/" only'),
+  streetAddress: z.string().trim().min(1, 'Street address is required').max(120, 'Street address is too long')
+    .regex(/\d/, 'Include the street number')
+    .regex(/^[\p{L}\p{M}\d .,'#&/\-’]+$/u, 'Street address contains invalid characters'),
+  city: z.string().trim().min(1, 'City is required').max(60, 'City is too long').regex(NAME, NAME_MESSAGE),
   province: z.enum(PROVINCES, { required_error: 'Province is required' }),
   postalCode: z.string().trim().min(1, 'Postal code is required')
     .regex(POSTAL_CODE, 'Enter a valid Canadian postal code, e.g. V6B 1A1'),
-  firstName: z.string().trim().min(1, 'First name is required').max(60),
-  lastName: z.string().trim().min(1, 'Last name is required').max(60),
-  email: z.string().trim().min(1, 'Email is required').email('Please enter a valid email address').max(254),
+  firstName: z.string().trim().min(1, 'First name is required').max(60, 'First name is too long').regex(NAME, NAME_MESSAGE),
+  lastName: z.string().trim().min(1, 'Last name is required').max(60, 'Last name is too long').regex(NAME, NAME_MESSAGE),
+  email: z.string().trim().min(1, 'Email is required').email('Please enter a valid email address').max(254, 'Email is too long'),
   isTownhouse: z.enum(['yes', 'no'], { required_error: 'Please select yes or no' }),
   consent: z.literal(true, { errorMap: () => ({ message: 'You must accept to submit this form' }) }),
+}).superRefine((v, ctx) => {
+  const allowed = PROVINCES_BY_POSTAL_LETTER[v.postalCode.trim().charAt(0).toUpperCase()];
+  if (POSTAL_CODE.test(v.postalCode.trim()) && allowed && !allowed.includes(v.province)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['postalCode'], message: `This postal code doesn't match ${v.province}` });
+  }
 });
 
 type Values = z.infer<typeof formSchema>;

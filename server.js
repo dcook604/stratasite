@@ -2241,35 +2241,67 @@ app.post('/api/resident-info', async (req, res) => {
       return res.status(400).json({ error: 'Invalid CAPTCHA. Please try again.' });
     }
 
-    const clean = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
-    const data = {
-      unitNumber: clean(unitNumber, 20),
-      firstName: clean(firstName, 60),
-      lastName: clean(lastName, 60),
-      email: clean(email, 254).toLowerCase(),
-      streetAddress: clean(streetAddress, 120),
-      city: clean(city, 60),
-      province: clean(province, 2).toUpperCase(),
-      postalCode: clean(postalCode, 7).toUpperCase()
-    };
-
     if (consent !== true) {
       return res.status(400).json({ error: 'You must accept the consent statement to submit this form' });
     }
-    if (Object.values(data).some((v) => !v) || typeof isTownhouse !== 'boolean') {
-      return res.status(400).json({ error: 'Missing required fields' });
+    if (typeof isTownhouse !== 'boolean') {
+      return res.status(400).json({ error: 'Please indicate whether you live in a townhouse' });
     }
-    if (!/^[A-Za-z0-9\-\/ ]{1,20}$/.test(data.unitNumber)) {
+
+    // Reject (rather than truncate) anything that isn't a plain string within its limit
+    const limits = { unitNumber: 20, firstName: 60, lastName: 60, email: 254, streetAddress: 120, city: 60, province: 2, postalCode: 7 };
+    const raw = { unitNumber, firstName, lastName, email, streetAddress, city, province, postalCode };
+    const data = {};
+    for (const [field, max] of Object.entries(limits)) {
+      const value = raw[field];
+      if (typeof value !== 'string') return res.status(400).json({ error: 'Missing required fields' });
+      const trimmed = value.trim().replace(/\s+/g, ' ');
+      if (!trimmed) return res.status(400).json({ error: 'Missing required fields' });
+      if (trimmed.length > max) return res.status(400).json({ error: `${field} is too long` });
+      data[field] = trimmed;
+    }
+    data.email = data.email.toLowerCase();
+    data.province = data.province.toUpperCase();
+    data.postalCode = data.postalCode.toUpperCase().replace(/[ -]/g, '').replace(/^(.{3})(.{3})$/, '$1 $2');
+
+    if (!/^[A-Za-z0-9][A-Za-z0-9\-\/ ]*$/.test(data.unitNumber)) {
       return res.status(400).json({ error: 'Invalid unit number' });
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+    // Names: letters (any language), spaces, apostrophes, hyphens and periods only
+    const namePattern = /^\p{L}[\p{L}\p{M}' .\-’]*$/u;
+    if (!namePattern.test(data.firstName) || !namePattern.test(data.lastName)) {
+      return res.status(400).json({ error: 'Names may only contain letters, spaces, apostrophes, hyphens and periods' });
+    }
+    if (!/^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+$/.test(data.email)) {
       return res.status(400).json({ error: 'Invalid email address' });
     }
-    if (!/^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z] ?\d[ABCEGHJ-NPRSTV-Z]\d$/.test(data.postalCode)) {
+    if (!/\d/.test(data.streetAddress) || !/^[\p{L}\p{M}\d .,'#&\/\-’]+$/u.test(data.streetAddress)) {
+      return res.status(400).json({ error: 'Please enter a valid street address including the street number' });
+    }
+    if (!/^\p{L}[\p{L}\p{M}' .\-’]*$/u.test(data.city)) {
+      return res.status(400).json({ error: 'Invalid city' });
+    }
+    if (!/^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z] \d[ABCEGHJ-NPRSTV-Z]\d$/.test(data.postalCode)) {
       return res.status(400).json({ error: 'Invalid postal code' });
     }
-    if (!/^(AB|BC|MB|NB|NL|NS|NT|NU|ON|PE|QC|SK|YT)$/.test(data.province)) {
-      return res.status(400).json({ error: 'Invalid province' });
+    const provincesByPostalLetter = {
+      A: ['NL'], B: ['NS'], C: ['PE'], E: ['NB'], G: ['QC'], H: ['QC'], J: ['QC'],
+      K: ['ON'], L: ['ON'], M: ['ON'], N: ['ON'], P: ['ON'], R: ['MB'], S: ['SK'],
+      T: ['AB'], V: ['BC'], X: ['NT', 'NU'], Y: ['YT']
+    };
+    if (!provincesByPostalLetter[data.postalCode[0]]) {
+      return res.status(400).json({ error: 'Invalid postal code' });
+    }
+    if (!provincesByPostalLetter[data.postalCode[0]].includes(data.province)) {
+      return res.status(400).json({ error: 'Postal code does not match the selected province' });
+    }
+
+    // Guard against double-taps and repeat submissions for the same person and unit
+    const duplicate = await db.residentInfo.findFirst({
+      where: { email: data.email, unitNumber: data.unitNumber, isActive: true }
+    });
+    if (duplicate) {
+      return res.status(409).json({ error: 'Information for this email and unit has already been submitted.' });
     }
 
     const submissionId = `RI-${Date.now()}`;
